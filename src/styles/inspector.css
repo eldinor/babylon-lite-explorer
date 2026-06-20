@@ -45,7 +45,7 @@
 .bli-pane-single { border: 0; grid-template-rows: 27px minmax(0, 1fr); }
 .bli-pane-single-left { grid-row: 1; border-bottom: 1px solid var(--bli-border); }
 .bli-pane-single-right { grid-row: 3; }
-.bli-pane-heading { display: flex; align-items: center; padding: 0 9px; border-bottom: 1px solid var(--bli-border); background: var(--bli-bg); color: var(--bli-text); font-weight: 600; }
+.bli-pane-heading { display: flex; align-items: center; justify-content: space-between; padding: 0 5px 0 9px; border-bottom: 1px solid var(--bli-border); background: var(--bli-bg); color: var(--bli-text); font-weight: 600; }
 .bli-resize-handle { position: relative; z-index: 2; background: var(--bli-border); touch-action: none; }
 .bli-resize-handle:hover, .bli-resize-handle:focus-visible { background: var(--bli-accent); }
 .bli-resize-handle.is-horizontal { width: 5px; cursor: col-resize; }
@@ -55,12 +55,18 @@
 .bli-tabs { display: flex; border-bottom: 1px solid var(--bli-border); background: var(--bli-bg); }
 .bli-tabs button { border: 0; border-radius: 0; padding: 0 10px; background: transparent; color: var(--bli-muted); }
 .bli-tabs button[aria-selected="true"] { color: var(--bli-text); box-shadow: inset 0 -2px var(--bli-accent); }
+.bli-tabs .bli-pick-toggle { margin-left: auto; padding: 0 7px; }
+.bli-pick-toggle { min-height: 21px !important; border-color: transparent !important; background: transparent !important; color: var(--bli-muted) !important; font-weight: 500; }
+.bli-pick-toggle.is-active { border-color: var(--bli-accent) !important; background: color-mix(in srgb, var(--bli-accent) 22%, transparent) !important; color: var(--bli-text) !important; }
 .bli-pane-content { min-height: 0; overflow: auto; }
-.bli-explorer, .bli-properties { min-height: 100%; }
+.bli-explorer { display: grid; grid-template-rows: auto minmax(0, 1fr); height: 100%; min-height: 0; }
+.bli-properties { min-height: 100%; }
 .bli-search { display: block; padding: 6px; border-bottom: 1px solid var(--bli-border); }
 .bli-search input, .bli-property-control input[type="text"], .bli-property-control input[type="number"] { width: 100%; height: 24px; padding: 2px 6px; border: 1px solid var(--bli-border); border-radius: 2px; background: var(--bli-bg); }
 .bli-tree, .bli-tree ul { margin: 0; padding: 0; list-style: none; }
-.bli-tree-row { display: flex; align-items: center; height: 25px; }
+.bli-tree-scroll { min-height: 0; overflow: auto; }
+.bli-tree-virtual { position: relative; min-width: 100%; }
+.bli-tree-row { position: absolute; left: 0; right: 0; display: flex; align-items: center; height: 25px; }
 .bli-tree-row:hover { background: color-mix(in srgb, var(--bli-accent) 10%, transparent); }
 .bli-tree-row.is-selected { background: color-mix(in srgb, var(--bli-accent) 25%, transparent); }
 .bli-tree-toggle, .bli-tree-label { border: 0 !important; background: transparent !important; }
@@ -71,9 +77,10 @@
 .bli-empty { padding: 16px; color: var(--bli-muted); }
 .bli-selection-title { position: sticky; top: 0; z-index: 1; padding: 8px 10px; border-bottom: 1px solid var(--bli-border); background: var(--bli-panel); font-weight: 600; }
 .bli-property-section h3 { margin: 0; padding: 5px 8px; border-bottom: 1px solid var(--bli-border); background: var(--bli-bg); color: var(--bli-muted); font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
-.bli-property-row { display: grid; grid-template-columns: minmax(90px, 42%) minmax(0, 1fr); min-height: 28px; align-items: center; border-bottom: 1px solid color-mix(in srgb, var(--bli-border) 60%, transparent); }
+.bli-property-row { display: grid; grid-template-columns: minmax(90px, 40%) minmax(0, 1fr) 24px; min-height: 28px; align-items: center; border-bottom: 1px solid color-mix(in srgb, var(--bli-border) 60%, transparent); }
 .bli-property-row > label { padding: 4px 8px; color: var(--bli-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .bli-property-control { min-width: 0; padding: 2px 6px; }
+.bli-copy-value { width: 20px; min-height: 20px !important; padding: 0; color: var(--bli-muted) !important; }
 .bli-readonly { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .bli-tuple { display: flex; gap: 3px; }
 .bli-tuple input { min-width: 0; padding: 2px !important; text-align: right; }

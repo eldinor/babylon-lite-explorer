@@ -5,7 +5,7 @@ import { ErrorBoundary } from "./ErrorBoundary";
 import { useInspectorRuntime } from "./runtime";
 
 export function Shell({ title }: { title: string }) {
-  const { signals, shell, setLayout, close } = useInspectorRuntime();
+  const { signals, shell, setLayout, setTheme, close } = useInspectorRuntime();
   const panes = signals.panes.value;
   const toolbarItems = signals.toolbarItems.value;
   const toolbar = (location: "top-left" | "top-right" | "bottom-left" | "bottom-right") => toolbarItems
@@ -16,7 +16,7 @@ export function Shell({ title }: { title: string }) {
     const selectedKey = signals.selectedPanes.value[side];
     const selected = choices.find((pane) => pane.key === selectedKey) ?? choices[0];
     return <section class={`bli-pane bli-pane-${side}`}>
-      <div class="bli-tabs" role="tablist" aria-label={`${side} panels`}>{choices.map((pane) => <button type="button" role="tab" aria-selected={pane.key === selected?.key} onClick={() => shell.selectPane(pane.key)} key={pane.key}>{pane.title}</button>)}</div>
+      <div class="bli-tabs" role="tablist" aria-label={`${side} panels`}>{choices.map((pane) => <button type="button" role="tab" aria-selected={pane.key === selected?.key} onClick={() => shell.selectPane(pane.key)} key={pane.key}>{pane.title}</button>)}{side === "left" && <PickingToggle />}</div>
       <div class="bli-pane-content">{choices.map((pane) => {
         const active = pane.key === selected?.key;
         if (!active && !pane.keepMounted) return null;
@@ -38,7 +38,7 @@ export function Shell({ title }: { title: string }) {
         const Content = pane.content;
         return <Fragment key={pane.key}>{index === 1 && <ResizeHandle axis="vertical" onChange={setPercent} />}
         <section class={`bli-pane bli-pane-single bli-pane-single-${pane.side}`}>
-          <div class="bli-pane-heading">{pane.title}</div>
+          <div class="bli-pane-heading"><span>{pane.title}</span>{pane.side === "left" && <PickingToggle />}</div>
           <div class="bli-pane-content"><ErrorBoundary><Content /></ErrorBoundary></div>
         </section></Fragment>;
       })}</div>;
@@ -54,6 +54,7 @@ export function Shell({ title }: { title: string }) {
           <div class="bli-toolbar-zone">{toolbar("top-right")}</div>
           <div class="bli-toolbar-actions">
             <button type="button" onClick={() => setLayout("single")}>Single</button>
+            <button type="button" onClick={() => setTheme(signals.theme.value === "dark" ? "light" : "dark")}>{signals.theme.value === "dark" ? "Light" : "Dark"}</button>
             <button type="button" aria-label="Dispose inspector" onClick={close}>×</button>
           </div>
         </header>
@@ -70,6 +71,7 @@ export function Shell({ title }: { title: string }) {
       <div class="bli-toolbar-actions">
         {toolbar("top-right")}
         <button type="button" onClick={() => setLayout(signals.layout.value === "single" ? "split" : "single")}>{signals.layout.value === "single" ? "Split" : "Single"}</button>
+        <button type="button" onClick={() => setTheme(signals.theme.value === "dark" ? "light" : "dark")}>{signals.theme.value === "dark" ? "Light" : "Dark"}</button>
         <button type="button" aria-label="Dispose inspector" onClick={close}>×</button>
       </div>
     </header>
@@ -78,6 +80,19 @@ export function Shell({ title }: { title: string }) {
     <StatusBar left={toolbar("bottom-left")} right={toolbar("bottom-right")} />
     <Notifications />
   </div>;
+}
+
+function PickingToggle() {
+  const { signals, setPickingActive } = useInspectorRuntime();
+  if (!signals.pickingAvailable.value) return null;
+  const active = signals.pickingActive.value;
+  return <button
+    class={`bli-pick-toggle${active ? " is-active" : ""}`}
+    type="button"
+    aria-pressed={active}
+    title={active ? "Picking mode active" : "Picking mode inactive"}
+    onClick={() => setPickingActive(!active)}
+  >Pick: {active ? "On" : "Off"}</button>;
 }
 
 function ResizeHandle({ axis, onChange }: { axis: "horizontal" | "vertical"; onChange(value: number): void }) {

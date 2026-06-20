@@ -8,6 +8,7 @@ import {
   createSceneContext,
   createSolidTexture2D,
   createSphere,
+  loadGltf,
   registerScene,
   startEngine
 } from "@babylonjs/lite";
@@ -33,6 +34,12 @@ sphere.material = createPbrMaterial({
   roughnessFactor: 0.4
 });
 addToScene(scene, sphere);
+
+addToScene(
+  scene,
+  await loadGltf(engine, "https://playground.babylonjs.com/scenes/BoomBox.glb")
+);
+
 await registerScene(scene);
 await startEngine(engine);
-showLiteInspector({ engine, scene, canvas });
+showLiteInspector({ engine, scene, canvas }, { features: { canvasPicking: true } });

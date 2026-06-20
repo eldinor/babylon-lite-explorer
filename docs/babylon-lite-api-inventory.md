@@ -13,11 +13,12 @@ Audited from `node_modules/@babylonjs/lite/index.d.ts` on 2026-06-20. The packag
 | Transform hierarchy | `SceneNode.children` | Yes | Public observable vectors | Yes | Yes |
 | Visibility | `SceneNode.visible`, `setMeshVisible` | Yes | Yes | N/A | Yes |
 | Materials | `Mesh.material`, `Material.name` | Yes | Concrete public props | Derived from meshes | Common fields plus verified PBR-like props |
-| Textures | No common scene collection | Limited | Not audited | No | Explicit registration only |
+| Textures | Public PBR/Standard material `Texture2D` slots | Yes | No | Derived from mesh materials | Read-only derived section |
 | Draw calls | `EngineContext.drawCallCount` | Yes | No | N/A | Yes |
 | GPU frame time | `EngineContext.gpuFrameTimeMs`, `isGpuTimingSupported`, `setGpuTimingEnabled` | Yes | Opt-in | N/A | Display only; inspector never opts in by default |
 | Render lifecycle | `onBeforeRender(SceneContext, callback)` | Yes | Registration has no documented removal handle | N/A | Not used in MVP lifecycle |
 | Scene disposal | `onSceneDispose(SceneContext, callback)` | Yes | Registration has no documented removal handle | N/A | Not used in MVP lifecycle |
+| Canvas picking | `createGpuPicker`, `pickAsync`, `disposePicker`, `PickingInfo.pickedMesh` | Yes | No | N/A | Opt-in |
 
 ## Public structures used
 
@@ -33,7 +34,7 @@ Audited from `node_modules/@babylonjs/lite/index.d.ts` on 2026-06-20. The packag
 
 ## Deliberately unsupported discovery
 
-- Textures are not globally enumerable through the audited `SceneContext` contract.
+- Textures are not globally enumerable through `SceneContext`; the official adapter derives referenced `Texture2D` values from documented material slots and deduplicates them by object identity.
 - Transform nodes not reachable through a public camera/mesh child hierarchy are not discoverable.
 - Concrete light and material kinds are not inferred from private tags or constructors.
 - Frame graph and render tasks are not included until their public enumeration/lifecycle surface is separately audited.

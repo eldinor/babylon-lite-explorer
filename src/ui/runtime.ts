@@ -1,7 +1,7 @@
 import { createContext } from "preact";
 import { useContext } from "preact/hooks";
 import type { InspectorSignals } from "../signals/createInspectorSignals";
-import type { LiteInspectorLayout } from "../api/types";
+import type { LiteInspectorLayout, LiteInspectorTheme } from "../api/types";
 import type { NotificationService } from "../services/notificationService";
 import type { CommandService } from "../services/commandService";
 import type { RefreshController } from "../services/refreshController";
@@ -14,6 +14,8 @@ export type InspectorRuntime = {
   commands: CommandService;
   shell: ShellService;
   setLayout(layout: LiteInspectorLayout): void;
+  setTheme(theme: LiteInspectorTheme): void;
+  setPickingActive(active: boolean): void;
   close(): void;
 };
 

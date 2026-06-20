@@ -18,6 +18,9 @@ export function createRegisteredSceneAdapter(options: {
   setProperty?: LiteSceneAdapter["setProperty"];
   getStats?: LiteSceneAdapter["getStats"];
   getEntitySnapshot?: LiteSceneAdapter["getEntitySnapshot"];
+  pickEntityId?: LiteSceneAdapter["pickEntityId"];
+  focusEntity?: LiteSceneAdapter["focusEntity"];
+  setEntityVisible?: LiteSceneAdapter["setEntityVisible"];
 }): LiteSceneAdapter {
   return {
     getSceneTree(context) {
@@ -43,6 +46,9 @@ export function createRegisteredSceneAdapter(options: {
     ]),
     setProperty: options.setProperty,
     getStats: options.getStats,
-    getEntitySnapshot: options.getEntitySnapshot
+    getEntitySnapshot: options.getEntitySnapshot,
+    pickEntityId: options.pickEntityId,
+    focusEntity: options.focusEntity,
+    setEntityVisible: options.setEntityVisible
   };
 }

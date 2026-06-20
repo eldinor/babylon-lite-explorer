@@ -1,7 +1,7 @@
 import "./styles/inspector.css";
 
 export { showLiteInspector } from "./api/showLiteInspector";
-export type { LiteInspectorContext, LiteInspectorHandle, LiteInspectorLayout, LiteInspectorMode, LiteInspectorOptions, LiteInspectorTheme } from "./api/types";
+export type { LiteInspectorContext, LiteInspectorFeatures, LiteInspectorHandle, LiteInspectorLayout, LiteInspectorMode, LiteInspectorOptions, LiteInspectorTheme } from "./api/types";
 export { createOfficialLiteSceneAdapter } from "./adapter/official/createOfficialLiteSceneAdapter";
 export { createRegisteredSceneAdapter } from "./adapter/registered/createRegisteredSceneAdapter";
 export type { LiteEntityRegistration } from "./adapter/registered/createRegisteredSceneAdapter";

@@ -7,6 +7,45 @@ import { ShellService } from "../src/services/shellService";
 const capabilities = { editable: false, focusable: false, visibilityToggle: false, serializableSnapshot: false };
 
 describe("services", () => {
+  it("auto-dismisses notifications after the configured duration", () => {
+    vi.useFakeTimers();
+    const signals = createInspectorSignals();
+    const notifications = new NotificationService(signals, 3000);
+    notifications.push("Temporary message", "info");
+    expect(signals.notifications.value).toHaveLength(1);
+    vi.advanceTimersByTime(2999);
+    expect(signals.notifications.value).toHaveLength(1);
+    vi.advanceTimersByTime(1);
+    expect(signals.notifications.value).toHaveLength(0);
+    notifications.dispose();
+    vi.useRealTimers();
+  });
+
+  it("supports persistent manually-dismissed notifications", () => {
+    vi.useFakeTimers();
+    const signals = createInspectorSignals();
+    const notifications = new NotificationService(signals, 0);
+    notifications.push("Persistent message");
+    vi.advanceTimersByTime(10_000);
+    expect(signals.notifications.value).toHaveLength(1);
+    notifications.dismiss(signals.notifications.value[0].id);
+    expect(signals.notifications.value).toHaveLength(0);
+    notifications.dispose();
+    vi.useRealTimers();
+  });
+
+  it("can disable notifications completely", () => {
+    vi.useFakeTimers();
+    const signals = createInspectorSignals();
+    const notifications = new NotificationService(signals, 3000, false);
+    notifications.push("Hidden error");
+    notifications.push("Hidden info", "info");
+    vi.advanceTimersByTime(3000);
+    expect(signals.notifications.value).toEqual([]);
+    notifications.dispose();
+    vi.useRealTimers();
+  });
+
   it("registers and disposes panes deterministically", () => {
     const signals = createInspectorSignals();
     const shell = new ShellService(signals);

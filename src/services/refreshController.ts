@@ -1,6 +1,6 @@
 import type { PropertyDescriptor } from "../adapter/propertyDescriptors";
 import type { InspectorSignals } from "../signals/createInspectorSignals";
-import { findEntityById } from "../signals/treeUtils";
+import { findEntityById, findEntityPath } from "../signals/treeUtils";
 import type { NotificationService } from "./notificationService";
 
 export class RefreshController {
@@ -32,6 +32,14 @@ export class RefreshController {
 
   async select(id: string | null): Promise<void> {
     this.signals.selectedEntityId.value = id;
+    if (id) {
+      const path = findEntityPath(this.signals.tree.value, id);
+      if (path?.length) {
+        const expanded = new Set(this.signals.expandedIds.value);
+        for (const ancestor of path.slice(0, -1)) expanded.add(ancestor.id);
+        this.signals.expandedIds.value = expanded;
+      }
+    }
     const request = ++this.generation;
     await this.refreshProperties(request);
   }
@@ -64,7 +72,8 @@ export class RefreshController {
     try {
       const result = await adapter.setProperty(entity, descriptor.path, value, context);
       if (!result.ok) { this.notifications.push(result.message); return false; }
-      await this.refreshProperties();
+      if (descriptor.path === "name") await this.refreshTree();
+      else await this.refreshProperties();
       this.signals.sceneVersion.value++;
       return true;
     } catch (error) {

@@ -4,6 +4,13 @@ export type LiteInspectorTheme = "dark" | "light";
 export type LiteInspectorMode = "overlay" | "inline";
 export type LiteInspectorLayout = "single" | "split";
 
+export type LiteInspectorFeatures = {
+  /** Expose adapter-backed camera focus controls. Disabled by default. */
+  focusSelected?: boolean;
+  /** Select entities by clicking the canvas. Disabled by default. */
+  canvasPicking?: boolean;
+};
+
 export type LiteInspectorContext = {
   engine: unknown;
   scene: unknown;
@@ -19,6 +26,11 @@ export type LiteInspectorOptions = {
   theme?: LiteInspectorTheme;
   initiallyOpen?: boolean;
   adapter?: LiteSceneAdapter;
+  features?: LiteInspectorFeatures;
+  /** Notification auto-dismiss delay in milliseconds. Defaults to 3000; use 0 for manual dismissal. */
+  notificationDurationMs?: number;
+  /** Disable all inspector notifications. Defaults to true. */
+  notificationsEnabled?: boolean;
   title?: string;
 };
 

@@ -18,7 +18,14 @@ import "@babylonjs/lite-inspector/styles.css";
 
 const inspector = showLiteInspector(
   { engine, scene, canvas },
-  { mode: "overlay", layout: "single", theme: "dark" }
+  {
+    mode: "overlay",
+    layout: "single",
+    theme: "dark",
+    features: { focusSelected: false, canvasPicking: false },
+    notificationDurationMs: 3000,
+    notificationsEnabled: true
+  }
 );
 
 await inspector.ready;
@@ -34,7 +41,15 @@ Each call owns independent state. `dispose()` is idempotent. Caller-provided ada
 
 `layout: "single"` is the compact default and stacks Properties beneath Scene Explorer at the top-right. Use `layout: "split"` for simultaneous side-by-side columns at the top-left.
 
-Drag the thin divider in Single mode to resize the stacked panes; the proportion is persisted. Split mode docks Scene Explorer at the left edge and Properties at the right, leaving the canvas interactive between them. Selected entities expose only adapter-backed actions, such as visibility and safe snapshot copying. Verified public PBR base color, metallic, roughness, and alpha fields are editable when present.
+Drag the thin divider in Single mode to resize the stacked panes; the proportion is persisted. Split mode docks Scene Explorer at the left edge and Properties at the right, leaving the canvas interactive between them. Selected entities expose only adapter-backed actions, such as visibility and safe snapshot copying. Official-adapter snapshots contain clean public property values without inspector IDs or UI descriptor metadata. Verified public PBR base color, metallic, roughness, and alpha fields are editable when present.
+
+The header switches layout and theme. Keyboard shortcuts are `Ctrl+Shift+L` (layout), `Ctrl+Shift+Y` (theme), `Ctrl+Shift+I` (show/hide), and `Ctrl+Shift+F` (focus scene search). Property rows include a copy-value control.
+
+Camera focus is optional and disabled by default. Set `features.focusSelected: true` to expose Focus only for entities whose adapter reports `focusable: true` and implements `focusEntity`.
+
+Canvas picking is also optional. Set `features.canvasPicking: true` to add a Pick toggle to the Scene Explorer header. Picking mode is inactive by default; while active, a short primary-pointer click selects a public scene mesh. Pointer drags are ignored so camera controls keep their normal behavior. Custom adapters can support it through `pickEntityId`.
+
+Notifications dismiss automatically after three seconds. Configure `notificationDurationMs`, or set it to `0` for manual dismissal. Set `notificationsEnabled: false` to disable notifications completely. These options are ready for a future preferences UI.
 
 ## Public API coverage
 

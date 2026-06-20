@@ -1,12 +1,14 @@
 import type {
   Camera,
   EngineContext,
+  GpuPicker,
   LightBase,
   Material,
   Mesh,
   PbrMaterialProps,
   SceneContext,
-  SceneNode
+  SceneNode,
+  Texture2D
 } from "@babylonjs/lite";
 import type { LiteInspectorContext } from "../../api/types";
 import type { PropertyDescriptor } from "../propertyDescriptors";
@@ -37,6 +39,68 @@ function isPublicEngine(value: unknown): value is EngineContext {
   return !!value && typeof value === "object" && typeof (value as Partial<EngineContext>).drawCallCount === "number";
 }
 
+function isPublicSceneNode(value: unknown): value is SceneNode {
+  if (!value || typeof value !== "object") return false;
+  const node = value as Partial<SceneNode>;
+  return typeof node.name === "string"
+    && Array.isArray(node.children)
+    && !!node.position && typeof node.position.x === "number"
+    && !!node.rotation && typeof node.rotation.x === "number"
+    && !!node.scaling && typeof node.scaling.x === "number";
+}
+
+function isPublicTexture2D(value: unknown): value is Texture2D {
+  if (!value || typeof value !== "object") return false;
+  const texture = value as Partial<Texture2D>;
+  return typeof texture.width === "number"
+    && typeof texture.height === "number"
+    && "texture" in texture
+    && "view" in texture
+    && "sampler" in texture;
+}
+
+type TextureUsage = { slot: string; texture: Texture2D };
+
+const directTextureSlots = [
+  "baseColorTexture", "normalTexture", "ormTexture", "emissiveTexture",
+  "specGlossTexture", "occlusionTexture", "metallicReflectanceTexture", "reflectanceTexture",
+  "diffuseTexture", "bumpTexture", "specularTexture", "ambientTexture",
+  "lightmapTexture", "opacityTexture", "reflectionTexture"
+] as const;
+
+function collectPublicMaterialTextures(material: Material): TextureUsage[] {
+  const record = material as Material & Record<string, unknown>;
+  const usages: TextureUsage[] = [];
+  const add = (slot: string, value: unknown) => { if (isPublicTexture2D(value)) usages.push({ slot, texture: value }); };
+  for (const slot of directTextureSlots) add(slot, record[slot]);
+
+  const nested = (key: string): Record<string, unknown> | null => {
+    const value = record[key];
+    return value && typeof value === "object" ? value as Record<string, unknown> : null;
+  };
+  const clearCoat = nested("clearCoat");
+  if (clearCoat) {
+    add("clearCoat.texture", clearCoat.texture);
+    add("clearCoat.roughnessTexture", clearCoat.roughnessTexture);
+    add("clearCoat.bumpTexture", clearCoat.bumpTexture);
+  }
+  const sheen = nested("sheen");
+  if (sheen) add("sheen.texture", sheen.texture);
+  const iridescence = nested("iridescence");
+  if (iridescence) {
+    add("iridescence.texture", iridescence.texture);
+    add("iridescence.thicknessTexture", iridescence.thicknessTexture);
+  }
+  const subsurface = nested("subsurface");
+  if (subsurface) {
+    const thickness = subsurface.thickness && typeof subsurface.thickness === "object" ? subsurface.thickness as Record<string, unknown> : null;
+    const refraction = subsurface.refraction && typeof subsurface.refraction === "object" ? subsurface.refraction as Record<string, unknown> : null;
+    if (thickness) add("subsurface.thickness.texture", thickness.texture);
+    if (refraction) add("subsurface.refraction.texture", refraction.texture);
+  }
+  return usages;
+}
+
 function asTuple3(value: { x: number; y: number; z: number }): readonly [number, number, number] {
   return [value.x, value.y, value.z];
 }
@@ -59,6 +123,9 @@ export function createOfficialLiteSceneAdapter(): LiteSceneAdapter {
   const objectIds = new WeakMap<object, string>();
   const entityTypes = new WeakMap<object, LiteEntityKind>();
   let nextId = 1;
+  const pickers = new Set<GpuPicker>();
+  const pickerByScene = new WeakMap<object, GpuPicker>();
+  let disposePickerPublic: ((picker: GpuPicker) => void) | undefined;
 
   const idFor = (kind: LiteEntityKind, source: object, explicit?: string): string => {
     const existing = objectIds.get(source);
@@ -69,12 +136,12 @@ export function createOfficialLiteSceneAdapter(): LiteSceneAdapter {
     return id;
   };
 
-  const makeNode = (node: SceneNode, kind: "mesh" | "transform", seen: Set<object>): LiteEntity => {
+  const makeNode = (node: SceneNode, kind: "mesh" | "transform", seen: Set<object>, meshSources?: ReadonlySet<object>): LiteEntity => {
     if (seen.has(node)) {
       return { id: idFor(kind, node), label: `${node.name || kind} (cycle)`, kind, source: node, capabilities: none };
     }
     seen.add(node);
-    const children = node.children.map((child) => makeNode(child, "transform", seen));
+    const children = node.children.map((child) => makeNode(child, meshSources?.has(child) ? "mesh" : "transform", seen, meshSources));
     seen.delete(node);
     return {
       id: idFor(kind, node, kind === "mesh" ? (node as Mesh).id : undefined),
@@ -107,35 +174,77 @@ export function createOfficialLiteSceneAdapter(): LiteSceneAdapter {
       children: []
     };
 
+    const meshSources = new Set<object>(scene.meshes);
+    const discoveredSceneNodes = new Set<SceneNode>(scene.meshes);
+    for (const mesh of scene.meshes) {
+      let parent: unknown = mesh.parent;
+      const visited = new Set<object>();
+      while (isPublicSceneNode(parent) && !visited.has(parent)) {
+        visited.add(parent);
+        discoveredSceneNodes.add(parent);
+        parent = parent.parent;
+      }
+    }
+    const externalNodeOwners = new Set<object>(scene.lights);
+    if (scene.camera) externalNodeOwners.add(scene.camera);
+    const nodes: LiteEntity[] = [];
+
     if (scene.camera) {
       entityTypes.set(scene.camera, "camera");
-      root.children!.push(section("cameras", "Cameras", [{
+      const cameraChildren = scene.camera.children.map((child) => makeNode(child, meshSources.has(child) ? "mesh" : "transform", new Set(), meshSources));
+      nodes.push({
         id: idFor("camera", scene.camera),
         label: "Active camera",
         kind: "camera",
         source: scene.camera,
+        children: cameraChildren.length ? cameraChildren : undefined,
         capabilities: { ...none, editable: true }
-      }]));
+      });
     }
 
-    if (scene.meshes.length) {
-      root.children!.push(section("meshes", "Meshes", scene.meshes.map((mesh) => makeNode(mesh, "mesh", new Set()))));
-    }
     if (scene.lights.length) {
-      root.children!.push(section("lights", "Lights", scene.lights.map((light, index) => {
+      nodes.push(...scene.lights.map((light, index) => {
         entityTypes.set(light, "light");
+        const lightChildren = light.children.map((child) => makeNode(child, meshSources.has(child) ? "mesh" : "transform", new Set(), meshSources));
         return {
           id: idFor("light", light),
           label: `${light.lightType || "Light"} ${index + 1}`,
           kind: "light" as const,
           source: light,
+          children: lightChildren.length ? lightChildren : undefined,
           capabilities: { ...none, editable: true }
         };
-      })));
+      }));
     }
+    const rootSceneNodes = [...discoveredSceneNodes].filter((node) => {
+      const parent = node.parent;
+      return !parent || (!discoveredSceneNodes.has(parent as SceneNode) && !externalNodeOwners.has(parent));
+    });
+    nodes.push(...rootSceneNodes.map((node) => makeNode(node, meshSources.has(node) ? "mesh" : "transform", new Set(), meshSources)));
+    if (nodes.length) root.children!.push(section("nodes", "Nodes", nodes));
 
     const materials = [...new Set(scene.meshes.map((mesh) => mesh.material))];
     if (materials.length) root.children!.push(section("materials", "Materials", materials.map(makeMaterial)));
+
+    const textureUsages = new Map<Texture2D, string[]>();
+    for (const material of materials) {
+      const materialLabel = material.name || "Unnamed material";
+      for (const usage of collectPublicMaterialTextures(material)) {
+        const labels = textureUsages.get(usage.texture) ?? [];
+        labels.push(`${materialLabel} / ${usage.slot}`);
+        textureUsages.set(usage.texture, labels);
+      }
+    }
+    if (textureUsages.size) {
+      root.children!.push(section("textures", "Textures", [...textureUsages].map(([texture, usages]) => ({
+        id: idFor("texture", texture),
+        label: usages[0],
+        kind: "texture" as const,
+        source: texture,
+        capabilities: none,
+        meta: { usages }
+      }))));
+    }
 
     if (scene.animationGroups.length) {
       root.children!.push(section("animations", "Animation Groups", scene.animationGroups.map((group, index) => {
@@ -199,6 +308,21 @@ export function createOfficialLiteSceneAdapter(): LiteSceneAdapter {
         if (typeof material.doubleSided === "boolean") values.push({ kind: "boolean", path: "doubleSided", label: "Double sided", value: material.doubleSided, section: "Material", readonly: true });
       }
       return values;
+    }
+    if (knownKind === "texture") {
+      const texture = source as Texture2D;
+      const usages = Array.isArray(entity.meta?.usages) ? entity.meta.usages.filter((value): value is string => typeof value === "string") : [];
+      return [...base,
+        { kind: "readonly", path: "usages", label: "Used by", value: usages.join(", "), section: "Texture" },
+        { kind: "number", path: "width", label: "Width", value: texture.width, readonly: true, section: "Texture" },
+        { kind: "number", path: "height", label: "Height", value: texture.height, readonly: true, section: "Texture" },
+        { kind: "number", path: "uScale", label: "U scale", value: texture.uScale ?? 1, readonly: true, section: "UV Transform" },
+        { kind: "number", path: "vScale", label: "V scale", value: texture.vScale ?? 1, readonly: true, section: "UV Transform" },
+        { kind: "number", path: "uOffset", label: "U offset", value: texture.uOffset ?? 0, readonly: true, section: "UV Transform" },
+        { kind: "number", path: "vOffset", label: "V offset", value: texture.vOffset ?? 0, readonly: true, section: "UV Transform" },
+        { kind: "number", path: "uAng", label: "UV rotation", value: texture.uAng ?? 0, readonly: true, section: "UV Transform" },
+        { kind: "boolean", path: "invertY", label: "Invert Y", value: texture.invertY ?? false, readonly: true, section: "UV Transform" }
+      ];
     }
     if (knownKind === "scene") {
       const scene = source as SceneContext;
@@ -276,12 +400,44 @@ export function createOfficialLiteSceneAdapter(): LiteSceneAdapter {
     return stats;
   };
 
+  const pickEntityId: NonNullable<LiteSceneAdapter["pickEntityId"]> = async (x, y, context) => {
+    if (!isPublicScene(context.scene)) return fail("unsupported", "Canvas picking requires a public Babylon Lite SceneContext.");
+    try {
+      const lite = await import("@babylonjs/lite");
+      let picker = pickerByScene.get(context.scene);
+      if (!picker) {
+        picker = lite.createGpuPicker(context.scene);
+        pickerByScene.set(context.scene, picker);
+        pickers.add(picker);
+      }
+      disposePickerPublic = lite.disposePicker;
+      const result = await lite.pickAsync(picker, x, y);
+      if (!result.hit || !result.pickedMesh) return ok(null);
+      return ok(objectIds.get(result.pickedMesh) ?? null);
+    } catch (error) {
+      return fail("failed", error instanceof Error ? error.message : "Canvas picking failed.");
+    }
+  };
+
+  const getEntitySnapshot: NonNullable<LiteSceneAdapter["getEntitySnapshot"]> = (entity) => {
+    const snapshot: Record<string, unknown> = {};
+    for (const descriptor of getProperties(entity)) {
+      if (!descriptor.path.startsWith("$")) snapshot[descriptor.path] = descriptor.value;
+    }
+    return ok(snapshot);
+  };
+
   return {
     getSceneTree,
     getProperties,
     setProperty,
     getStats,
+    pickEntityId,
     setEntityVisible: async (entity, visible, context) => setProperty(entity, "visible", visible, context),
-    getEntitySnapshot: (entity) => ok({ id: entity.id, label: entity.label, kind: entity.kind, properties: getProperties(entity) })
+    getEntitySnapshot,
+    dispose() {
+      if (disposePickerPublic) for (const picker of pickers) disposePickerPublic(picker);
+      pickers.clear();
+    }
   };
 }

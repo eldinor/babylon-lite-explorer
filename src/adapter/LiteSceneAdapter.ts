@@ -61,5 +61,6 @@ export type LiteSceneAdapter = {
   focusEntity?(entity: LiteEntity, context: LiteInspectorContext): AdapterResult | Promise<AdapterResult>;
   setEntityVisible?(entity: LiteEntity, visible: boolean, context: LiteInspectorContext): AdapterResult | Promise<AdapterResult>;
   getEntitySnapshot?(entity: LiteEntity, context: LiteInspectorContext): AdapterResult<unknown> | Promise<AdapterResult<unknown>>;
+  pickEntityId?(x: number, y: number, context: LiteInspectorContext): AdapterResult<string | null> | Promise<AdapterResult<string | null>>;
   dispose?(): void;
 };

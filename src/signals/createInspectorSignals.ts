@@ -23,6 +23,8 @@ export function createInspectorSignals() {
   const notifications = signal<InspectorNotification[]>([]);
   const isRefreshingTree = signal(false);
   const isRefreshingProperties = signal(false);
+  const pickingAvailable = signal(false);
+  const pickingActive = signal(false);
   const panes = signal<SidePaneDefinition[]>([]);
   const toolbarItems = signal<ToolbarItemDefinition[]>([]);
   const selectedPanes = signal<Record<"left" | "right" | "single", string | null>>({ left: null, right: null, single: null });
@@ -33,7 +35,8 @@ export function createInspectorSignals() {
   return {
     isOpen, theme, layout, context, adapter, sceneVersion, selectedEntityId, selectedEntity,
     tree, filteredTree, properties, stats, search, expandedIds, notifications,
-    isRefreshingTree, isRefreshingProperties, panes, toolbarItems, selectedPanes,
+    isRefreshingTree, isRefreshingProperties, pickingAvailable, pickingActive,
+    panes, toolbarItems, selectedPanes,
     singlePanePercent
   };
 }

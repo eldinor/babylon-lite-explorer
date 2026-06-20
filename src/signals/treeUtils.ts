@@ -9,6 +9,15 @@ export function findEntityById(tree: readonly LiteEntity[], id: string): LiteEnt
   return null;
 }
 
+export function findEntityPath(tree: readonly LiteEntity[], id: string): LiteEntity[] | null {
+  for (const entity of tree) {
+    if (entity.id === id) return [entity];
+    const childPath = entity.children ? findEntityPath(entity.children, id) : null;
+    if (childPath) return [entity, ...childPath];
+  }
+  return null;
+}
+
 export function filterTree(tree: readonly LiteEntity[], query: string): LiteEntity[] {
   const normalized = query.trim().toLocaleLowerCase();
   if (!normalized) return [...tree];

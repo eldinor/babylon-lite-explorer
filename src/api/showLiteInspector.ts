@@ -1,9 +1,10 @@
 import { h, render } from "preact";
 import { createOfficialLiteSceneAdapter } from "../adapter/official/createOfficialLiteSceneAdapter";
-import { DisposableStore } from "../core/disposable";
+import { createDisposable, DisposableStore } from "../core/disposable";
 import { createInspectorSignals } from "../signals/createInspectorSignals";
 import { CommandService } from "../services/commandService";
 import { NotificationService } from "../services/notificationService";
+import { PickingService } from "../services/pickingService";
 import { RefreshController } from "../services/refreshController";
 import { ShellService } from "../services/shellService";
 import { StatsService } from "../services/statsService";
@@ -17,11 +18,17 @@ export function showLiteInspector(context: LiteInspectorContext, options: LiteIn
   if (typeof document === "undefined") throw new Error("Babylon Lite Inspector requires a DOM environment.");
   const canvas = options.canvas ?? context.canvas;
   const container = options.container ?? canvas?.parentElement ?? document.body;
+  const readPreference = (key: string): string | null => {
+    try { return localStorage.getItem(key); } catch { return null; }
+  };
   const mode = options.mode ?? "overlay";
-  const layout = options.layout ?? "single";
+  const storedLayout = readPreference("bli.layout");
+  const storedTheme = readPreference("bli.theme");
+  const layout = options.layout ?? (storedLayout === "split" ? "split" : "single");
+  const theme = options.theme ?? (storedTheme === "light" ? "light" : "dark");
   const host = document.createElement("div");
   host.className = `bli-root bli-${mode}`;
-  host.dataset.theme = options.theme ?? "dark";
+  host.dataset.theme = theme;
   host.dataset.layout = layout;
   host.hidden = options.initiallyOpen === false;
   container.appendChild(host);
@@ -36,17 +43,26 @@ export function showLiteInspector(context: LiteInspectorContext, options: LiteIn
   const signals = createInspectorSignals();
   signals.context.value = { ...context, canvas };
   signals.adapter.value = options.adapter ?? createOfficialLiteSceneAdapter();
-  signals.theme.value = options.theme ?? "dark";
+  signals.theme.value = theme;
   signals.layout.value = layout;
   try {
     const singlePercent = Number(localStorage.getItem("bli.singlePanePercent"));
     if (singlePercent >= 25 && singlePercent <= 75) signals.singlePanePercent.value = singlePercent;
   } catch { /* storage may be unavailable in embedded or private contexts */ }
   signals.isOpen.value = options.initiallyOpen ?? true;
-  const notifications = new NotificationService(signals);
+  const notifications = new NotificationService(
+    signals,
+    Math.max(0, options.notificationDurationMs ?? 3000),
+    options.notificationsEnabled !== false
+  );
+  const focusSelectedEnabled = options.features?.focusSelected === true;
   const refresh = new RefreshController(signals, notifications);
   const shell = new ShellService(signals);
   const stats = new StatsService(signals);
+  const picking = options.features?.canvasPicking === true && canvas
+    ? new PickingService(canvas, signals, refresh, notifications)
+    : undefined;
+  signals.pickingAvailable.value = !!picking;
   const commands = new CommandService();
   const disposables = new DisposableStore();
   disposables.add(shell.addSidePane({ key: "scene-explorer", title: "Scene Explorer", side: "left", order: 10, content: SceneExplorer, keepMounted: true }));
@@ -81,7 +97,7 @@ export function showLiteInspector(context: LiteInspectorContext, options: LiteIn
   disposables.add(commands.register({
     id: "focus-selected",
     label: "Focus selected",
-    when: (entity) => !!entity?.capabilities.focusable,
+    when: (entity) => focusSelectedEnabled && !!entity?.capabilities.focusable,
     run: async (entity, currentContext) => {
       const adapter = signals.adapter.value;
       if (!entity || !adapter?.focusEntity) return;
@@ -100,6 +116,17 @@ export function showLiteInspector(context: LiteInspectorContext, options: LiteIn
     setLayout(nextLayout) {
       signals.layout.value = nextLayout;
       host.dataset.layout = nextLayout;
+      try { localStorage.setItem("bli.layout", nextLayout); } catch { /* optional persistence */ }
+    },
+    setTheme(nextTheme) {
+      signals.theme.value = nextTheme;
+      host.dataset.theme = nextTheme;
+      try { localStorage.setItem("bli.theme", nextTheme); } catch { /* optional persistence */ }
+    },
+    setPickingActive(active) {
+      if (!picking) return;
+      if (active) picking.start(); else picking.stop();
+      signals.pickingActive.value = active;
     },
     close: () => handle.dispose()
   };
@@ -130,7 +157,10 @@ export function showLiteInspector(context: LiteInspectorContext, options: LiteIn
       if (disposed) return;
       disposed = true;
       refresh.dispose();
+      picking?.dispose();
+      signals.pickingActive.value = false;
       stats.dispose();
+      notifications.dispose();
       disposables.dispose();
       commands.dispose();
       if (!options.adapter) signals.adapter.value?.dispose?.();
@@ -139,9 +169,24 @@ export function showLiteInspector(context: LiteInspectorContext, options: LiteIn
       if (restoredPosition !== undefined) container.style.position = restoredPosition;
     },
     show() { if (!disposed) { signals.isOpen.value = true; host.hidden = false; rerender(); } },
-    hide() { if (!disposed) { signals.isOpen.value = false; host.hidden = true; rerender(); } },
+    hide() { if (!disposed) { runtime.setPickingActive(false); signals.isOpen.value = false; host.hidden = true; rerender(); } },
     toggle() { if (signals.isOpen.value) handle.hide(); else handle.show(); },
     refresh() { return disposed ? Promise.resolve() : refresh.refreshTree(); }
   };
+  const onKeyDown = (event: KeyboardEvent) => {
+    if (!event.ctrlKey || !event.shiftKey) {
+      if (event.key === "Escape" && host.contains(document.activeElement) && !(event.target instanceof HTMLInputElement)) void refresh.select(null);
+      return;
+    }
+    if (event.code === "KeyL") { event.preventDefault(); runtime.setLayout(signals.layout.value === "single" ? "split" : "single"); }
+    if (event.code === "KeyY") { event.preventDefault(); runtime.setTheme(signals.theme.value === "dark" ? "light" : "dark"); }
+    if (event.code === "KeyI") { event.preventDefault(); handle.toggle(); }
+    if (event.code === "KeyF" && signals.isOpen.value) {
+      event.preventDefault();
+      host.querySelector<HTMLInputElement>(".bli-search input")?.focus();
+    }
+  };
+  window.addEventListener("keydown", onKeyDown);
+  disposables.add(createDisposable(() => window.removeEventListener("keydown", onKeyDown)));
   return handle;
 }
