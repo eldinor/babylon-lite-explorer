@@ -1,0 +1,27 @@
+# Dependencies
+node_modules/
+
+# Build and test output
+dist/
+coverage/
+.vite/
+*.tsbuildinfo
+
+# Local caches and archives
+.npm/
+.npm-cache/
+*.tgz
+*.log
+
+# Local environment files
+.env
+.env.*
+!.env.example
+
+# Editor, OS, and agent-local state
+.vscode/
+.idea/
+.agents/
+.codex/
+.DS_Store
+Thumbs.db

@@ -1,0 +1,51 @@
+{
+  "name": "@babylonjs/lite-inspector",
+  "version": "0.1.0",
+  "description": "A small, official-API-only inspector for Babylon Lite",
+  "type": "module",
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./styles.css": "./dist/lite-inspector.css"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build && tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "peerDependencies": {
+    "@babylonjs/lite": "^1.2.0",
+    "@preact/signals": "^2.0.0",
+    "preact": "^10.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@babylonjs/lite": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@babylonjs/lite": "^1.2.0",
+    "@preact/preset-vite": "^2.10.2",
+    "@preact/signals": "^2.0.1",
+    "@testing-library/preact": "^3.2.4",
+    "@types/node": "^24.0.0",
+    "jsdom": "^26.1.0",
+    "preact": "^10.26.9",
+    "typescript": "^5.8.3",
+    "vite": "^6.3.5",
+    "vitest": "^3.2.4"
+  }
+}

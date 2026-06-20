@@ -1,0 +1,15 @@
+export type PropertyBase = {
+  path: string;
+  label: string;
+  section?: string;
+  readonly?: boolean;
+};
+
+export type PropertyDescriptor =
+  | (PropertyBase & { kind: "readonly"; value: string })
+  | (PropertyBase & { kind: "text"; value: string })
+  | (PropertyBase & { kind: "number"; value: number; min?: number; max?: number; step?: number })
+  | (PropertyBase & { kind: "boolean"; value: boolean })
+  | (PropertyBase & { kind: "vector3"; value: readonly [number, number, number] })
+  | (PropertyBase & { kind: "color3"; value: readonly [number, number, number] })
+  | (PropertyBase & { kind: "color4"; value: readonly [number, number, number, number] });

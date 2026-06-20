@@ -1,0 +1,147 @@
+import { h, render } from "preact";
+import { createOfficialLiteSceneAdapter } from "../adapter/official/createOfficialLiteSceneAdapter";
+import { DisposableStore } from "../core/disposable";
+import { createInspectorSignals } from "../signals/createInspectorSignals";
+import { CommandService } from "../services/commandService";
+import { NotificationService } from "../services/notificationService";
+import { RefreshController } from "../services/refreshController";
+import { ShellService } from "../services/shellService";
+import { StatsService } from "../services/statsService";
+import { App } from "../ui/App";
+import { PropertiesPanel } from "../ui/PropertiesPanel";
+import { SceneExplorer } from "../ui/SceneExplorer";
+import type { InspectorRuntime } from "../ui/runtime";
+import type { LiteInspectorContext, LiteInspectorHandle, LiteInspectorOptions } from "./types";
+
+export function showLiteInspector(context: LiteInspectorContext, options: LiteInspectorOptions = {}): LiteInspectorHandle {
+  if (typeof document === "undefined") throw new Error("Babylon Lite Inspector requires a DOM environment.");
+  const canvas = options.canvas ?? context.canvas;
+  const container = options.container ?? canvas?.parentElement ?? document.body;
+  const mode = options.mode ?? "overlay";
+  const layout = options.layout ?? "single";
+  const host = document.createElement("div");
+  host.className = `bli-root bli-${mode}`;
+  host.dataset.theme = options.theme ?? "dark";
+  host.dataset.layout = layout;
+  host.hidden = options.initiallyOpen === false;
+  container.appendChild(host);
+
+  let restoredPosition: string | undefined;
+  const containerPosition = mode === "overlay" && container !== document.body ? getComputedStyle(container).position : "";
+  if (mode === "overlay" && container !== document.body && (!containerPosition || containerPosition === "static")) {
+    restoredPosition = container.style.position;
+    container.style.position = "relative";
+  }
+
+  const signals = createInspectorSignals();
+  signals.context.value = { ...context, canvas };
+  signals.adapter.value = options.adapter ?? createOfficialLiteSceneAdapter();
+  signals.theme.value = options.theme ?? "dark";
+  signals.layout.value = layout;
+  try {
+    const singlePercent = Number(localStorage.getItem("bli.singlePanePercent"));
+    if (singlePercent >= 25 && singlePercent <= 75) signals.singlePanePercent.value = singlePercent;
+  } catch { /* storage may be unavailable in embedded or private contexts */ }
+  signals.isOpen.value = options.initiallyOpen ?? true;
+  const notifications = new NotificationService(signals);
+  const refresh = new RefreshController(signals, notifications);
+  const shell = new ShellService(signals);
+  const stats = new StatsService(signals);
+  const commands = new CommandService();
+  const disposables = new DisposableStore();
+  disposables.add(shell.addSidePane({ key: "scene-explorer", title: "Scene Explorer", side: "left", order: 10, content: SceneExplorer, keepMounted: true }));
+  disposables.add(shell.addSidePane({ key: "properties", title: "Properties", side: "right", order: 10, content: PropertiesPanel, keepMounted: true }));
+  disposables.add(commands.register({ id: "refresh", label: "Refresh", run: () => refresh.refreshTree() }));
+  disposables.add(commands.register({ id: "clear-selection", label: "Clear selection", when: (entity) => !!entity, run: () => refresh.select(null) }));
+  disposables.add(commands.register({
+    id: "copy-entity-snapshot",
+    label: "Copy entity snapshot",
+    when: (entity) => !!entity?.capabilities.serializableSnapshot,
+    run: async (entity, currentContext) => {
+      const adapter = signals.adapter.value;
+      if (!entity || !adapter?.getEntitySnapshot) return;
+      const result = await adapter.getEntitySnapshot(entity, currentContext);
+      if (!result.ok) { notifications.push(result.message); return; }
+      try { await navigator.clipboard.writeText(JSON.stringify(result.value, null, 2)); }
+      catch { notifications.push("Could not write the entity snapshot to the clipboard."); }
+    }
+  }));
+  disposables.add(commands.register({
+    id: "toggle-visible",
+    label: "Toggle visible",
+    when: (entity) => !!entity?.capabilities.visibilityToggle,
+    run: async (entity, currentContext) => {
+      const adapter = signals.adapter.value;
+      if (!entity || !adapter?.setEntityVisible) return;
+      const visible = signals.properties.value.find((item) => item.path === "visible");
+      const result = await adapter.setEntityVisible(entity, !(visible?.kind === "boolean" && visible.value), currentContext);
+      if (!result.ok) notifications.push(result.message); else await refresh.refreshProperties();
+    }
+  }));
+  disposables.add(commands.register({
+    id: "focus-selected",
+    label: "Focus selected",
+    when: (entity) => !!entity?.capabilities.focusable,
+    run: async (entity, currentContext) => {
+      const adapter = signals.adapter.value;
+      if (!entity || !adapter?.focusEntity) return;
+      const result = await adapter.focusEntity(entity, currentContext);
+      if (!result.ok) notifications.push(result.message);
+    }
+  }));
+
+  let disposed = false;
+  const runtime: InspectorRuntime = {
+    signals,
+    refresh,
+    notifications,
+    commands,
+    shell,
+    setLayout(nextLayout) {
+      signals.layout.value = nextLayout;
+      host.dataset.layout = nextLayout;
+    },
+    close: () => handle.dispose()
+  };
+  const rerender = () => render(h(App, { runtime, title: options.title ?? "Babylon Lite Inspector" }), host);
+  rerender();
+  stats.start();
+
+  const ready = (async () => {
+    const adapterResult = await signals.adapter.value?.refresh?.(signals.context.value!);
+    if (adapterResult && !adapterResult.ok) notifications.push(adapterResult.message);
+    await refresh.refreshTree();
+    if (!signals.expandedIds.value.size) {
+      const expanded = new Set<string>();
+      for (const root of signals.tree.value) {
+        expanded.add(root.id);
+        for (const child of root.children ?? []) expanded.add(child.id);
+      }
+      signals.expandedIds.value = expanded;
+    }
+  })().catch((error) => {
+    notifications.push(error instanceof Error ? error.message : "Inspector startup failed.");
+    throw error;
+  });
+
+  const handle: LiteInspectorHandle = {
+    ready,
+    dispose() {
+      if (disposed) return;
+      disposed = true;
+      refresh.dispose();
+      stats.dispose();
+      disposables.dispose();
+      commands.dispose();
+      if (!options.adapter) signals.adapter.value?.dispose?.();
+      render(null, host);
+      host.remove();
+      if (restoredPosition !== undefined) container.style.position = restoredPosition;
+    },
+    show() { if (!disposed) { signals.isOpen.value = true; host.hidden = false; rerender(); } },
+    hide() { if (!disposed) { signals.isOpen.value = false; host.hidden = true; rerender(); } },
+    toggle() { if (signals.isOpen.value) handle.hide(); else handle.show(); },
+    refresh() { return disposed ? Promise.resolve() : refresh.refreshTree(); }
+  };
+  return handle;
+}
