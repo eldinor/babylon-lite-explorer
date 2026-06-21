@@ -2,15 +2,15 @@ import {
   addToScene,
   attachControl,
   createArcRotateCamera,
+  createBox,
   createEngine,
   createHemisphericLight,
   createPbrMaterial,
   createSceneContext,
   createSolidTexture2D,
   createSphere,
-  loadGltf,
   registerScene,
-  startEngine
+  startEngine,
 } from "@babylonjs/lite";
 import { showLiteExplorer } from "../../../src";
 
@@ -23,22 +23,26 @@ attachControl(camera, canvas, scene);
 addToScene(scene, createHemisphericLight([0, 1, 0], 1));
 const sphere = createSphere(engine, { segments: 16, diameter: 2 });
 sphere.name = "Sphere";
-sphere.material = createPbrMaterial({
-  // Babylon Lite 1.2.0's PBR bind group expects these two textures even when
-  // the corresponding factors are present. Neutral white textures preserve
-  // the factor values: ORM channels are occlusion=1, roughness=1, metallic=1.
-  baseColorTexture: createSolidTexture2D(engine, 1, 1, 1, 1),
-  ormTexture: createSolidTexture2D(engine, 1, 1, 1, 1),
-  baseColorFactor: [0.9, 0.1, 0.1, 1],
-  metallicFactor: 0.1,
-  roughnessFactor: 0.4
-});
+sphere.position.x = -1.25;
+const sphereMaterial = createPbrMaterial();
+// Babylon Lite 1.2.0 predates the lazy fallback textures now present upstream.
+// Supply neutral textures until that fix reaches a published release.
+sphereMaterial.baseColorTexture = createSolidTexture2D(engine, 1, 1, 1, 1);
+sphereMaterial.ormTexture = createSolidTexture2D(engine, 1, 1, 1, 1);
+sphere.material = sphereMaterial;
 addToScene(scene, sphere);
 
-addToScene(
-  scene,
-  await loadGltf(engine, "https://playground.babylonjs.com/scenes/BoomBox.glb")
-);
+const box = createBox(engine, 1.5);
+box.name = "Blue box";
+box.position.x = 1.25;
+box.material = createPbrMaterial({
+  baseColorTexture: createSolidTexture2D(engine, 1, 1, 1, 1),
+  ormTexture: createSolidTexture2D(engine, 1, 1, 1, 1),
+  baseColorFactor: [0.05, 0.25, 0.95, 1],
+  metallicFactor: 0.1,
+  roughnessFactor: 0.35,
+});
+addToScene(scene, box);
 
 await registerScene(scene);
 await startEngine(engine);

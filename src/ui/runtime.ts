@@ -16,7 +16,8 @@ export type ExplorerRuntime = {
   setLayout(layout: LiteExplorerLayout): void;
   setTheme(theme: LiteExplorerTheme): void;
   setPickingActive(active: boolean): void;
-  close(): void;
+  hide(): void;
+  dispose(): void;
 };
 
 export const ExplorerRuntimeContext = createContext<ExplorerRuntime | null>(null);

@@ -5,7 +5,7 @@ import { ErrorBoundary } from "./ErrorBoundary";
 import { useExplorerRuntime } from "./runtime";
 
 export function Shell({ title }: { title: string }) {
-  const { signals, shell, setLayout, setTheme, close } = useExplorerRuntime();
+  const { signals, shell, setLayout, setTheme, hide, dispose } = useExplorerRuntime();
   const panes = signals.panes.value;
   const toolbarItems = signals.toolbarItems.value;
   const toolbar = (location: "top-left" | "top-right" | "bottom-left" | "bottom-right") => toolbarItems
@@ -53,9 +53,10 @@ export function Shell({ title }: { title: string }) {
         <header class="ble-toolbar">
           <div class="ble-toolbar-zone">{toolbar("top-right")}</div>
           <div class="ble-toolbar-actions">
-            <button type="button" onClick={() => setLayout("single")}>Single</button>
-            <button type="button" onClick={() => setTheme(signals.theme.value === "dark" ? "light" : "dark")}>{signals.theme.value === "dark" ? "Light" : "Dark"}</button>
-            <button type="button" aria-label="Dispose explorer" onClick={close}>×</button>
+            <button type="button" title="Switch to single layout" onClick={() => setLayout("single")}>Single</button>
+            <button type="button" title={`Switch to ${signals.theme.value === "dark" ? "light" : "dark"} theme`} onClick={() => setTheme(signals.theme.value === "dark" ? "light" : "dark")}>{signals.theme.value === "dark" ? "Light" : "Dark"}</button>
+            <button type="button" title="Hide Explorer (Ctrl+Shift+E)" onClick={hide}>Hide</button>
+            <button class="ble-dispose" type="button" title="Dispose Explorer permanently" aria-label="Dispose explorer permanently" onClick={dispose}>×</button>
           </div>
         </header>
         {renderSide("right")}
@@ -70,9 +71,10 @@ export function Shell({ title }: { title: string }) {
       <div class="ble-toolbar-zone"><strong>{title}</strong>{toolbar("top-left")}</div>
       <div class="ble-toolbar-actions">
         {toolbar("top-right")}
-        <button type="button" onClick={() => setLayout(signals.layout.value === "single" ? "split" : "single")}>{signals.layout.value === "single" ? "Split" : "Single"}</button>
-        <button type="button" onClick={() => setTheme(signals.theme.value === "dark" ? "light" : "dark")}>{signals.theme.value === "dark" ? "Light" : "Dark"}</button>
-        <button type="button" aria-label="Dispose explorer" onClick={close}>×</button>
+        <button type="button" title={`Switch to ${signals.layout.value === "single" ? "split" : "single"} layout`} onClick={() => setLayout(signals.layout.value === "single" ? "split" : "single")}>{signals.layout.value === "single" ? "Split" : "Single"}</button>
+        <button type="button" title={`Switch to ${signals.theme.value === "dark" ? "light" : "dark"} theme`} onClick={() => setTheme(signals.theme.value === "dark" ? "light" : "dark")}>{signals.theme.value === "dark" ? "Light" : "Dark"}</button>
+        <button type="button" title="Hide Explorer (Ctrl+Shift+E)" onClick={hide}>Hide</button>
+        <button class="ble-dispose" type="button" title="Dispose Explorer permanently" aria-label="Dispose explorer permanently" onClick={dispose}>×</button>
       </div>
     </header>
     <main class="ble-main ble-main-single">{renderSingle()}</main>

@@ -40,13 +40,29 @@ it("switches layouts from the header without refresh or hide controls", async ()
   const handle = showLiteExplorer({ scene: data.scene, engine: {} });
   await handle.ready;
   const headerLabels = [...document.querySelectorAll<HTMLButtonElement>(".ble-toolbar-actions button")].map((button) => button.textContent);
-  expect(headerLabels).toEqual(["Split", "Light", "×"]);
+  expect(headerLabels).toEqual(["Split", "Light", "Hide", "×"]);
   expect(headerLabels).not.toContain("Refresh");
-  expect(headerLabels).not.toContain("Hide");
   document.querySelector<HTMLButtonElement>(".ble-toolbar-actions button")?.click();
   expect(document.querySelector(".ble-root")?.getAttribute("data-layout")).toBe("split");
   await waitFor(() => expect(document.querySelector<HTMLButtonElement>(".ble-toolbar-actions button")?.textContent).toBe("Single"));
   handle.dispose();
+});
+
+it("hides from the title bar, restores by shortcut, and disposes separately", async () => {
+  const data = fakeScene();
+  const handle = showLiteExplorer({ scene: data.scene, engine: {} });
+  await handle.ready;
+
+  document.querySelector<HTMLButtonElement>('button[title="Hide Explorer (Ctrl+Shift+E)"]')?.click();
+  expect(document.querySelector<HTMLElement>(".ble-root")?.hidden).toBe(true);
+
+  window.dispatchEvent(new KeyboardEvent("keydown", { code: "KeyE", ctrlKey: true, shiftKey: true, bubbles: true }));
+  expect(document.querySelector<HTMLElement>(".ble-root")?.hidden).toBe(false);
+
+  const disposeButton = document.querySelector<HTMLButtonElement>('button[aria-label="Dispose explorer permanently"]');
+  expect(disposeButton?.classList.contains("ble-dispose")).toBe(true);
+  disposeButton?.click();
+  expect(document.querySelector(".ble-root")).toBeNull();
 });
 
 it("toggles and persists theme from the header", async () => {
@@ -71,6 +87,23 @@ it("supports lifecycle-safe keyboard shortcuts", async () => {
   handle.dispose();
   window.dispatchEvent(new KeyboardEvent("keydown", { code: "KeyL", ctrlKey: true, shiftKey: true, bubbles: true }));
   expect(document.querySelector(".ble-root")).toBeNull();
+});
+
+it("can disable keyboard shortcuts", async () => {
+  const data = fakeScene();
+  const handle = showLiteExplorer(
+    { scene: data.scene, engine: {} },
+    { keyboardShortcutsEnabled: false }
+  );
+  await handle.ready;
+  const root = document.querySelector<HTMLElement>(".ble-root");
+
+  window.dispatchEvent(new KeyboardEvent("keydown", { code: "KeyL", ctrlKey: true, shiftKey: true, bubbles: true }));
+  window.dispatchEvent(new KeyboardEvent("keydown", { code: "KeyE", ctrlKey: true, shiftKey: true, bubbles: true }));
+
+  expect(root?.dataset.layout).toBe("single");
+  expect(root?.hidden).toBe(false);
+  handle.dispose();
 });
 
 it("restores persisted compact pane proportions", async () => {

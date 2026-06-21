@@ -34,6 +34,8 @@
 .ble-toolbar strong { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ble-toolbar-zone { display: flex; align-items: center; gap: 6px; min-width: 0; }
 .ble-toolbar-actions { display: flex; gap: 4px; }
+.ble-toolbar-actions .ble-dispose { border-color: color-mix(in srgb, var(--ble-danger) 65%, var(--ble-border)); color: var(--ble-danger); font-weight: 700; }
+.ble-toolbar-actions .ble-dispose:hover { border-color: var(--ble-danger) !important; background: color-mix(in srgb, var(--ble-danger) 14%, var(--ble-panel-2)); }
 .ble-root button, .ble-root input { font: inherit; color: inherit; }
 .ble-root button { min-height: 24px; border: 1px solid var(--ble-border); border-radius: 3px; background: var(--ble-panel-2); cursor: pointer; }
 .ble-root button:hover:not(:disabled) { border-color: var(--ble-accent); }

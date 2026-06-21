@@ -24,7 +24,8 @@ const explorer = showLiteExplorer(
     theme: "dark",
     features: { focusSelected: false, canvasPicking: false },
     notificationDurationMs: 3000,
-    notificationsEnabled: true
+    notificationsEnabled: true,
+    keyboardShortcutsEnabled: true
   }
 );
 
@@ -43,7 +44,7 @@ Each call owns independent state. `dispose()` is idempotent. Caller-provided ada
 
 Drag the thin divider in Single mode to resize the stacked panes; the proportion is persisted. Split mode docks Scene Explorer at the left edge and Properties at the right, leaving the canvas interactive between them. Selected entities expose only adapter-backed actions, such as visibility and safe snapshot copying. Official-adapter snapshots contain clean public property values without explorer IDs or UI descriptor metadata. Verified public PBR base color, metallic, roughness, and alpha fields are editable when present.
 
-The header switches layout and theme. Keyboard shortcuts are `Ctrl+Shift+L` (layout), `Ctrl+Shift+Y` (theme), `Ctrl+Shift+E` (show/hide), and `Ctrl+Shift+F` (focus scene search). Property rows include a copy-value control.
+The header switches layout and theme. Keyboard shortcuts are `Ctrl+Shift+L` (layout), `Ctrl+Shift+Y` (theme), `Ctrl+Shift+E` (show/hide), and `Ctrl+Shift+F` (focus scene search). Set `keyboardShortcutsEnabled: false` to disable all of them. Property rows include a copy-value control.
 
 Camera focus is optional and disabled by default. Set `features.focusSelected: true` to expose Focus only for entities whose adapter reports `focusable: true` and implements `focusEntity`.
 

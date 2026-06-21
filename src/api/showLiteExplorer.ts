@@ -128,7 +128,8 @@ export function showLiteExplorer(context: LiteExplorerContext, options: LiteExpl
       if (active) picking.start(); else picking.stop();
       signals.pickingActive.value = active;
     },
-    close: () => handle.dispose()
+    hide: () => handle.hide(),
+    dispose: () => handle.dispose()
   };
   const rerender = () => render(h(App, { runtime, title: options.title ?? "Babylon Lite Explorer" }), host);
   rerender();
@@ -186,7 +187,9 @@ export function showLiteExplorer(context: LiteExplorerContext, options: LiteExpl
       host.querySelector<HTMLInputElement>(".ble-search input")?.focus();
     }
   };
-  window.addEventListener("keydown", onKeyDown);
-  disposables.add(createDisposable(() => window.removeEventListener("keydown", onKeyDown)));
+  if (options.keyboardShortcutsEnabled !== false) {
+    window.addEventListener("keydown", onKeyDown);
+    disposables.add(createDisposable(() => window.removeEventListener("keydown", onKeyDown)));
+  }
   return handle;
 }

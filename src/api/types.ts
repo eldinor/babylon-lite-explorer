@@ -31,6 +31,8 @@ export type LiteExplorerOptions = {
   notificationDurationMs?: number;
   /** Disable all explorer notifications. Defaults to true. */
   notificationsEnabled?: boolean;
+  /** Enable global explorer keyboard shortcuts. Defaults to true. */
+  keyboardShortcutsEnabled?: boolean;
   title?: string;
 };
 
