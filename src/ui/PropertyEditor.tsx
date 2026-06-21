@@ -1,10 +1,10 @@
 import { useEffect, useState } from "preact/hooks";
 import type { PropertyDescriptor } from "../adapter/propertyDescriptors";
-import { useInspectorRuntime } from "./runtime";
+import { useExplorerRuntime } from "./runtime";
 
 export function PropertyEditor({ descriptor }: { descriptor: PropertyDescriptor }) {
-  const { refresh } = useInspectorRuntime();
-  if (descriptor.kind === "readonly" || descriptor.readonly) return <span class="bli-readonly" title={String(descriptor.value)}>{String(descriptor.value)}</span>;
+  const { refresh } = useExplorerRuntime();
+  if (descriptor.kind === "readonly" || descriptor.readonly) return <span class="ble-readonly" title={String(descriptor.value)}>{String(descriptor.value)}</span>;
   if (descriptor.kind === "boolean") return <input type="checkbox" checked={descriptor.value} onChange={(event) => void refresh.setProperty(descriptor, event.currentTarget.checked)} />;
   if (descriptor.kind === "vector3" || descriptor.kind === "color3" || descriptor.kind === "color4") return <TupleEditor descriptor={descriptor} />;
   if (descriptor.kind === "number") return <ScalarEditor descriptor={descriptor} />;
@@ -12,7 +12,7 @@ export function PropertyEditor({ descriptor }: { descriptor: PropertyDescriptor 
 }
 
 function TextEditor({ descriptor }: { descriptor: Extract<PropertyDescriptor, { kind: "text" }> }) {
-  const { refresh } = useInspectorRuntime();
+  const { refresh } = useExplorerRuntime();
   const [value, setValue] = useState(descriptor.value);
   useEffect(() => setValue(descriptor.value), [descriptor.value]);
   return <input type="text" value={value} onInput={(event) => {
@@ -26,7 +26,7 @@ function TextEditor({ descriptor }: { descriptor: Extract<PropertyDescriptor, { 
 }
 
 function ScalarEditor({ descriptor }: { descriptor: Extract<PropertyDescriptor, { kind: "number" }> }) {
-  const { refresh } = useInspectorRuntime();
+  const { refresh } = useExplorerRuntime();
   const [value, setValue] = useState(String(descriptor.value));
   useEffect(() => setValue(String(descriptor.value)), [descriptor.value]);
   return <input type="number" value={value} min={descriptor.min} max={descriptor.max} step={descriptor.step} onInput={(event) => {
@@ -41,10 +41,10 @@ function ScalarEditor({ descriptor }: { descriptor: Extract<PropertyDescriptor, 
 }
 
 function TupleEditor({ descriptor }: { descriptor: Extract<PropertyDescriptor, { kind: "vector3" | "color3" | "color4" }> }) {
-  const { refresh } = useInspectorRuntime();
+  const { refresh } = useExplorerRuntime();
   const [values, setValues] = useState(() => descriptor.value.map(String));
   useEffect(() => setValues(descriptor.value.map(String)), [descriptor.value]);
-  return <div class="bli-tuple">{values.map((value, index) => <input key={index} aria-label={`${descriptor.label} ${"XYZW"[index]}`} type="number" step="0.01" value={value} onInput={(event) => {
+  return <div class="ble-tuple">{values.map((value, index) => <input key={index} aria-label={`${descriptor.label} ${"XYZW"[index]}`} type="number" step="0.01" value={value} onInput={(event) => {
     const next = [...values];
     next[index] = event.currentTarget.value;
     setValues(next);

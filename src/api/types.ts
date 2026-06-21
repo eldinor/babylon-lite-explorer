@@ -1,40 +1,40 @@
 import type { LiteSceneAdapter } from "../adapter/LiteSceneAdapter";
 
-export type LiteInspectorTheme = "dark" | "light";
-export type LiteInspectorMode = "overlay" | "inline";
-export type LiteInspectorLayout = "single" | "split";
+export type LiteExplorerTheme = "dark" | "light";
+export type LiteExplorerMode = "overlay" | "inline";
+export type LiteExplorerLayout = "single" | "split";
 
-export type LiteInspectorFeatures = {
+export type LiteExplorerFeatures = {
   /** Expose adapter-backed camera focus controls. Disabled by default. */
   focusSelected?: boolean;
   /** Select entities by clicking the canvas. Disabled by default. */
   canvasPicking?: boolean;
 };
 
-export type LiteInspectorContext = {
+export type LiteExplorerContext = {
   engine: unknown;
   scene: unknown;
   canvas?: HTMLCanvasElement;
 };
 
-export type LiteInspectorOptions = {
+export type LiteExplorerOptions = {
   container?: HTMLElement;
   canvas?: HTMLCanvasElement;
-  mode?: LiteInspectorMode;
+  mode?: LiteExplorerMode;
   /** Compact panel layout. Defaults to `single`. */
-  layout?: LiteInspectorLayout;
-  theme?: LiteInspectorTheme;
+  layout?: LiteExplorerLayout;
+  theme?: LiteExplorerTheme;
   initiallyOpen?: boolean;
   adapter?: LiteSceneAdapter;
-  features?: LiteInspectorFeatures;
+  features?: LiteExplorerFeatures;
   /** Notification auto-dismiss delay in milliseconds. Defaults to 3000; use 0 for manual dismissal. */
   notificationDurationMs?: number;
-  /** Disable all inspector notifications. Defaults to true. */
+  /** Disable all explorer notifications. Defaults to true. */
   notificationsEnabled?: boolean;
   title?: string;
 };
 
-export type LiteInspectorHandle = {
+export type LiteExplorerHandle = {
   readonly ready: Promise<void>;
   dispose(): void;
   show(): void;

@@ -1,5 +1,5 @@
 import type { PropertyDescriptor } from "../adapter/propertyDescriptors";
-import type { InspectorSignals } from "../signals/createInspectorSignals";
+import type { ExplorerSignals } from "../signals/createExplorerSignals";
 import { findEntityById, findEntityPath } from "../signals/treeUtils";
 import type { NotificationService } from "./notificationService";
 
@@ -7,7 +7,7 @@ export class RefreshController {
   private generation = 0;
   private disposed = false;
 
-  constructor(private readonly signals: InspectorSignals, private readonly notifications: NotificationService) {}
+  constructor(private readonly signals: ExplorerSignals, private readonly notifications: NotificationService) {}
 
   async refreshTree(): Promise<void> {
     const request = ++this.generation;

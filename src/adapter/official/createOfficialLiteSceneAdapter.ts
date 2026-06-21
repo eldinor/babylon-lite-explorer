@@ -10,7 +10,7 @@ import type {
   SceneNode,
   Texture2D
 } from "@babylonjs/lite";
-import type { LiteInspectorContext } from "../../api/types";
+import type { LiteExplorerContext } from "../../api/types";
 import type { PropertyDescriptor } from "../propertyDescriptors";
 import {
   fail,
@@ -161,7 +161,7 @@ export function createOfficialLiteSceneAdapter(): LiteSceneAdapter {
     capabilities: { ...none, editable: isPublicPbrMaterial(material) }
   });
 
-  const getSceneTree = (context: LiteInspectorContext): LiteEntity[] => {
+  const getSceneTree = (context: LiteExplorerContext): LiteEntity[] => {
     if (!isPublicScene(context.scene)) return [];
     const scene = context.scene;
     entityTypes.set(scene, "scene");
@@ -273,7 +273,7 @@ export function createOfficialLiteSceneAdapter(): LiteSceneAdapter {
     const source = entity.source;
     const base: PropertyDescriptor[] = [
       { kind: "readonly", path: "$kind", label: "Kind", value: entity.kind, section: "General" },
-      { kind: "readonly", path: "$id", label: "Inspector ID", value: entity.id, section: "General" }
+      { kind: "readonly", path: "$id", label: "Explorer ID", value: entity.id, section: "General" }
     ];
     if (!source || typeof source !== "object") return base;
     const knownKind = entityTypes.get(source);
@@ -385,7 +385,7 @@ export function createOfficialLiteSceneAdapter(): LiteSceneAdapter {
     }
   };
 
-  const getStats = (context: LiteInspectorContext): LiteStats => {
+  const getStats = (context: LiteExplorerContext): LiteStats => {
     const stats: LiteStats = {};
     if (isPublicEngine(context.engine)) {
       stats.drawCallCount = context.engine.drawCallCount;

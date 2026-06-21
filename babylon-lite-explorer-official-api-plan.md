@@ -1,16 +1,16 @@
-# Babylon Lite Inspector — Official API-Only Build Plan
+# Babylon Lite Explorer — Official API-Only Build Plan
 
 **Target stack:** Preact, `@preact/signals`, TypeScript, and scoped plain CSS.
 
 **Target package:** `@babylonjs/lite` (verify the installed version before implementation; npm reported `1.2.0` on 2026-06-20).
 
-**Main goal:** Build a small, embeddable inspector for Babylon Lite that adopts the useful interaction patterns of Inspector V2 while depending only on documented Babylon Lite exports and public application data.
+**Main goal:** Build a small, embeddable explorer for Babylon Lite that adopts the useful interaction patterns of Inspector V2 while depending only on documented Babylon Lite exports and public application data.
 
 ---
 
 ## 1. Non-negotiable API policy
 
-The inspector must use official Babylon Lite APIs only.
+The explorer must use official Babylon Lite APIs only.
 
 It must not:
 
@@ -37,7 +37,7 @@ Before implementing the adapter, inspect the declarations shipped with the exact
 docs/babylon-lite-api-inventory.md
 ```
 
-For every inspector feature, record:
+For every explorer feature, record:
 
 | Feature | Public export or public field | Read | Write | Enumeration | Notes |
 |---|---|---:|---:|---:|---|
@@ -97,26 +97,26 @@ Two supported adapter paths exist:
 ## 4. Public API
 
 ```ts
-export type LiteInspectorTheme = "dark" | "light";
-export type LiteInspectorMode = "overlay" | "inline";
+export type LiteExplorerTheme = "dark" | "light";
+export type LiteExplorerMode = "overlay" | "inline";
 
-export type LiteInspectorContext = {
+export type LiteExplorerContext = {
   engine: unknown;
   scene: unknown;
   canvas?: HTMLCanvasElement;
 };
 
-export type LiteInspectorOptions = {
+export type LiteExplorerOptions = {
   container?: HTMLElement;
   canvas?: HTMLCanvasElement;
-  mode?: LiteInspectorMode;
-  theme?: LiteInspectorTheme;
+  mode?: LiteExplorerMode;
+  theme?: LiteExplorerTheme;
   initiallyOpen?: boolean;
   adapter?: LiteSceneAdapter;
   title?: string;
 };
 
-export type LiteInspectorHandle = {
+export type LiteExplorerHandle = {
   readonly ready: Promise<void>;
   dispose(): void;
   show(): void;
@@ -125,15 +125,15 @@ export type LiteInspectorHandle = {
   refresh(): Promise<void>;
 };
 
-export function showLiteInspector(
-  context: LiteInspectorContext,
-  options?: LiteInspectorOptions
-): LiteInspectorHandle;
+export function showLiteExplorer(
+  context: LiteExplorerContext,
+  options?: LiteExplorerOptions
+): LiteExplorerHandle;
 ```
 
 Requirements:
 
-- Each call creates an independent inspector instance.
+- Each call creates an independent explorer instance.
 - No global singleton state.
 - `dispose()` is idempotent and removes all owned resources.
 - Asynchronous startup and initial refresh are represented by `handle.ready`.
@@ -155,13 +155,13 @@ export type LiteEntityRegistration = {
 };
 
 export function createRegisteredSceneAdapter(options: {
-  getEntities(context: LiteInspectorContext): LiteEntityRegistration[];
+  getEntities(context: LiteExplorerContext): LiteEntityRegistration[];
   getProperties?: LiteSceneAdapter["getProperties"];
   setProperty?: LiteSceneAdapter["setProperty"];
 }): LiteSceneAdapter;
 ```
 
-The host owns these registrations. The inspector does not discover additional fields on their source objects.
+The host owns these registrations. The explorer does not discover additional fields on their source objects.
 
 ---
 
@@ -217,31 +217,31 @@ export type AdapterResult<T = void> =
   | { ok: false; code: "unsupported" | "invalid" | "failed"; message: string };
 
 export type LiteSceneAdapter = {
-  getSceneTree(context: LiteInspectorContext): LiteEntity[] | Promise<LiteEntity[]>;
+  getSceneTree(context: LiteExplorerContext): LiteEntity[] | Promise<LiteEntity[]>;
   getProperties(
     entity: LiteEntity,
-    context: LiteInspectorContext
+    context: LiteExplorerContext
   ): PropertyDescriptor[] | Promise<PropertyDescriptor[]>;
   setProperty?(
     entity: LiteEntity,
     path: string,
     value: unknown,
-    context: LiteInspectorContext
+    context: LiteExplorerContext
   ): AdapterResult | Promise<AdapterResult>;
-  refresh?(context: LiteInspectorContext): AdapterResult | Promise<AdapterResult>;
-  getStats?(context: LiteInspectorContext): LiteStats | Promise<LiteStats>;
+  refresh?(context: LiteExplorerContext): AdapterResult | Promise<AdapterResult>;
+  getStats?(context: LiteExplorerContext): LiteStats | Promise<LiteStats>;
   focusEntity?(
     entity: LiteEntity,
-    context: LiteInspectorContext
+    context: LiteExplorerContext
   ): AdapterResult | Promise<AdapterResult>;
   setEntityVisible?(
     entity: LiteEntity,
     visible: boolean,
-    context: LiteInspectorContext
+    context: LiteExplorerContext
   ): AdapterResult | Promise<AdapterResult>;
   getEntitySnapshot?(
     entity: LiteEntity,
-    context: LiteInspectorContext
+    context: LiteExplorerContext
   ): AdapterResult<unknown> | Promise<AdapterResult<unknown>>;
   dispose?(): void;
 };
@@ -259,7 +259,7 @@ Adapter rules:
 
 ## 6. Stable identity
 
-Entity IDs must remain stable across refreshes and must be unique within one inspector.
+Entity IDs must remain stable across refreshes and must be unique within one explorer.
 
 Priority:
 
@@ -320,10 +320,10 @@ Safeguards:
 ## 8. Per-instance state
 
 ```ts
-export function createInspectorSignals() {
+export function createExplorerSignals() {
   const isOpen = signal(true);
-  const theme = signal<LiteInspectorTheme>("dark");
-  const context = signal<LiteInspectorContext | null>(null);
+  const theme = signal<LiteExplorerTheme>("dark");
+  const context = signal<LiteExplorerContext | null>(null);
   const adapter = signal<LiteSceneAdapter | null>(null);
 
   const sceneVersion = signal(0);
@@ -334,7 +334,7 @@ export function createInspectorSignals() {
 
   const search = signal("");
   const expandedIds = signal<ReadonlySet<string>>(new Set());
-  const notifications = signal<InspectorNotification[]>([]);
+  const notifications = signal<ExplorerNotification[]>([]);
   const isRefreshingTree = signal(false);
   const isRefreshingProperties = signal(false);
 
@@ -356,7 +356,7 @@ Signals contain normalized view-model state, not raw engine state. Raw reference
 
 ## 9. Refresh controller
 
-Use one refresh controller per inspector to coordinate tree, selection, properties, and races.
+Use one refresh controller per explorer to coordinate tree, selection, properties, and races.
 
 ```ts
 type RefreshMode = "manual" | "interval" | "beforeRender";
@@ -422,7 +422,7 @@ MVP layout:
 
 ```txt
 ┌────────────────────────────────────────────────────┐
-│ Babylon Lite Inspector          Refresh  Hide  ×   │
+│ Babylon Lite Explorer          Refresh  Hide  ×   │
 ├──────────────────────┬─────────────────────────────┤
 │ Scene Explorer       │ Properties                  │
 │ Search               │                             │
@@ -432,7 +432,7 @@ MVP layout:
 └────────────────────────────────────────────────────┘
 ```
 
-Build only inspector-specific controls:
+Build only explorer-specific controls:
 
 ```txt
 Button, IconButton, Tabs, TreeView, TreeNode, PropertyGrid,
@@ -468,8 +468,8 @@ Requirements:
 
 - Mount into `options.container`, otherwise `canvas.parentElement`, otherwise `document.body`.
 - Position relative to the resolved container deliberately.
-- If the inspector temporarily changes an owned style such as container positioning, record and restore the exact previous value on disposal.
-- Inspector bounds receive pointer input; the canvas remains interactive elsewhere.
+- If the explorer temporarily changes an owned style such as container positioning, record and restore the exact previous value on disposal.
+- Explorer bounds receive pointer input; the canvas remains interactive elsewhere.
 
 ### Inline
 
@@ -482,21 +482,21 @@ Requirements:
 
 ## 13. Styling and packaging
 
-Use scoped `.bli-*` classes in one CSS entry file. No global resets outside `.bli-root`.
+Use scoped `.ble-*` classes in one CSS entry file. No global resets outside `.ble-root`.
 
 ```css
-.bli-root {
-  --bli-bg: #181818;
-  --bli-panel: #202020;
-  --bli-panel-2: #252525;
-  --bli-border: #383838;
-  --bli-text: #eeeeee;
-  --bli-muted: #a0a0a0;
-  --bli-accent: #4da3ff;
-  --bli-danger: #ff5a5a;
+.ble-root {
+  --ble-bg: #181818;
+  --ble-panel: #202020;
+  --ble-panel-2: #252525;
+  --ble-border: #383838;
+  --ble-text: #eeeeee;
+  --ble-muted: #a0a0a0;
+  --ble-accent: #4da3ff;
+  --ble-danger: #ff5a5a;
   font: 12px/1.4 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  color: var(--bli-text);
-  background: var(--bli-bg);
+  color: var(--ble-text);
+  background: var(--ble-bg);
   box-sizing: border-box;
 }
 ```
@@ -529,13 +529,13 @@ Do not bundle Preact, Signals, or Babylon Lite.
 ## 14. Commands
 
 ```ts
-export type InspectorCommand = {
+export type ExplorerCommand = {
   id: string;
   label: string;
   when?: (entity: LiteEntity | null) => boolean;
   run: (
     entity: LiteEntity | null,
-    context: LiteInspectorContext
+    context: LiteExplorerContext
   ) => void | Promise<void>;
 };
 ```
@@ -555,7 +555,7 @@ Clipboard failures must be reported. Commands must not bypass adapter capabiliti
 
 ## 15. Lifecycle
 
-`showLiteInspector()` flow:
+`showLiteExplorer()` flow:
 
 1. Resolve and validate the mount container.
 2. Create the host element and mode-specific classes.
@@ -573,10 +573,10 @@ Clipboard failures must be reported. Commands must not bypass adapter capabiliti
 - invalidate outstanding async work;
 - stop timers and documented render hooks;
 - dispose registrations and services in reverse order;
-- call `adapter.dispose()` when owned by this inspector;
+- call `adapter.dispose()` when owned by this explorer;
 - unmount Preact;
 - remove the host DOM node;
-- restore any container styles changed by the inspector;
+- restore any container styles changed by the explorer;
 - tolerate the host/container already being removed.
 
 A caller-owned adapter is not disposed unless the API explicitly transfers ownership. Record this rule in the public documentation.
@@ -589,7 +589,7 @@ A caller-owned adapter is not disposed unless the API explicitly transfers owner
 src/
   index.ts
   api/
-    showLiteInspector.ts
+    showLiteExplorer.ts
     types.ts
   adapter/
     LiteSceneAdapter.ts
@@ -604,7 +604,7 @@ src/
     disposable.ts
     serviceContainer.ts
   signals/
-    createInspectorSignals.ts
+    createExplorerSignals.ts
     treeUtils.ts
   services/
     shellService.ts
@@ -624,7 +624,7 @@ src/
     NotificationRegion.tsx
     controls/
   styles/
-    inspector.css
+    explorer.css
 docs/
   babylon-lite-api-inventory.md
 examples/
@@ -652,7 +652,7 @@ tests/
 
 ### Phase 1: Small vertical slice
 
-- Mount and dispose one inspector.
+- Mount and dispose one explorer.
 - Create the official adapter skeleton and registered adapter.
 - Display a stable read-only tree.
 - Select an entity and display read-only descriptors.
@@ -672,7 +672,7 @@ Do not build statistics or a large shell abstraction until this slice works agai
 
 ### Phase 3: Verified statistics
 
-- Add FPS/frame time only through documented APIs or inspector-owned timing.
+- Add FPS/frame time only through documented APIs or explorer-owned timing.
 - Add draw/GPU metrics only when official APIs explicitly expose them.
 - Sample at a throttled rate independently from tree/property rendering.
 
@@ -719,7 +719,7 @@ Do not build statistics or a large shell abstraction until this slice works agai
 
 ### Lifecycle
 
-- two inspectors operate independently;
+- two explorers operate independently;
 - repeated disposal is safe;
 - disposal stops timers/hooks/effects;
 - disposal during async startup is safe;
@@ -730,14 +730,14 @@ Do not build statistics or a large shell abstraction until this slice works agai
 
 - empty official API support shows guidance rather than an empty unexplained panel;
 - property panel isolates unknown adapter output;
-- pane error boundaries prevent full-inspector crashes;
+- pane error boundaries prevent full-explorer crashes;
 - tree, tabs, buttons, inputs, and notifications meet the defined keyboard/ARIA behavior.
 
 ---
 
 ## 19. MVP acceptance checklist
 
-- `showLiteInspector({ engine, scene, canvas })` mounts without private API access.
+- `showLiteExplorer({ engine, scene, canvas })` mounts without private API access.
 - The exact supported Babylon Lite public API is documented in the inventory.
 - `handle.ready` resolves after initial startup or rejects with an actionable error.
 - `dispose()` fully and idempotently cleans owned resources.
@@ -748,9 +748,9 @@ Do not build statistics or a large shell abstraction until this slice works agai
 - At least one edit works only if backed by a verified public operation.
 - Adapter failures produce notifications and do not corrupt displayed state.
 - Manual refresh reconciles stable selection and rejects stale results.
-- Statistics show only metrics available through documented APIs or inspector-owned measurement.
+- Statistics show only metrics available through documented APIs or explorer-owned measurement.
 - Empty and partially supported scenes do not crash.
-- Two simultaneous inspectors work independently.
+- Two simultaneous explorers work independently.
 - No React, Fluent UI, private fields, reflective discovery, or full-scene per-frame polling.
 
 ---
@@ -758,7 +758,7 @@ Do not build statistics or a large shell abstraction until this slice works agai
 ## 20. Final design principle
 
 ```txt
-Inspector V2 idea         Babylon Lite Inspector implementation
+Inspector V2 idea         Babylon Lite Explorer implementation
 ----------------------------------------------------------------
 React                     Preact
 Fluent UI                 Scoped plain CSS
@@ -772,4 +772,4 @@ Watcher service           Manual, coordinated refresh first
 Extensions                Post-MVP
 ```
 
-The inspector should be honest about what the public API exposes. A smaller inspector with explicit limitations is preferable to a seemingly capable inspector coupled to private engine internals.
+The explorer should be honest about what the public API exposes. A smaller explorer with explicit limitations is preferable to a seemingly capable explorer coupled to private engine internals.

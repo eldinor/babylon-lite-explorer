@@ -1,11 +1,11 @@
-import type { InspectorSignals } from "../signals/createInspectorSignals";
+import type { ExplorerSignals } from "../signals/createExplorerSignals";
 
 export class NotificationService {
   private nextId = 1;
   private readonly timers = new Map<number, ReturnType<typeof setTimeout>>();
 
   constructor(
-    private readonly signals: InspectorSignals,
+    private readonly signals: ExplorerSignals,
     private readonly durationMs = 3000,
     private readonly enabled = true
   ) {}

@@ -12,7 +12,7 @@ import {
   registerScene,
   startEngine
 } from "@babylonjs/lite";
-import { showLiteInspector } from "../../../src";
+import { showLiteExplorer } from "../../../src";
 
 const canvas = document.querySelector<HTMLCanvasElement>("#renderCanvas")!;
 const engine = await createEngine(canvas);
@@ -42,4 +42,4 @@ addToScene(
 
 await registerScene(scene);
 await startEngine(engine);
-showLiteInspector({ engine, scene, canvas }, { features: { canvasPicking: true } });
+showLiteExplorer({ engine, scene, canvas }, { features: { canvasPicking: true } });

@@ -1,17 +1,17 @@
 import { computed, signal } from "@preact/signals";
-import type { LiteInspectorContext, LiteInspectorLayout, LiteInspectorTheme } from "../api/types";
+import type { LiteExplorerContext, LiteExplorerLayout, LiteExplorerTheme } from "../api/types";
 import type { LiteEntity, LiteSceneAdapter, LiteStats } from "../adapter/LiteSceneAdapter";
 import type { PropertyDescriptor } from "../adapter/propertyDescriptors";
 import type { SidePaneDefinition, ToolbarItemDefinition } from "../services/shellService";
 import { filterTree, findEntityById } from "./treeUtils";
 
-export type InspectorNotification = { id: number; tone: "error" | "info"; message: string };
+export type ExplorerNotification = { id: number; tone: "error" | "info"; message: string };
 
-export function createInspectorSignals() {
+export function createExplorerSignals() {
   const isOpen = signal(true);
-  const theme = signal<LiteInspectorTheme>("dark");
-  const layout = signal<LiteInspectorLayout>("single");
-  const context = signal<LiteInspectorContext | null>(null);
+  const theme = signal<LiteExplorerTheme>("dark");
+  const layout = signal<LiteExplorerLayout>("single");
+  const context = signal<LiteExplorerContext | null>(null);
   const adapter = signal<LiteSceneAdapter | null>(null);
   const sceneVersion = signal(0);
   const selectedEntityId = signal<string | null>(null);
@@ -20,7 +20,7 @@ export function createInspectorSignals() {
   const stats = signal<LiteStats>({});
   const search = signal("");
   const expandedIds = signal<ReadonlySet<string>>(new Set());
-  const notifications = signal<InspectorNotification[]>([]);
+  const notifications = signal<ExplorerNotification[]>([]);
   const isRefreshingTree = signal(false);
   const isRefreshingProperties = signal(false);
   const pickingAvailable = signal(false);
@@ -41,4 +41,4 @@ export function createInspectorSignals() {
   };
 }
 
-export type InspectorSignals = ReturnType<typeof createInspectorSignals>;
+export type ExplorerSignals = ReturnType<typeof createExplorerSignals>;

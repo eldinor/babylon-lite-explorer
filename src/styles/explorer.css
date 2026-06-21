@@ -1,0 +1,100 @@
+.ble-root {
+  --ble-bg: #18191b;
+  --ble-panel: #202226;
+  --ble-panel-2: #292c31;
+  --ble-border: #3a3e45;
+  --ble-text: #eceef2;
+  --ble-muted: #9ca3ad;
+  --ble-accent: #58a6ff;
+  --ble-danger: #ff6b6b;
+  color: var(--ble-text);
+  background: var(--ble-bg);
+  font: 12px/1.4 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  box-sizing: border-box;
+  color-scheme: dark;
+}
+.ble-root *, .ble-root *::before, .ble-root *::after { box-sizing: border-box; }
+.ble-root[data-theme="light"] {
+  --ble-bg: #f3f4f6; --ble-panel: #fff; --ble-panel-2: #e8eaed; --ble-border: #c8ccd2;
+  --ble-text: #17191d; --ble-muted: #626975; --ble-accent: #0969da; --ble-danger: #cf222e;
+  color-scheme: light;
+}
+.ble-overlay { position: absolute; top: 0; z-index: 999999; border: 1px solid var(--ble-border); box-shadow: 0 12px 32px rgb(0 0 0 / 35%); }
+.ble-overlay[data-layout="single"] { right: 0; width: min(420px, 100%); height: 100vh; }
+.ble-overlay[data-layout="split"] { inset: 0; width: 100%; height: 100vh; border: 0; background: transparent; box-shadow: none; pointer-events: none; }
+.ble-inline { position: relative; width: 100%; height: 100%; min-height: 320px; border: 1px solid var(--ble-border); }
+.ble-shell { display: grid; grid-template-rows: 38px minmax(0, 1fr) auto 28px; width: 100%; height: 100%; overflow: hidden; background: var(--ble-bg); }
+.ble-split-shell { position: relative; width: 100%; height: 100%; pointer-events: none; }
+.ble-split-dock { position: absolute; top: 0; bottom: 0; display: grid; width: min(420px, 50vw); overflow: hidden; border-color: var(--ble-border); border-style: solid; background: var(--ble-bg); box-shadow: 0 12px 32px rgb(0 0 0 / 35%); pointer-events: auto; }
+.ble-split-dock-left { left: 0; grid-template-rows: 38px minmax(0, 1fr); border-width: 0 1px 0 0; }
+.ble-split-dock-right { right: 0; grid-template-rows: 38px minmax(0, 1fr) auto 28px; border-width: 0 0 0 1px; }
+.ble-split-dock .ble-pane { min-height: 0; }
+.ble-split-dock .ble-pane-left { border-right: 0; }
+.ble-toolbar { display: flex; align-items: center; justify-content: space-between; padding: 0 8px 0 12px; border-bottom: 1px solid var(--ble-border); background: var(--ble-panel); }
+.ble-toolbar strong { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ble-toolbar-zone { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.ble-toolbar-actions { display: flex; gap: 4px; }
+.ble-root button, .ble-root input { font: inherit; color: inherit; }
+.ble-root button { min-height: 24px; border: 1px solid var(--ble-border); border-radius: 3px; background: var(--ble-panel-2); cursor: pointer; }
+.ble-root button:hover:not(:disabled) { border-color: var(--ble-accent); }
+.ble-root button:disabled { opacity: .5; cursor: default; }
+.ble-root :focus-visible { outline: 2px solid var(--ble-accent); outline-offset: -1px; }
+.ble-main { display: grid; min-height: 0; }
+.ble-main-single { grid-template-columns: minmax(0, 1fr); }
+.ble-single-stack { display: grid; min-height: 0; }
+.ble-pane-single { border: 0; grid-template-rows: 27px minmax(0, 1fr); }
+.ble-pane-single-left { grid-row: 1; border-bottom: 1px solid var(--ble-border); }
+.ble-pane-single-right { grid-row: 3; }
+.ble-pane-heading { display: flex; align-items: center; justify-content: space-between; padding: 0 5px 0 9px; border-bottom: 1px solid var(--ble-border); background: var(--ble-bg); color: var(--ble-text); font-weight: 600; }
+.ble-resize-handle { position: relative; z-index: 2; background: var(--ble-border); touch-action: none; }
+.ble-resize-handle:hover, .ble-resize-handle:focus-visible { background: var(--ble-accent); }
+.ble-resize-handle.is-horizontal { width: 5px; cursor: col-resize; }
+.ble-resize-handle.is-vertical { grid-row: 2; height: 5px; cursor: row-resize; }
+.ble-pane { display: grid; grid-template-rows: 30px minmax(0, 1fr); min-width: 0; background: var(--ble-panel); }
+.ble-pane-left { border-right: 1px solid var(--ble-border); }
+.ble-tabs { display: flex; border-bottom: 1px solid var(--ble-border); background: var(--ble-bg); }
+.ble-tabs button { border: 0; border-radius: 0; padding: 0 10px; background: transparent; color: var(--ble-muted); }
+.ble-tabs button[aria-selected="true"] { color: var(--ble-text); box-shadow: inset 0 -2px var(--ble-accent); }
+.ble-tabs .ble-pick-toggle { margin-left: auto; padding: 0 7px; }
+.ble-pick-toggle { min-height: 21px !important; border-color: transparent !important; background: transparent !important; color: var(--ble-muted) !important; font-weight: 500; }
+.ble-pick-toggle.is-active { border-color: var(--ble-accent) !important; background: color-mix(in srgb, var(--ble-accent) 22%, transparent) !important; color: var(--ble-text) !important; }
+.ble-pane-content { min-height: 0; overflow: auto; }
+.ble-explorer { display: grid; grid-template-rows: auto minmax(0, 1fr); height: 100%; min-height: 0; }
+.ble-properties { min-height: 100%; }
+.ble-search { display: block; padding: 6px; border-bottom: 1px solid var(--ble-border); }
+.ble-search input, .ble-property-control input[type="text"], .ble-property-control input[type="number"] { width: 100%; height: 24px; padding: 2px 6px; border: 1px solid var(--ble-border); border-radius: 2px; background: var(--ble-bg); }
+.ble-tree, .ble-tree ul { margin: 0; padding: 0; list-style: none; }
+.ble-tree-scroll { min-height: 0; overflow: auto; }
+.ble-tree-virtual { position: relative; min-width: 100%; }
+.ble-tree-row { position: absolute; left: 0; right: 0; display: flex; align-items: center; height: 25px; }
+.ble-tree-row:hover { background: color-mix(in srgb, var(--ble-accent) 10%, transparent); }
+.ble-tree-row.is-selected { background: color-mix(in srgb, var(--ble-accent) 25%, transparent); }
+.ble-tree-toggle, .ble-tree-label { border: 0 !important; background: transparent !important; }
+.ble-tree-toggle { flex: 0 0 20px; min-height: 20px !important; padding: 0; color: var(--ble-muted); }
+.ble-tree-label { display: flex; align-items: center; flex: 1; min-width: 0; padding: 0 5px 0 0; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ble-kind { width: 7px; height: 7px; margin-right: 7px; border-radius: 50%; background: var(--ble-muted); }
+.ble-kind-mesh { background: #d29922; } .ble-kind-camera { background: #a371f7; } .ble-kind-light { background: #f2cc60; } .ble-kind-material { background: #3fb950; }
+.ble-empty { padding: 16px; color: var(--ble-muted); }
+.ble-selection-title { position: sticky; top: 0; z-index: 1; padding: 8px 10px; border-bottom: 1px solid var(--ble-border); background: var(--ble-panel); font-weight: 600; }
+.ble-property-section h3 { margin: 0; padding: 5px 8px; border-bottom: 1px solid var(--ble-border); background: var(--ble-bg); color: var(--ble-muted); font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
+.ble-property-row { display: grid; grid-template-columns: minmax(90px, 40%) minmax(0, 1fr) 24px; min-height: 28px; align-items: center; border-bottom: 1px solid color-mix(in srgb, var(--ble-border) 60%, transparent); }
+.ble-property-row > label { padding: 4px 8px; color: var(--ble-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ble-property-control { min-width: 0; padding: 2px 6px; }
+.ble-copy-value { width: 20px; min-height: 20px !important; padding: 0; color: var(--ble-muted) !important; }
+.ble-readonly { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ble-tuple { display: flex; gap: 3px; }
+.ble-tuple input { min-width: 0; padding: 2px !important; text-align: right; }
+.ble-status { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 0 9px; overflow: hidden; border-top: 1px solid var(--ble-border); background: var(--ble-bg); color: var(--ble-muted); white-space: nowrap; }
+.ble-status-zone { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.ble-selection-status { display: flex; align-items: center; gap: 7px; min-height: 26px; padding: 3px 9px; overflow: hidden; border-top: 1px solid var(--ble-border); background: var(--ble-panel); }
+.ble-selection-status span { flex: 0 0 auto; color: var(--ble-muted); }
+.ble-selection-status strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ble-selection-status.is-empty { min-height: 0; padding: 0; border: 0; }
+.ble-selection-actions { display: flex; gap: 3px; margin-left: auto; }
+.ble-selection-actions button { min-height: 20px; padding: 1px 6px; }
+.ble-notifications { position: absolute; right: 8px; bottom: 34px; display: grid; gap: 5px; width: min(360px, calc(100% - 16px)); pointer-events: none; }
+.ble-notification { display: flex; justify-content: space-between; align-items: start; gap: 8px; padding: 7px 8px; border: 1px solid var(--ble-border); border-left: 3px solid var(--ble-danger); border-radius: 3px; background: var(--ble-panel-2); box-shadow: 0 4px 14px rgb(0 0 0 / 25%); pointer-events: auto; }
+.ble-notification button { min-height: 18px; border: 0; background: transparent; }
+.ble-pane-error { margin: 8px; padding: 8px; border: 1px solid var(--ble-danger); color: var(--ble-danger); }
+.ble-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+@media (max-width: 560px) { .ble-split-dock { width: 50vw; min-width: 0; } }

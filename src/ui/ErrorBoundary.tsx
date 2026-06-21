@@ -5,7 +5,7 @@ export class ErrorBoundary extends Component<{ children: ComponentChildren }, { 
   static getDerivedStateFromError(error: Error) { return { error }; }
   render() {
     return this.state.error
-      ? <div class="bli-pane-error" role="alert">Panel failed: {this.state.error.message}</div>
+      ? <div class="ble-pane-error" role="alert">Panel failed: {this.state.error.message}</div>
       : this.props.children;
   }
 }

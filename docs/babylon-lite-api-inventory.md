@@ -2,7 +2,7 @@
 
 Audited from `node_modules/@babylonjs/lite/index.d.ts` on 2026-06-20. The package exports one public root entry point (`@babylonjs/lite`). Re-audit this file when upgrading the peer dependency.
 
-| Inspector feature | Verified public surface | Read | Write | Enumerate | MVP support |
+| Explorer feature | Verified public surface | Read | Write | Enumerate | MVP support |
 |---|---|---:|---:|---:|---|
 | Scene | `SceneContext` | Yes | Limited | N/A | Yes |
 | Camera | `SceneContext.camera`, `Camera` | Yes | `fov`, `nearPlane`, `farPlane` | One | Yes |
@@ -15,7 +15,7 @@ Audited from `node_modules/@babylonjs/lite/index.d.ts` on 2026-06-20. The packag
 | Materials | `Mesh.material`, `Material.name` | Yes | Concrete public props | Derived from meshes | Common fields plus verified PBR-like props |
 | Textures | Public PBR/Standard material `Texture2D` slots | Yes | No | Derived from mesh materials | Read-only derived section |
 | Draw calls | `EngineContext.drawCallCount` | Yes | No | N/A | Yes |
-| GPU frame time | `EngineContext.gpuFrameTimeMs`, `isGpuTimingSupported`, `setGpuTimingEnabled` | Yes | Opt-in | N/A | Display only; inspector never opts in by default |
+| GPU frame time | `EngineContext.gpuFrameTimeMs`, `isGpuTimingSupported`, `setGpuTimingEnabled` | Yes | Opt-in | N/A | Display only; explorer never opts in by default |
 | Render lifecycle | `onBeforeRender(SceneContext, callback)` | Yes | Registration has no documented removal handle | N/A | Not used in MVP lifecycle |
 | Scene disposal | `onSceneDispose(SceneContext, callback)` | Yes | Registration has no documented removal handle | N/A | Not used in MVP lifecycle |
 | Canvas picking | `createGpuPicker`, `pickAsync`, `disposePicker`, `PickingInfo.pickedMesh` | Yes | No | N/A | Opt-in |

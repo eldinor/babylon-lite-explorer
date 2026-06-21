@@ -1,7 +1,7 @@
 import { h, render } from "preact";
 import { createOfficialLiteSceneAdapter } from "../adapter/official/createOfficialLiteSceneAdapter";
 import { createDisposable, DisposableStore } from "../core/disposable";
-import { createInspectorSignals } from "../signals/createInspectorSignals";
+import { createExplorerSignals } from "../signals/createExplorerSignals";
 import { CommandService } from "../services/commandService";
 import { NotificationService } from "../services/notificationService";
 import { PickingService } from "../services/pickingService";
@@ -11,23 +11,23 @@ import { StatsService } from "../services/statsService";
 import { App } from "../ui/App";
 import { PropertiesPanel } from "../ui/PropertiesPanel";
 import { SceneExplorer } from "../ui/SceneExplorer";
-import type { InspectorRuntime } from "../ui/runtime";
-import type { LiteInspectorContext, LiteInspectorHandle, LiteInspectorOptions } from "./types";
+import type { ExplorerRuntime } from "../ui/runtime";
+import type { LiteExplorerContext, LiteExplorerHandle, LiteExplorerOptions } from "./types";
 
-export function showLiteInspector(context: LiteInspectorContext, options: LiteInspectorOptions = {}): LiteInspectorHandle {
-  if (typeof document === "undefined") throw new Error("Babylon Lite Inspector requires a DOM environment.");
+export function showLiteExplorer(context: LiteExplorerContext, options: LiteExplorerOptions = {}): LiteExplorerHandle {
+  if (typeof document === "undefined") throw new Error("Babylon Lite Explorer requires a DOM environment.");
   const canvas = options.canvas ?? context.canvas;
   const container = options.container ?? canvas?.parentElement ?? document.body;
   const readPreference = (key: string): string | null => {
     try { return localStorage.getItem(key); } catch { return null; }
   };
   const mode = options.mode ?? "overlay";
-  const storedLayout = readPreference("bli.layout");
-  const storedTheme = readPreference("bli.theme");
+  const storedLayout = readPreference("ble.layout");
+  const storedTheme = readPreference("ble.theme");
   const layout = options.layout ?? (storedLayout === "split" ? "split" : "single");
   const theme = options.theme ?? (storedTheme === "light" ? "light" : "dark");
   const host = document.createElement("div");
-  host.className = `bli-root bli-${mode}`;
+  host.className = `ble-root ble-${mode}`;
   host.dataset.theme = theme;
   host.dataset.layout = layout;
   host.hidden = options.initiallyOpen === false;
@@ -40,13 +40,13 @@ export function showLiteInspector(context: LiteInspectorContext, options: LiteIn
     container.style.position = "relative";
   }
 
-  const signals = createInspectorSignals();
+  const signals = createExplorerSignals();
   signals.context.value = { ...context, canvas };
   signals.adapter.value = options.adapter ?? createOfficialLiteSceneAdapter();
   signals.theme.value = theme;
   signals.layout.value = layout;
   try {
-    const singlePercent = Number(localStorage.getItem("bli.singlePanePercent"));
+    const singlePercent = Number(localStorage.getItem("ble.singlePanePercent"));
     if (singlePercent >= 25 && singlePercent <= 75) signals.singlePanePercent.value = singlePercent;
   } catch { /* storage may be unavailable in embedded or private contexts */ }
   signals.isOpen.value = options.initiallyOpen ?? true;
@@ -107,7 +107,7 @@ export function showLiteInspector(context: LiteInspectorContext, options: LiteIn
   }));
 
   let disposed = false;
-  const runtime: InspectorRuntime = {
+  const runtime: ExplorerRuntime = {
     signals,
     refresh,
     notifications,
@@ -116,12 +116,12 @@ export function showLiteInspector(context: LiteInspectorContext, options: LiteIn
     setLayout(nextLayout) {
       signals.layout.value = nextLayout;
       host.dataset.layout = nextLayout;
-      try { localStorage.setItem("bli.layout", nextLayout); } catch { /* optional persistence */ }
+      try { localStorage.setItem("ble.layout", nextLayout); } catch { /* optional persistence */ }
     },
     setTheme(nextTheme) {
       signals.theme.value = nextTheme;
       host.dataset.theme = nextTheme;
-      try { localStorage.setItem("bli.theme", nextTheme); } catch { /* optional persistence */ }
+      try { localStorage.setItem("ble.theme", nextTheme); } catch { /* optional persistence */ }
     },
     setPickingActive(active) {
       if (!picking) return;
@@ -130,7 +130,7 @@ export function showLiteInspector(context: LiteInspectorContext, options: LiteIn
     },
     close: () => handle.dispose()
   };
-  const rerender = () => render(h(App, { runtime, title: options.title ?? "Babylon Lite Inspector" }), host);
+  const rerender = () => render(h(App, { runtime, title: options.title ?? "Babylon Lite Explorer" }), host);
   rerender();
   stats.start();
 
@@ -147,11 +147,11 @@ export function showLiteInspector(context: LiteInspectorContext, options: LiteIn
       signals.expandedIds.value = expanded;
     }
   })().catch((error) => {
-    notifications.push(error instanceof Error ? error.message : "Inspector startup failed.");
+    notifications.push(error instanceof Error ? error.message : "Explorer startup failed.");
     throw error;
   });
 
-  const handle: LiteInspectorHandle = {
+  const handle: LiteExplorerHandle = {
     ready,
     dispose() {
       if (disposed) return;
@@ -180,10 +180,10 @@ export function showLiteInspector(context: LiteInspectorContext, options: LiteIn
     }
     if (event.code === "KeyL") { event.preventDefault(); runtime.setLayout(signals.layout.value === "single" ? "split" : "single"); }
     if (event.code === "KeyY") { event.preventDefault(); runtime.setTheme(signals.theme.value === "dark" ? "light" : "dark"); }
-    if (event.code === "KeyI") { event.preventDefault(); handle.toggle(); }
+    if (event.code === "KeyE") { event.preventDefault(); handle.toggle(); }
     if (event.code === "KeyF" && signals.isOpen.value) {
       event.preventDefault();
-      host.querySelector<HTMLInputElement>(".bli-search input")?.focus();
+      host.querySelector<HTMLInputElement>(".ble-search input")?.focus();
     }
   };
   window.addEventListener("keydown", onKeyDown);

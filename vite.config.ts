@@ -8,7 +8,7 @@ export default defineConfig({
       entry: "src/index.ts",
       formats: ["es"],
       fileName: "index",
-      cssFileName: "lite-inspector"
+      cssFileName: "lite-explorer"
     },
     rollupOptions: {
       external: ["preact", "preact/hooks", "preact/jsx-runtime", "@preact/signals", "@babylonjs/lite"]

@@ -1,10 +1,10 @@
-import type { InspectorSignals } from "../signals/createInspectorSignals";
+import type { ExplorerSignals } from "../signals/createExplorerSignals";
 
 export class StatsService {
   private timer: ReturnType<typeof setInterval> | undefined;
   private last = performance.now();
 
-  constructor(private readonly signals: InspectorSignals) {}
+  constructor(private readonly signals: ExplorerSignals) {}
 
   start(): void {
     this.timer = setInterval(() => { void this.sample(); }, 500);
@@ -20,7 +20,7 @@ export class StatsService {
     try {
       const stats = await adapter.getStats(context);
       this.signals.stats.value = { ...stats, frameMs: elapsed / Math.max(1, Math.round(elapsed / 16.67)) };
-    } catch { /* stats are optional and must not destabilize the inspector */ }
+    } catch { /* stats are optional and must not destabilize the explorer */ }
   }
 
   dispose(): void { if (this.timer) clearInterval(this.timer); this.timer = undefined; }

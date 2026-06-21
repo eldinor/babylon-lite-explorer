@@ -1,4 +1,4 @@
-import type { LiteInspectorContext } from "../api/types";
+import type { LiteExplorerContext } from "../api/types";
 import type { PropertyDescriptor } from "./propertyDescriptors";
 
 export type LiteEntityKind =
@@ -53,14 +53,14 @@ export const ok = <T = void>(value: T = undefined as T): AdapterResult<T> => ({ 
 export const fail = (code: "unsupported" | "invalid" | "failed", message: string): AdapterResult<never> => ({ ok: false, code, message });
 
 export type LiteSceneAdapter = {
-  getSceneTree(context: LiteInspectorContext): LiteEntity[] | Promise<LiteEntity[]>;
-  getProperties(entity: LiteEntity, context: LiteInspectorContext): PropertyDescriptor[] | Promise<PropertyDescriptor[]>;
-  setProperty?(entity: LiteEntity, path: string, value: unknown, context: LiteInspectorContext): AdapterResult | Promise<AdapterResult>;
-  refresh?(context: LiteInspectorContext): AdapterResult | Promise<AdapterResult>;
-  getStats?(context: LiteInspectorContext): LiteStats | Promise<LiteStats>;
-  focusEntity?(entity: LiteEntity, context: LiteInspectorContext): AdapterResult | Promise<AdapterResult>;
-  setEntityVisible?(entity: LiteEntity, visible: boolean, context: LiteInspectorContext): AdapterResult | Promise<AdapterResult>;
-  getEntitySnapshot?(entity: LiteEntity, context: LiteInspectorContext): AdapterResult<unknown> | Promise<AdapterResult<unknown>>;
-  pickEntityId?(x: number, y: number, context: LiteInspectorContext): AdapterResult<string | null> | Promise<AdapterResult<string | null>>;
+  getSceneTree(context: LiteExplorerContext): LiteEntity[] | Promise<LiteEntity[]>;
+  getProperties(entity: LiteEntity, context: LiteExplorerContext): PropertyDescriptor[] | Promise<PropertyDescriptor[]>;
+  setProperty?(entity: LiteEntity, path: string, value: unknown, context: LiteExplorerContext): AdapterResult | Promise<AdapterResult>;
+  refresh?(context: LiteExplorerContext): AdapterResult | Promise<AdapterResult>;
+  getStats?(context: LiteExplorerContext): LiteStats | Promise<LiteStats>;
+  focusEntity?(entity: LiteEntity, context: LiteExplorerContext): AdapterResult | Promise<AdapterResult>;
+  setEntityVisible?(entity: LiteEntity, visible: boolean, context: LiteExplorerContext): AdapterResult | Promise<AdapterResult>;
+  getEntitySnapshot?(entity: LiteEntity, context: LiteExplorerContext): AdapterResult<unknown> | Promise<AdapterResult<unknown>>;
+  pickEntityId?(x: number, y: number, context: LiteExplorerContext): AdapterResult<string | null> | Promise<AdapterResult<string | null>>;
   dispose?(): void;
 };

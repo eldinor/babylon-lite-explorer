@@ -1,7 +1,7 @@
 import type { ComponentType } from "preact";
 import type { Disposable } from "../core/disposable";
 import { createDisposable } from "../core/disposable";
-import type { InspectorSignals } from "../signals/createInspectorSignals";
+import type { ExplorerSignals } from "../signals/createExplorerSignals";
 
 export type SidePaneDefinition = {
   key: string;
@@ -24,7 +24,7 @@ export type ToolbarItemDefinition = {
 const sort = <T extends { order?: number; key: string }>(values: T[]) => [...values].sort((a, b) => (a.order ?? 0) - (b.order ?? 0) || a.key.localeCompare(b.key));
 
 export class ShellService {
-  constructor(private readonly signals: InspectorSignals) {}
+  constructor(private readonly signals: ExplorerSignals) {}
 
   addSidePane(pane: SidePaneDefinition): Disposable {
     if (this.signals.panes.value.some((item) => item.key === pane.key)) throw new Error(`Pane already registered: ${pane.key}`);

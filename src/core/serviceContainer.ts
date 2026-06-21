@@ -1,13 +1,13 @@
-export type LiteInspectorService = { id: string; start?(): void | Promise<void>; dispose(): void };
+export type LiteExplorerService = { id: string; start?(): void | Promise<void>; dispose(): void };
 
 export class ServiceContainer {
-  private readonly services = new Map<string, LiteInspectorService>();
-  register<T extends LiteInspectorService>(service: T): T {
+  private readonly services = new Map<string, LiteExplorerService>();
+  register<T extends LiteExplorerService>(service: T): T {
     if (this.services.has(service.id)) throw new Error(`Service already registered: ${service.id}`);
     this.services.set(service.id, service);
     return service;
   }
-  get<T extends LiteInspectorService>(id: string): T {
+  get<T extends LiteExplorerService>(id: string): T {
     const service = this.services.get(id);
     if (!service) throw new Error(`Missing service: ${id}`);
     return service as T;

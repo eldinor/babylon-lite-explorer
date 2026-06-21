@@ -1,4 +1,4 @@
-import type { InspectorSignals } from "../signals/createInspectorSignals";
+import type { ExplorerSignals } from "../signals/createExplorerSignals";
 import type { NotificationService } from "./notificationService";
 import type { RefreshController } from "./refreshController";
 
@@ -11,7 +11,7 @@ export class PickingService {
 
   constructor(
     private readonly canvas: HTMLCanvasElement,
-    private readonly signals: InspectorSignals,
+    private readonly signals: ExplorerSignals,
     private readonly refresh: RefreshController,
     private readonly notifications: NotificationService
   ) {}

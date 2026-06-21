@@ -1,4 +1,4 @@
-import type { LiteInspectorContext } from "../../api/types";
+import type { LiteExplorerContext } from "../../api/types";
 import type { LiteEntity, LiteEntityCapabilities, LiteEntityKind, LiteSceneAdapter } from "../LiteSceneAdapter";
 
 export type LiteEntityRegistration = {
@@ -13,7 +13,7 @@ export type LiteEntityRegistration = {
 const defaults: LiteEntityCapabilities = { editable: false, focusable: false, visibilityToggle: false, serializableSnapshot: false };
 
 export function createRegisteredSceneAdapter(options: {
-  getEntities(context: LiteInspectorContext): LiteEntityRegistration[];
+  getEntities(context: LiteExplorerContext): LiteEntityRegistration[];
   getProperties?: LiteSceneAdapter["getProperties"];
   setProperty?: LiteSceneAdapter["setProperty"];
   getStats?: LiteSceneAdapter["getStats"];

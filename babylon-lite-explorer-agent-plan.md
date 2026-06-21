@@ -1,10 +1,10 @@
-# Babylon Lite Inspector — Agent Build Plan
+# Babylon Lite Explorer — Agent Build Plan
 
 **Target stack:** Preact + `@preact/signals` + TypeScript + plain CSS.
 
 **Do not use:** React, Fluent UI, Redux, Zustand, Babylon.js Inspector code directly, Babylon.js class assumptions.
 
-**Main goal:** Build a small, embeddable, Babylon Lite-native inspector that borrows the best architectural ideas from Babylon Inspector V2 without copying its heavy UI stack.
+**Main goal:** Build a small, embeddable, Babylon Lite-native explorer that borrows the best architectural ideas from Babylon Inspector V2 without copying its heavy UI stack.
 
 ---
 
@@ -26,12 +26,12 @@ Inspector V2 is not just a property panel. Its UI architecture is a modular tool
 - optional `keepMounted` behavior for pane content;
 - teaching moments / discoverability helpers for dynamically added extensions;
 - standardized pane headers with icon + title;
-- property-line components for common inspector controls;
+- property-line components for common explorer controls;
 - a top-level tool wrapper that provides theming and shared tool context.
 
 Inspector V2 uses Fluent UI's `makeStyles` and Fluent design tokens for CSS-in-JS styling. The shared UI layer has Fluent primitives and higher-order components such as property lines and panes. The modular shell itself uses Fluent components, Fluent icons, resize-handle helpers, motion components, and ObservableCollection-based registration.
 
-For Babylon Lite Inspector, **do not copy the Fluent implementation**. Instead, copy the interaction model:
+For Babylon Lite Explorer, **do not copy the Fluent implementation**. Instead, copy the interaction model:
 
 - shell service;
 - side-pane registration;
@@ -75,26 +75,26 @@ The adapter is the safety boundary. UI components must never mutate Babylon Lite
 Implement this API first:
 
 ```ts
-export type LiteInspectorTheme = "dark" | "light";
-export type LiteInspectorMode = "overlay" | "inline";
+export type LiteExplorerTheme = "dark" | "light";
+export type LiteExplorerMode = "overlay" | "inline";
 
-export type LiteInspectorContext = {
+export type LiteExplorerContext = {
   engine: unknown;
   scene: unknown;
   canvas?: HTMLCanvasElement;
 };
 
-export type LiteInspectorOptions = {
+export type LiteExplorerOptions = {
   container?: HTMLElement;
   canvas?: HTMLCanvasElement;
-  mode?: LiteInspectorMode;
-  theme?: LiteInspectorTheme;
+  mode?: LiteExplorerMode;
+  theme?: LiteExplorerTheme;
   initiallyOpen?: boolean;
   adapter?: LiteSceneAdapter;
   title?: string;
 };
 
-export type LiteInspectorHandle = {
+export type LiteExplorerHandle = {
   dispose(): void;
   show(): void;
   hide(): void;
@@ -102,17 +102,17 @@ export type LiteInspectorHandle = {
   refresh(): void;
 };
 
-export function showLiteInspector(
-  context: LiteInspectorContext,
-  options?: LiteInspectorOptions
-): LiteInspectorHandle;
+export function showLiteExplorer(
+  context: LiteExplorerContext,
+  options?: LiteExplorerOptions
+): LiteExplorerHandle;
 ```
 
 ### API requirements
 
-- `showLiteInspector()` mounts one inspector panel.
+- `showLiteExplorer()` mounts one explorer panel.
 - `dispose()` removes DOM, intervals, event listeners, signal effects, and services.
-- Multiple inspectors must be possible for multiple scenes.
+- Multiple explorers must be possible for multiple scenes.
 - Do not use global singleton state.
 - Do not import optional Babylon Lite modules unless a feature needs them.
 
@@ -127,8 +127,8 @@ src/
   index.ts
 
   api/
-    showLiteInspector.ts
-    LiteInspectorHandle.ts
+    showLiteExplorer.ts
+    LiteExplorerHandle.ts
 
   adapter/
     LiteSceneAdapter.ts
@@ -143,7 +143,7 @@ src/
     serviceContainer.ts
 
   signals/
-    createInspectorSignals.ts
+    createExplorerSignals.ts
     treeUtils.ts
 
   services/
@@ -176,7 +176,7 @@ src/
     ColorInput.tsx
 
   styles/
-    inspector.css
+    explorer.css
 
 examples/
   basic/
@@ -205,7 +205,7 @@ Package should be ESM-first:
 
 ```json
 {
-  "name": "@babylonjs/lite-inspector",
+  "name": "babylon-lite-explorer",
   "version": "0.1.0",
   "type": "module",
   "sideEffects": false,
@@ -230,16 +230,16 @@ Do not bundle:
 
 ## 6. Signals architecture
 
-Create one signal store per inspector instance.
+Create one signal store per explorer instance.
 
 ```ts
 import { signal, computed } from "@preact/signals";
 
-export function createInspectorSignals() {
+export function createExplorerSignals() {
   const isOpen = signal(true);
   const theme = signal<"dark" | "light">("dark");
 
-  const context = signal<LiteInspectorContext | null>(null);
+  const context = signal<LiteExplorerContext | null>(null);
   const adapter = signal<LiteSceneAdapter | null>(null);
 
   const sceneVersion = signal(0);
@@ -282,7 +282,7 @@ export function createInspectorSignals() {
 
 ### Rules
 
-- Signals store inspector view-model state, not raw engine state.
+- Signals store explorer view-model state, not raw engine state.
 - Adapter may hold references to source objects.
 - UI may display source data, but must not mutate it directly.
 - All writes go through `adapter.setProperty()`.
@@ -334,18 +334,18 @@ export type LiteStats = {
 };
 
 export type LiteSceneAdapter = {
-  getSceneTree(context: LiteInspectorContext): LiteEntity[];
-  getProperties(entity: LiteEntity, context: LiteInspectorContext): PropertyDescriptor[];
+  getSceneTree(context: LiteExplorerContext): LiteEntity[];
+  getProperties(entity: LiteEntity, context: LiteExplorerContext): PropertyDescriptor[];
   setProperty?(
     entity: LiteEntity,
     path: string,
     value: unknown,
-    context: LiteInspectorContext
+    context: LiteExplorerContext
   ): void | Promise<void>;
-  refresh?(context: LiteInspectorContext): void | Promise<void>;
-  getStats?(context: LiteInspectorContext): LiteStats;
-  focusEntity?(entity: LiteEntity, context: LiteInspectorContext): void;
-  setEntityVisible?(entity: LiteEntity, visible: boolean, context: LiteInspectorContext): void;
+  refresh?(context: LiteExplorerContext): void | Promise<void>;
+  getStats?(context: LiteExplorerContext): LiteStats;
+  focusEntity?(entity: LiteEntity, context: LiteExplorerContext): void;
+  setEntityVisible?(entity: LiteEntity, visible: boolean, context: LiteExplorerContext): void;
 };
 ```
 
@@ -539,7 +539,7 @@ export type ShellService = {
 
 ```txt
 ┌──────────────────────────────────────────────┐
-│ Babylon Lite Inspector        ⟳  ◐  ×        │
+│ Babylon Lite Explorer        ⟳  ◐  ×        │
 ├───────────────────┬──────────────────────────┤
 │ Scene Explorer    │ Properties               │
 │                   │                          │
@@ -575,37 +575,37 @@ export type ShellService = {
 
 ## 11. CSS plan
 
-Use one CSS file with scoped `.bli-*` classes. Do not inject global styles.
+Use one CSS file with scoped `.ble-*` classes. Do not inject global styles.
 
 ```css
-.bli-root {
-  --bli-bg: #181818;
-  --bli-panel: #202020;
-  --bli-panel-2: #252525;
-  --bli-border: #383838;
-  --bli-text: #eeeeee;
-  --bli-muted: #a0a0a0;
-  --bli-accent: #4da3ff;
-  --bli-danger: #ff5a5a;
+.ble-root {
+  --ble-bg: #181818;
+  --ble-panel: #202020;
+  --ble-panel-2: #252525;
+  --ble-border: #383838;
+  --ble-text: #eeeeee;
+  --ble-muted: #a0a0a0;
+  --ble-accent: #4da3ff;
+  --ble-danger: #ff5a5a;
 
   font: 12px/1.4 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  color: var(--bli-text);
-  background: var(--bli-bg);
+  color: var(--ble-text);
+  background: var(--ble-bg);
   box-sizing: border-box;
 }
 
-.bli-root * {
+.ble-root * {
   box-sizing: border-box;
 }
 
-.bli-root[data-theme="light"] {
-  --bli-bg: #f5f5f5;
-  --bli-panel: #ffffff;
-  --bli-panel-2: #eeeeee;
-  --bli-border: #cccccc;
-  --bli-text: #1a1a1a;
-  --bli-muted: #666666;
-  --bli-accent: #0067c0;
+.ble-root[data-theme="light"] {
+  --ble-bg: #f5f5f5;
+  --ble-panel: #ffffff;
+  --ble-panel-2: #eeeeee;
+  --ble-border: #cccccc;
+  --ble-text: #1a1a1a;
+  --ble-muted: #666666;
+  --ble-accent: #0067c0;
 }
 ```
 
@@ -617,21 +617,21 @@ Use one CSS file with scoped `.bli-*` classes. Do not inject global styles.
 - Clear focus styles for keyboard navigation.
 - Dark theme default.
 - Light theme via `data-theme="light"`.
-- No global resets outside `.bli-root`.
+- No global resets outside `.ble-root`.
 - Overlay root must use `pointer-events: auto`.
-- Canvas behind inspector must remain interactive outside inspector bounds.
+- Canvas behind explorer must remain interactive outside explorer bounds.
 
 ### Overlay defaults
 
 ```css
-.bli-overlay {
+.ble-overlay {
   position: absolute;
   top: 12px;
   right: 12px;
   width: 720px;
   height: min(80vh, 640px);
   z-index: 999999;
-  border: 1px solid var(--bli-border);
+  border: 1px solid var(--ble-border);
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
 }
 ```
@@ -661,7 +661,7 @@ StatusBar
 Panel
 ```
 
-Do not add a general design system. These controls are inspector-specific.
+Do not add a general design system. These controls are explorer-specific.
 
 ### Property row pattern
 
@@ -874,23 +874,23 @@ export type Disposable = {
   dispose(): void;
 };
 
-export type LiteInspectorService = {
+export type LiteExplorerService = {
   id: string;
   start(): void | Promise<void>;
   dispose(): void;
 };
 
 export class ServiceContainer {
-  private services = new Map<string, LiteInspectorService>();
+  private services = new Map<string, LiteExplorerService>();
 
-  register(service: LiteInspectorService): void {
+  register(service: LiteExplorerService): void {
     if (this.services.has(service.id)) {
       throw new Error(`Service already registered: ${service.id}`);
     }
     this.services.set(service.id, service);
   }
 
-  get<T extends LiteInspectorService>(id: string): T {
+  get<T extends LiteExplorerService>(id: string): T {
     const service = this.services.get(id);
     if (!service) throw new Error(`Missing service: ${id}`);
     return service as T;
@@ -928,11 +928,11 @@ CommandService
 Add a small command system:
 
 ```ts
-export type InspectorCommand = {
+export type ExplorerCommand = {
   id: string;
   label: string;
   when?: (entity: LiteEntity | null) => boolean;
-  run: (entity: LiteEntity | null, context: LiteInspectorContext) => void | Promise<void>;
+  run: (entity: LiteEntity | null, context: LiteExplorerContext) => void | Promise<void>;
 };
 ```
 
@@ -949,7 +949,7 @@ focus selected, optional
 
 ---
 
-## 19. `showLiteInspector()` implementation flow
+## 19. `showLiteExplorer()` implementation flow
 
 The agent should implement in this order:
 
@@ -958,8 +958,8 @@ The agent should implement in this order:
    - `options.canvas.parentElement`, else;
    - `document.body`.
 2. Create host div.
-3. Add `.bli-root` and `.bli-overlay` classes.
-4. Create inspector signals.
+3. Add `.ble-root` and `.ble-overlay` classes.
+4. Create explorer signals.
 5. Set context, adapter, theme, open state.
 6. Create service container.
 7. Register shell, command, explorer, properties, stats services.
@@ -983,7 +983,7 @@ Dispose must:
 
 MVP is done only when all items pass:
 
-- `showLiteInspector({ engine, scene, canvas })` mounts an overlay.
+- `showLiteExplorer({ engine, scene, canvas })` mounts an overlay.
 - `dispose()` fully removes DOM and listeners.
 - Scene Explorer shows scene, camera, meshes, lights, materials where available.
 - Search filters tree nodes.
@@ -1063,7 +1063,7 @@ import {
   startEngine
 } from "@babylonjs/lite";
 
-import { showLiteInspector } from "@babylonjs/lite-inspector";
+import { showLiteExplorer } from "babylon-lite-explorer";
 
 const canvas = document.getElementById("renderCanvas") as HTMLCanvasElement;
 
@@ -1094,7 +1094,7 @@ addToScene(scene, sphere);
 await registerScene(scene);
 await startEngine(engine);
 
-showLiteInspector({ engine, scene, canvas });
+showLiteExplorer({ engine, scene, canvas });
 ```
 
 ---
@@ -1191,10 +1191,10 @@ Do not include:
 
 ## 25. Final design principle
 
-The Babylon Lite Inspector should feel like Inspector V2 structurally, but not technically:
+The Babylon Lite Explorer should feel like Inspector V2 structurally, but not technically:
 
 ```txt
-Inspector V2 idea        Babylon Lite Inspector implementation
+Inspector V2 idea        Babylon Lite Explorer implementation
 ---------------------------------------------------------------
 React                    Preact
 Fluent UI                Plain scoped CSS

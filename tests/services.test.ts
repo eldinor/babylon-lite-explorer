@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { createInspectorSignals } from "../src/signals/createInspectorSignals";
+import { createExplorerSignals } from "../src/signals/createExplorerSignals";
 import { NotificationService } from "../src/services/notificationService";
 import { RefreshController } from "../src/services/refreshController";
 import { ShellService } from "../src/services/shellService";
@@ -9,7 +9,7 @@ const capabilities = { editable: false, focusable: false, visibilityToggle: fals
 describe("services", () => {
   it("auto-dismisses notifications after the configured duration", () => {
     vi.useFakeTimers();
-    const signals = createInspectorSignals();
+    const signals = createExplorerSignals();
     const notifications = new NotificationService(signals, 3000);
     notifications.push("Temporary message", "info");
     expect(signals.notifications.value).toHaveLength(1);
@@ -23,7 +23,7 @@ describe("services", () => {
 
   it("supports persistent manually-dismissed notifications", () => {
     vi.useFakeTimers();
-    const signals = createInspectorSignals();
+    const signals = createExplorerSignals();
     const notifications = new NotificationService(signals, 0);
     notifications.push("Persistent message");
     vi.advanceTimersByTime(10_000);
@@ -36,7 +36,7 @@ describe("services", () => {
 
   it("can disable notifications completely", () => {
     vi.useFakeTimers();
-    const signals = createInspectorSignals();
+    const signals = createExplorerSignals();
     const notifications = new NotificationService(signals, 3000, false);
     notifications.push("Hidden error");
     notifications.push("Hidden info", "info");
@@ -47,7 +47,7 @@ describe("services", () => {
   });
 
   it("registers and disposes panes deterministically", () => {
-    const signals = createInspectorSignals();
+    const signals = createExplorerSignals();
     const shell = new ShellService(signals);
     const component = () => null;
     const later = shell.addSidePane({ key: "z", title: "Z", side: "left", order: 20, content: component });
@@ -58,7 +58,7 @@ describe("services", () => {
   });
 
   it("registers and disposes toolbar items", () => {
-    const signals = createInspectorSignals();
+    const signals = createExplorerSignals();
     const shell = new ShellService(signals);
     const disposable = shell.addToolbarItem({ key: "refresh", location: "top-right", component: () => null });
     expect(signals.toolbarItems.value).toHaveLength(1);
@@ -67,7 +67,7 @@ describe("services", () => {
   });
 
   it("preserves or clears selection across tree refresh", async () => {
-    const signals = createInspectorSignals();
+    const signals = createExplorerSignals();
     let present = true;
     signals.context.value = { scene: {}, engine: {} };
     signals.adapter.value = {
@@ -84,7 +84,7 @@ describe("services", () => {
   });
 
   it("rejects stale property responses", async () => {
-    const signals = createInspectorSignals();
+    const signals = createExplorerSignals();
     signals.context.value = { scene: {}, engine: {} };
     const resolvers: Array<(value: never[]) => void> = [];
     signals.adapter.value = {
@@ -104,7 +104,7 @@ describe("services", () => {
   });
 
   it("does not optimistically apply rejected writes", async () => {
-    const signals = createInspectorSignals();
+    const signals = createExplorerSignals();
     signals.context.value = { scene: {}, engine: {} };
     signals.tree.value = [{ id: "one", label: "One", kind: "mesh", source: {}, capabilities }];
     signals.selectedEntityId.value = "one";

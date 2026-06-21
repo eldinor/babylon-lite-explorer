@@ -2,10 +2,10 @@ import type { ComponentChildren } from "preact";
 import { Fragment } from "preact";
 import { useRef } from "preact/hooks";
 import { ErrorBoundary } from "./ErrorBoundary";
-import { useInspectorRuntime } from "./runtime";
+import { useExplorerRuntime } from "./runtime";
 
 export function Shell({ title }: { title: string }) {
-  const { signals, shell, setLayout, setTheme, close } = useInspectorRuntime();
+  const { signals, shell, setLayout, setTheme, close } = useExplorerRuntime();
   const panes = signals.panes.value;
   const toolbarItems = signals.toolbarItems.value;
   const toolbar = (location: "top-left" | "top-right" | "bottom-left" | "bottom-right") => toolbarItems
@@ -15,9 +15,9 @@ export function Shell({ title }: { title: string }) {
     const choices = panes.filter((pane) => pane.side === side);
     const selectedKey = signals.selectedPanes.value[side];
     const selected = choices.find((pane) => pane.key === selectedKey) ?? choices[0];
-    return <section class={`bli-pane bli-pane-${side}`}>
-      <div class="bli-tabs" role="tablist" aria-label={`${side} panels`}>{choices.map((pane) => <button type="button" role="tab" aria-selected={pane.key === selected?.key} onClick={() => shell.selectPane(pane.key)} key={pane.key}>{pane.title}</button>)}{side === "left" && <PickingToggle />}</div>
-      <div class="bli-pane-content">{choices.map((pane) => {
+    return <section class={`ble-pane ble-pane-${side}`}>
+      <div class="ble-tabs" role="tablist" aria-label={`${side} panels`}>{choices.map((pane) => <button type="button" role="tab" aria-selected={pane.key === selected?.key} onClick={() => shell.selectPane(pane.key)} key={pane.key}>{pane.title}</button>)}{side === "left" && <PickingToggle />}</div>
+      <div class="ble-pane-content">{choices.map((pane) => {
         const active = pane.key === selected?.key;
         if (!active && !pane.keepMounted) return null;
         const Content = pane.content;
@@ -32,30 +32,30 @@ export function Shell({ title }: { title: string }) {
     });
     const setPercent = (value: number) => {
       signals.singlePanePercent.value = value;
-      try { localStorage.setItem("bli.singlePanePercent", String(value)); } catch { /* optional persistence */ }
+      try { localStorage.setItem("ble.singlePanePercent", String(value)); } catch { /* optional persistence */ }
     };
-    return <div class="bli-single-stack" style={{ gridTemplateRows: `${signals.singlePanePercent.value}% 5px minmax(0, 1fr)` }}>{stackedPanes.map((pane, index) => {
+    return <div class="ble-single-stack" style={{ gridTemplateRows: `${signals.singlePanePercent.value}% 5px minmax(0, 1fr)` }}>{stackedPanes.map((pane, index) => {
         const Content = pane.content;
         return <Fragment key={pane.key}>{index === 1 && <ResizeHandle axis="vertical" onChange={setPercent} />}
-        <section class={`bli-pane bli-pane-single bli-pane-single-${pane.side}`}>
-          <div class="bli-pane-heading"><span>{pane.title}</span>{pane.side === "left" && <PickingToggle />}</div>
-          <div class="bli-pane-content"><ErrorBoundary><Content /></ErrorBoundary></div>
+        <section class={`ble-pane ble-pane-single ble-pane-single-${pane.side}`}>
+          <div class="ble-pane-heading"><span>{pane.title}</span>{pane.side === "left" && <PickingToggle />}</div>
+          <div class="ble-pane-content"><ErrorBoundary><Content /></ErrorBoundary></div>
         </section></Fragment>;
       })}</div>;
   };
   if (signals.layout.value === "split") {
-    return <div class="bli-split-shell">
-      <section class="bli-split-dock bli-split-dock-left">
-        <header class="bli-toolbar"><strong>{title}</strong>{toolbar("top-left")}</header>
+    return <div class="ble-split-shell">
+      <section class="ble-split-dock ble-split-dock-left">
+        <header class="ble-toolbar"><strong>{title}</strong>{toolbar("top-left")}</header>
         {renderSide("left")}
       </section>
-      <section class="bli-split-dock bli-split-dock-right">
-        <header class="bli-toolbar">
-          <div class="bli-toolbar-zone">{toolbar("top-right")}</div>
-          <div class="bli-toolbar-actions">
+      <section class="ble-split-dock ble-split-dock-right">
+        <header class="ble-toolbar">
+          <div class="ble-toolbar-zone">{toolbar("top-right")}</div>
+          <div class="ble-toolbar-actions">
             <button type="button" onClick={() => setLayout("single")}>Single</button>
             <button type="button" onClick={() => setTheme(signals.theme.value === "dark" ? "light" : "dark")}>{signals.theme.value === "dark" ? "Light" : "Dark"}</button>
-            <button type="button" aria-label="Dispose inspector" onClick={close}>×</button>
+            <button type="button" aria-label="Dispose explorer" onClick={close}>×</button>
           </div>
         </header>
         {renderSide("right")}
@@ -65,17 +65,17 @@ export function Shell({ title }: { title: string }) {
       <Notifications />
     </div>;
   }
-  return <div class="bli-shell">
-    <header class="bli-toolbar">
-      <div class="bli-toolbar-zone"><strong>{title}</strong>{toolbar("top-left")}</div>
-      <div class="bli-toolbar-actions">
+  return <div class="ble-shell">
+    <header class="ble-toolbar">
+      <div class="ble-toolbar-zone"><strong>{title}</strong>{toolbar("top-left")}</div>
+      <div class="ble-toolbar-actions">
         {toolbar("top-right")}
         <button type="button" onClick={() => setLayout(signals.layout.value === "single" ? "split" : "single")}>{signals.layout.value === "single" ? "Split" : "Single"}</button>
         <button type="button" onClick={() => setTheme(signals.theme.value === "dark" ? "light" : "dark")}>{signals.theme.value === "dark" ? "Light" : "Dark"}</button>
-        <button type="button" aria-label="Dispose inspector" onClick={close}>×</button>
+        <button type="button" aria-label="Dispose explorer" onClick={close}>×</button>
       </div>
     </header>
-    <main class="bli-main bli-main-single">{renderSingle()}</main>
+    <main class="ble-main ble-main-single">{renderSingle()}</main>
     <SelectionBar />
     <StatusBar left={toolbar("bottom-left")} right={toolbar("bottom-right")} />
     <Notifications />
@@ -83,11 +83,11 @@ export function Shell({ title }: { title: string }) {
 }
 
 function PickingToggle() {
-  const { signals, setPickingActive } = useInspectorRuntime();
+  const { signals, setPickingActive } = useExplorerRuntime();
   if (!signals.pickingAvailable.value) return null;
   const active = signals.pickingActive.value;
   return <button
-    class={`bli-pick-toggle${active ? " is-active" : ""}`}
+    class={`ble-pick-toggle${active ? " is-active" : ""}`}
     type="button"
     aria-pressed={active}
     title={active ? "Picking mode active" : "Picking mode inactive"}
@@ -98,7 +98,7 @@ function PickingToggle() {
 function ResizeHandle({ axis, onChange }: { axis: "horizontal" | "vertical"; onChange(value: number): void }) {
   const dragging = useRef(false);
   return <div
-    class={`bli-resize-handle is-${axis}`}
+    class={`ble-resize-handle is-${axis}`}
     role="separator"
     aria-orientation={axis}
     tabIndex={0}
@@ -126,7 +126,7 @@ function ResizeHandle({ axis, onChange }: { axis: "horizontal" | "vertical"; onC
 }
 
 function SelectionBar() {
-  const { signals, commands, notifications } = useInspectorRuntime();
+  const { signals, commands, notifications } = useExplorerRuntime();
   const selected = signals.selectedEntity.value;
   const context = signals.context.value;
   const actionLabels: Record<string, string> = {
@@ -142,12 +142,12 @@ function SelectionBar() {
     catch (error) { notifications.push(error instanceof Error ? error.message : `Command failed: ${command.label}`); }
   };
   return selected
-    ? <div class="bli-selection-status"><span>Selected</span><strong>{selected.label}</strong><div class="bli-selection-actions">{actions.map((action) => <button type="button" key={action.id} onClick={() => void run(action.id)}>{actionLabels[action.id]}</button>)}</div></div>
-    : <div class="bli-selection-status is-empty" aria-hidden="true" />;
+    ? <div class="ble-selection-status"><span>Selected</span><strong>{selected.label}</strong><div class="ble-selection-actions">{actions.map((action) => <button type="button" key={action.id} onClick={() => void run(action.id)}>{actionLabels[action.id]}</button>)}</div></div>
+    : <div class="ble-selection-status is-empty" aria-hidden="true" />;
 }
 
 function StatusBar({ left, right }: { left: ComponentChildren; right: ComponentChildren }) {
-  const { signals } = useInspectorRuntime();
+  const { signals } = useExplorerRuntime();
   const stats = signals.stats.value;
   const items = [
     stats.frameMs !== undefined && `Frame ${stats.frameMs.toFixed(1)} ms`,
@@ -156,10 +156,10 @@ function StatusBar({ left, right }: { left: ComponentChildren; right: ComponentC
     stats.meshCount !== undefined && `Meshes ${stats.meshCount}`,
     stats.lightCount !== undefined && `Lights ${stats.lightCount}`
   ].filter(Boolean);
-  return <footer class="bli-status"><span class="bli-status-zone">{left}{items.length ? items.map((item) => <span key={String(item)}>{item}</span>) : <span>Ready</span>}</span><span class="bli-status-zone">{right}</span></footer>;
+  return <footer class="ble-status"><span class="ble-status-zone">{left}{items.length ? items.map((item) => <span key={String(item)}>{item}</span>) : <span>Ready</span>}</span><span class="ble-status-zone">{right}</span></footer>;
 }
 
 function Notifications() {
-  const { signals, notifications } = useInspectorRuntime();
-  return <div class="bli-notifications" aria-live="polite">{signals.notifications.value.map((item) => <div class={`bli-notification is-${item.tone}`} key={item.id}>{item.message}<button type="button" aria-label="Dismiss notification" onClick={() => notifications.dismiss(item.id)}>×</button></div>)}</div>;
+  const { signals, notifications } = useExplorerRuntime();
+  return <div class="ble-notifications" aria-live="polite">{signals.notifications.value.map((item) => <div class={`ble-notification is-${item.tone}`} key={item.id}>{item.message}<button type="button" aria-label="Dismiss notification" onClick={() => notifications.dismiss(item.id)}>×</button></div>)}</div>;
 }

@@ -1,7 +1,7 @@
 {
-  "name": "@babylonjs/lite-inspector",
+  "name": "babylon-lite-explorer",
   "version": "0.1.0",
-  "description": "A small, official-API-only inspector for Babylon Lite",
+  "description": "A small, official-API-only explorer for Babylon Lite",
   "type": "module",
   "sideEffects": [
     "**/*.css"
@@ -14,7 +14,7 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
-    "./styles.css": "./dist/lite-inspector.css"
+    "./styles.css": "./dist/lite-explorer.css"
   },
   "files": [
     "dist"
