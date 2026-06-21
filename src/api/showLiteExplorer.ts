@@ -91,7 +91,7 @@ export function showLiteExplorer(context: LiteExplorerContext, options: LiteExpl
       if (!entity || !adapter?.setEntityVisible) return;
       const visible = signals.properties.value.find((item) => item.path === "visible");
       const result = await adapter.setEntityVisible(entity, !(visible?.kind === "boolean" && visible.value), currentContext);
-      if (!result.ok) notifications.push(result.message); else await refresh.refreshProperties();
+      if (!result.ok) notifications.push(result.message); else await refresh.refreshTree();
     }
   }));
   disposables.add(commands.register({
@@ -103,6 +103,28 @@ export function showLiteExplorer(context: LiteExplorerContext, options: LiteExpl
       if (!entity || !adapter?.focusEntity) return;
       const result = await adapter.focusEntity(entity, currentContext);
       if (!result.ok) notifications.push(result.message);
+    }
+  }));
+  disposables.add(commands.register({
+    id: "play-animation",
+    label: "Play animation",
+    when: (entity) => !!entity?.capabilities.animationPlayback,
+    run: async (entity, currentContext) => {
+      const adapter = signals.adapter.value;
+      if (!entity || !adapter?.playAnimationGroup) return;
+      const result = await adapter.playAnimationGroup(entity, currentContext);
+      if (!result.ok) notifications.push(result.message); else await refresh.refreshProperties();
+    }
+  }));
+  disposables.add(commands.register({
+    id: "stop-animation",
+    label: "Stop animation",
+    when: (entity) => !!entity?.capabilities.animationPlayback,
+    run: async (entity, currentContext) => {
+      const adapter = signals.adapter.value;
+      if (!entity || !adapter?.stopAnimationGroup) return;
+      const result = await adapter.stopAnimationGroup(entity, currentContext);
+      if (!result.ok) notifications.push(result.message); else await refresh.refreshTree();
     }
   }));
 
@@ -131,7 +153,8 @@ export function showLiteExplorer(context: LiteExplorerContext, options: LiteExpl
     hide: () => handle.hide(),
     dispose: () => handle.dispose()
   };
-  const rerender = () => render(h(App, { runtime, title: options.title ?? "Babylon Lite Explorer" }), host);
+  const defaultTitle = `Babylon Lite ${__BABYLON_LITE_VERSION__} Explorer ${__EXPLORER_VERSION__}`;
+  const rerender = () => render(h(App, { runtime, title: options.title ?? defaultTitle }), host);
   rerender();
   stats.start();
 

@@ -1,14 +1,18 @@
-import type {
-  Camera,
-  EngineContext,
-  GpuPicker,
-  LightBase,
-  Material,
-  Mesh,
-  PbrMaterialProps,
-  SceneContext,
-  SceneNode,
-  Texture2D
+import {
+  playAnimation,
+  setSubtreeVisible,
+  stopAnimation,
+  type AnimationGroup,
+  type Camera,
+  type EngineContext,
+  type GpuPicker,
+  type LightBase,
+  type Material,
+  type Mesh,
+  type PbrMaterialProps,
+  type SceneContext,
+  type SceneNode,
+  type Texture2D
 } from "@babylonjs/lite";
 import type { LiteExplorerContext } from "../../api/types";
 import type { PropertyDescriptor } from "../propertyDescriptors";
@@ -122,10 +126,36 @@ const clamp01 = (value: number) => Math.min(1, Math.max(0, value));
 export function createOfficialLiteSceneAdapter(): LiteSceneAdapter {
   const objectIds = new WeakMap<object, string>();
   const entityTypes = new WeakMap<object, LiteEntityKind>();
+  const animationClocks = new WeakMap<AnimationGroup, { time: number; publicTime: number; sampledAt: number; wasPlaying: boolean }>();
   let nextId = 1;
   const pickers = new Set<GpuPicker>();
   const pickerByScene = new WeakMap<object, GpuPicker>();
   let disposePickerPublic: ((picker: GpuPicker) => void) | undefined;
+
+  const getAnimationTime = (group: AnimationGroup): number => {
+    const now = performance.now();
+    const publicTime = group.currentFrame;
+    let clock = animationClocks.get(group);
+    if (!clock) {
+      clock = { time: publicTime, publicTime, sampledAt: now, wasPlaying: group.isPlaying };
+      animationClocks.set(group, clock);
+      return publicTime;
+    }
+    if (publicTime !== clock.publicTime) {
+      clock.time = publicTime;
+    } else if (group.isPlaying && clock.wasPlaying) {
+      clock.time += ((now - clock.sampledAt) / 1000) * group.speedRatio;
+      if (group.duration > 0) {
+        clock.time = group.loopAnimation
+          ? ((clock.time % group.duration) + group.duration) % group.duration
+          : Math.min(group.duration, Math.max(0, clock.time));
+      }
+    }
+    clock.publicTime = publicTime;
+    clock.sampledAt = now;
+    clock.wasPlaying = group.isPlaying;
+    return clock.time;
+  };
 
   const idFor = (kind: LiteEntityKind, source: object, explicit?: string): string => {
     const existing = objectIds.get(source);
@@ -251,10 +281,10 @@ export function createOfficialLiteSceneAdapter(): LiteSceneAdapter {
         entityTypes.set(group, "animationGroup");
         return {
           id: idFor("animationGroup", group),
-          label: `Animation group ${index + 1}`,
+          label: group.name || `Animation group ${index + 1}`,
           kind: "animationGroup" as const,
           source: group,
-          capabilities: none
+          capabilities: { ...none, animationPlayback: true }
         };
       })));
     }
@@ -324,6 +354,20 @@ export function createOfficialLiteSceneAdapter(): LiteSceneAdapter {
         { kind: "boolean", path: "invertY", label: "Invert Y", value: texture.invertY ?? false, readonly: true, section: "UV Transform" }
       ];
     }
+    if (knownKind === "animationGroup") {
+      const group = source as AnimationGroup;
+      const frameRate = group.frameRate ?? 60;
+      const currentTime = getAnimationTime(group);
+      return [...base,
+        { kind: "readonly", path: "name", label: "Name", value: group.name, section: "Animation" },
+        { kind: "number", path: "duration", label: "Duration", value: group.duration, readonly: true, section: "Animation" },
+        { kind: "number", path: "currentTime", label: "Current time", value: Number(currentTime.toFixed(2)), readonly: true, step: 0.01, section: "Playback" },
+        { kind: "number", path: "currentFrame", label: "Current frame", value: Math.round(currentTime * frameRate), readonly: true, section: "Playback" },
+        { kind: "boolean", path: "isPlaying", label: "Playing", value: group.isPlaying, readonly: true, section: "Playback" },
+        { kind: "number", path: "speedRatio", label: "Speed ratio", value: group.speedRatio, readonly: true, section: "Playback" },
+        { kind: "boolean", path: "loopAnimation", label: "Loop", value: group.loopAnimation, readonly: true, section: "Playback" }
+      ];
+    }
     if (knownKind === "scene") {
       const scene = source as SceneContext;
       return [...base,
@@ -342,7 +386,7 @@ export function createOfficialLiteSceneAdapter(): LiteSceneAdapter {
       if (kind === "mesh" || kind === "transform") {
         const node = source as SceneNode;
         if (path === "name" && typeof value === "string") node.name = value;
-        else if (path === "visible" && typeof value === "boolean") node.visible = value;
+        else if (path === "visible" && typeof value === "boolean") setSubtreeVisible(node, value);
         else if ((path === "position" || path === "rotation" || path === "scaling") && Array.isArray(value) && value.length === 3 && value.every(Number.isFinite)) {
           const tuple = value as [number, number, number];
           if (path === "scaling" && tuple.some((part) => part === 0)) return fail("invalid", "Scaling components cannot be exactly zero.");
@@ -400,6 +444,33 @@ export function createOfficialLiteSceneAdapter(): LiteSceneAdapter {
     return stats;
   };
 
+  const playAnimationGroup: NonNullable<LiteSceneAdapter["playAnimationGroup"]> = (entity, context) => {
+    if (!isPublicScene(context.scene)) return fail("unsupported", "Animation playback requires a public Babylon Lite SceneContext.");
+    const source = entity.source;
+    if (!source || typeof source !== "object" || entityTypes.get(source) !== "animationGroup") return fail("unsupported", "This entity is not an animation group.");
+    const selected = source as AnimationGroup;
+    if (!context.scene.animationGroups.includes(selected)) return fail("unsupported", "This animation group does not belong to the current scene.");
+    const now = performance.now();
+    for (const group of context.scene.animationGroups) {
+      stopAnimation(group);
+      animationClocks.set(group, { time: 0, publicTime: 0, sampledAt: now, wasPlaying: false });
+    }
+    playAnimation(selected);
+    animationClocks.set(selected, { time: 0, publicTime: 0, sampledAt: now, wasPlaying: true });
+    return ok();
+  };
+
+  const stopAnimationGroup: NonNullable<LiteSceneAdapter["stopAnimationGroup"]> = (entity, context) => {
+    if (!isPublicScene(context.scene)) return fail("unsupported", "Animation playback requires a public Babylon Lite SceneContext.");
+    const source = entity.source;
+    if (!source || typeof source !== "object" || entityTypes.get(source) !== "animationGroup") return fail("unsupported", "This entity is not an animation group.");
+    const selected = source as AnimationGroup;
+    if (!context.scene.animationGroups.includes(selected)) return fail("unsupported", "This animation group does not belong to the current scene.");
+    stopAnimation(selected);
+    animationClocks.set(selected, { time: 0, publicTime: 0, sampledAt: performance.now(), wasPlaying: false });
+    return ok();
+  };
+
   const pickEntityId: NonNullable<LiteSceneAdapter["pickEntityId"]> = async (x, y, context) => {
     if (!isPublicScene(context.scene)) return fail("unsupported", "Canvas picking requires a public Babylon Lite SceneContext.");
     try {
@@ -434,6 +505,8 @@ export function createOfficialLiteSceneAdapter(): LiteSceneAdapter {
     getStats,
     pickEntityId,
     setEntityVisible: async (entity, visible, context) => setProperty(entity, "visible", visible, context),
+    playAnimationGroup,
+    stopAnimationGroup,
     getEntitySnapshot,
     dispose() {
       if (disposePickerPublic) for (const picker of pickers) disposePickerPublic(picker);

@@ -56,6 +56,10 @@ Notifications dismiss automatically after three seconds. Configure `notification
 
 The official adapter currently exposes the public scene camera, meshes, mesh hierarchy, lights, derived materials, and animation groups. It edits documented scene-node transforms and visibility, camera clipping/FOV fields, and documented light fields. See [the audited API inventory](docs/babylon-lite-api-inventory.md).
 
+Babylon Lite 1.2.0 preserves glTF node names on public transform nodes, but generated renderable meshes are named `gltf_mesh_0`, `gltf_mesh_1`, and so on. The original glTF `mesh.name` is not retained on the public mesh object, so Explorer cannot recover it through official APIs. A named parent transform may still provide the model’s original node-level label.
+
+Texture previews and original texture URLs are unavailable through the official adapter. Babylon Lite 1.2.0 exposes GPU handles, dimensions, UV transforms, and `invertY` on `Texture2D`, but it does not retain public source-image/URL metadata or provide a public pixel-readback surface for these textures. These texture fields are read-only in Explorer: `invertY` is applied during upload, while UV-transform shader support is fixed when a material is built and cannot be enabled or invalidated through the current public API.
+
 Textures and entities that Babylon Lite does not publicly enumerate can be supplied explicitly:
 
 ```ts

@@ -14,6 +14,7 @@ it("mounts independent instances and disposes idempotently", async () => {
   expect(document.querySelectorAll(".ble-root")).toHaveLength(2);
   expect(document.querySelector(".ble-root")?.getAttribute("data-layout")).toBe("single");
   expect(document.querySelector(".ble-root")?.querySelectorAll(".ble-single-stack > .ble-pane")).toHaveLength(2);
+  expect(document.querySelector(".ble-toolbar strong")?.textContent).toBe("Babylon Lite 1.2.0 Explorer 0.1.0");
   expect([...document.querySelector(".ble-root")!.querySelectorAll(".ble-pane-heading")].map((item) => item.textContent)).toEqual(["Scene Explorer", "Properties"]);
   first.hide(); first.show(); first.toggle(); first.toggle();
   first.dispose(); first.dispose();
@@ -89,6 +90,18 @@ it("supports lifecycle-safe keyboard shortcuts", async () => {
   expect(document.querySelector(".ble-root")).toBeNull();
 });
 
+it("links the footer logo to BabylonPress", async () => {
+  const data = fakeScene();
+  const handle = showLiteExplorer({ scene: data.scene, engine: {} });
+  await handle.ready;
+
+  const link = document.querySelector<HTMLAnchorElement>(".ble-footer-logo");
+  expect(link?.href).toBe("https://babylonpress.org/");
+  expect(link?.target).toBe("_blank");
+  expect(link?.querySelector("img")?.alt).toBe("BabylonPress");
+  handle.dispose();
+});
+
 it("can disable keyboard shortcuts", async () => {
   const data = fakeScene();
   const handle = showLiteExplorer(
@@ -146,6 +159,24 @@ it("applies property input without waiting for blur", async () => {
   nameInput.dispatchEvent(new Event("input", { bubbles: true }));
   await waitFor(() => expect(data.mesh.name).toBe("Renamed immediately"));
   expect(document.activeElement).toBe(nameInput);
+  handle.dispose();
+});
+
+it("applies the Visible checkbox", async () => {
+  const data = fakeScene();
+  const handle = showLiteExplorer({ scene: data.scene, engine: {} });
+  await handle.ready;
+  const sphere = [...document.querySelectorAll<HTMLButtonElement>(".ble-tree-label")].find((button) => button.textContent?.includes("Sphere"));
+  sphere?.click();
+  const checkbox = await waitFor(() => {
+    const input = document.querySelector<HTMLInputElement>('.ble-property-control input[type="checkbox"]');
+    expect(input).not.toBeNull();
+    return input!;
+  });
+
+  checkbox.click();
+  await waitFor(() => expect(data.mesh.visible).toBe(false));
+  expect(checkbox.checked).toBe(false);
   handle.dispose();
 });
 

@@ -13,7 +13,7 @@ Audited from `node_modules/@babylonjs/lite/index.d.ts` on 2026-06-20. The packag
 | Transform hierarchy | `SceneNode.children` | Yes | Public observable vectors | Yes | Yes |
 | Visibility | `SceneNode.visible`, `setMeshVisible` | Yes | Yes | N/A | Yes |
 | Materials | `Mesh.material`, `Material.name` | Yes | Concrete public props | Derived from meshes | Common fields plus verified PBR-like props |
-| Textures | Public PBR/Standard material `Texture2D` slots | Yes | No | Derived from mesh materials | Read-only derived section |
+| Textures | Public PBR/Standard material `Texture2D` slots | Metadata only | No reliable runtime write path | Derived from mesh materials | Read-only metadata; no preview or source URL |
 | Draw calls | `EngineContext.drawCallCount` | Yes | No | N/A | Yes |
 | GPU frame time | `EngineContext.gpuFrameTimeMs`, `isGpuTimingSupported`, `setGpuTimingEnabled` | Yes | Opt-in | N/A | Display only; explorer never opts in by default |
 | Render lifecycle | `onBeforeRender(SceneContext, callback)` | Yes | Registration has no documented removal handle | N/A | Not used in MVP lifecycle |
@@ -35,7 +35,10 @@ Audited from `node_modules/@babylonjs/lite/index.d.ts` on 2026-06-20. The packag
 ## Deliberately unsupported discovery
 
 - Textures are not globally enumerable through `SceneContext`; the official adapter derives referenced `Texture2D` values from documented material slots and deduplicates them by object identity.
+- `Texture2D` does not expose its original URL, source image, or pixels. The public GPU handles (`texture`, `view`, and `sampler`) are insufficient for a portable preview without a documented readback API, so the official adapter does not render texture thumbnails or inspect private loader metadata.
+- Texture UV fields and `invertY` are read-only in the official adapter. In Babylon Lite 1.2.0, `invertY` is consumed during upload and UV-transform shader support is compiled from loader-time feature flags; changing the public fields and rebuilding a material cannot reliably alter an existing renderable.
 - Transform nodes not reachable through a public camera/mesh child hierarchy are not discoverable.
+- The glTF loader preserves public transform-node names but assigns generated render meshes names such as `gltf_mesh_0`. It does not retain the original glTF `mesh.name` on the public `Mesh`, so the official adapter cannot recover that exact name; callers may use the named parent transform as a node-level label.
 - Concrete light and material kinds are not inferred from private tags or constructors.
 - Frame graph and render tasks are not included until their public enumeration/lifecycle surface is separately audited.
 

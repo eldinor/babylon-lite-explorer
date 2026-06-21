@@ -1128,7 +1128,7 @@ showLiteExplorer({ engine, scene, canvas });
 
 ### Phase 5: Advanced panels
 
-- Texture preview.
+- Texture preview only after Babylon Lite exposes public source-image/URL metadata or a documented pixel-readback API.
 - Material preview.
 - JSON viewer.
 - Animation controls.

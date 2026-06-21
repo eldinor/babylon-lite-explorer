@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { createOfficialLiteSceneAdapter } from "../src/adapter/official/createOfficialLiteSceneAdapter";
 import { findEntityById } from "../src/signals/treeUtils";
 import { fakeScene } from "./helpers";
@@ -87,6 +87,30 @@ describe("official adapter", () => {
     expect(await createOfficialLiteSceneAdapter().getSceneTree({ scene: {}, engine: {} })).toEqual([]);
   });
 
+  it("updates render visibility through the public subtree API", async () => {
+    const data = fakeScene();
+    const child = {
+      ...data.mesh,
+      id: "child-id",
+      name: "Child",
+      children: [],
+      position: { ...data.mesh.position },
+      rotation: { ...data.mesh.rotation },
+      scaling: { ...data.mesh.scaling },
+      parent: data.mesh,
+      visible: true
+    };
+    data.mesh.children.push(child as never);
+    const context = { scene: data.scene, engine: {} };
+    const adapter = createOfficialLiteSceneAdapter();
+    const tree = await adapter.getSceneTree(context);
+    const entity = tree[0].children?.find((item) => item.label === "Nodes")?.children?.find((item) => item.kind === "mesh");
+
+    expect((await adapter.setProperty?.(entity!, "visible", false, context))?.ok).toBe(true);
+    expect(data.mesh.visible).toBe(false);
+    expect(child.visible).toBe(false);
+  });
+
   it("edits verified public PBR factors and clamps channels", async () => {
     const data = fakeScene();
     Object.assign(data.material, { baseColorFactor: [1, 0, 0, 1], metallicFactor: 0.2, roughnessFactor: 0.4, alpha: 1 });
@@ -133,6 +157,7 @@ describe("official adapter", () => {
     const properties = await adapter.getProperties(textures![0], context);
     expect(properties.find((item) => item.path === "width")).toMatchObject({ value: 1024, readonly: true });
     expect(properties.find((item) => item.path === "usages")).toMatchObject({ value: "Red / baseColorTexture, Red / ormTexture" });
+    expect(properties.find((item) => item.path === "invertY")).toMatchObject({ value: true, readonly: true });
     expect(await adapter.getEntitySnapshot?.(textures![0], context)).toEqual({
       ok: true,
       value: {
@@ -147,6 +172,77 @@ describe("official adapter", () => {
         invertY: true
       }
     });
+  });
+
+  it("uses public animation names and exposes playback properties", async () => {
+    const data = fakeScene();
+    data.scene.animationGroups.push({
+      name: "Swim",
+      duration: 2.5,
+      currentFrame: 42,
+      isPlaying: true,
+      speedRatio: 1.25,
+      loopAnimation: true,
+      weight: 1
+    } as never);
+    const context = { scene: data.scene, engine: {} };
+    const adapter = createOfficialLiteSceneAdapter();
+    const tree = await adapter.getSceneTree(context);
+    const animation = tree[0].children?.find((item) => item.label === "Animation Groups")?.children?.[0];
+
+    expect(animation?.label).toBe("Swim");
+    expect(await adapter.getProperties(animation!, context)).toEqual(expect.arrayContaining([
+      expect.objectContaining({ path: "name", value: "Swim" }),
+      expect.objectContaining({ path: "duration", value: 2.5, readonly: true }),
+      expect.objectContaining({ path: "currentTime", value: 42, readonly: true }),
+      expect.objectContaining({ path: "currentFrame", value: 2520, readonly: true }),
+      expect.objectContaining({ path: "isPlaying", value: true, readonly: true }),
+      expect.objectContaining({ path: "speedRatio", value: 1.25, readonly: true }),
+      expect.objectContaining({ path: "loopAnimation", value: true, readonly: true })
+    ]));
+  });
+
+  it("plays one animation from the start and stops the others", async () => {
+    const now = vi.spyOn(performance, "now").mockReturnValue(1_000);
+    const data = fakeScene();
+    const first = { name: "Idle", duration: 2, currentFrame: 1, isPlaying: true, speedRatio: 1, loopAnimation: true, weight: 1 };
+    const second = { name: "Swim", duration: 3, currentFrame: 2, isPlaying: false, speedRatio: 1, loopAnimation: true, weight: 1 };
+    data.scene.animationGroups.push(first as never, second as never);
+    const context = { scene: data.scene, engine: {} };
+    const adapter = createOfficialLiteSceneAdapter();
+    const tree = await adapter.getSceneTree(context);
+    const animations = tree[0].children?.find((item) => item.label === "Animation Groups")?.children;
+    const idle = animations?.find((item) => item.label === "Idle");
+    const animation = animations?.find((item) => item.label === "Swim");
+
+    expect((await adapter.playAnimationGroup?.(animation!, context))?.ok).toBe(true);
+    expect(first).toMatchObject({ isPlaying: false, currentFrame: 0 });
+    expect(second).toMatchObject({ isPlaying: true, currentFrame: 0 });
+    now.mockReturnValue(1_500);
+    expect((await adapter.getProperties(idle!, context)).find((item) => item.path === "currentTime")?.value).toBe(0);
+    expect((await adapter.getProperties(animation!, context)).find((item) => item.path === "currentTime")?.value).toBe(0.5);
+    expect((await adapter.stopAnimationGroup?.(animation!, context))?.ok).toBe(true);
+    expect(second).toMatchObject({ isPlaying: false, currentFrame: 0 });
+    now.mockRestore();
+  });
+
+  it("tracks live playback when Babylon Lite leaves public currentFrame at zero", async () => {
+    const now = vi.spyOn(performance, "now").mockReturnValue(1_000);
+    const data = fakeScene();
+    const group = { name: "Swim", duration: 3, frameRate: 60, currentFrame: 0, isPlaying: true, speedRatio: 1, loopAnimation: true, weight: 1 };
+    data.scene.animationGroups.push(group as never);
+    const context = { scene: data.scene, engine: {} };
+    const adapter = createOfficialLiteSceneAdapter();
+    const tree = await adapter.getSceneTree(context);
+    const animation = tree[0].children?.find((item) => item.label === "Animation Groups")?.children?.[0];
+
+    await adapter.getProperties(animation!, context);
+    now.mockReturnValue(1_500);
+    const properties = await adapter.getProperties(animation!, context);
+
+    expect(properties.find((item) => item.path === "currentTime")?.value).toBe(0.5);
+    expect(properties.find((item) => item.path === "currentFrame")?.value).toBe(30);
+    now.mockRestore();
   });
 
   it("handles a larger public mesh collection", async () => {

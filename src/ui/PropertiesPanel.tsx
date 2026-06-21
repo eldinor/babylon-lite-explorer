@@ -1,10 +1,16 @@
+import { useEffect } from "preact/hooks";
 import { PropertyEditor } from "./PropertyEditor";
 import { propertyValueToClipboardText } from "./propertyClipboard";
 import { useExplorerRuntime } from "./runtime";
 
 export function PropertiesPanel() {
-  const { signals, notifications } = useExplorerRuntime();
+  const { signals, notifications, refresh } = useExplorerRuntime();
   const entity = signals.selectedEntity.value;
+  useEffect(() => {
+    if (entity?.kind !== "animationGroup") return;
+    const timer = setInterval(() => { void refresh.refreshProperties(); }, 100);
+    return () => clearInterval(timer);
+  }, [entity?.id, refresh]);
   if (!entity) return <div class="ble-empty">Select an entity to inspect its public properties.</div>;
   const groups = new Map<string, typeof signals.properties.value>();
   for (const descriptor of signals.properties.value) {
@@ -14,7 +20,7 @@ export function PropertiesPanel() {
   return <div class="ble-properties">
     <div class="ble-selection-title">{entity.label}</div>
     {[...groups].map(([section, descriptors]) => <section class="ble-property-section" key={section}>
-      <h3>{section}</h3>
+      <h3>{section}{section === "Playback" && descriptors.some((descriptor) => descriptor.path === "isPlaying" && descriptor.value === true) && <span class="ble-playing-status">Playing</span>}</h3>
       {descriptors.map((descriptor) => <div class="ble-property-row" key={descriptor.path}>
         <label title={descriptor.path}>{descriptor.label}</label>
         <div class="ble-property-control"><PropertyEditor descriptor={descriptor} /></div>

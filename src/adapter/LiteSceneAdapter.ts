@@ -20,6 +20,7 @@ export type LiteEntityCapabilities = {
   focusable: boolean;
   visibilityToggle: boolean;
   serializableSnapshot: boolean;
+  animationPlayback?: boolean;
 };
 
 export type LiteEntity = {
@@ -60,6 +61,8 @@ export type LiteSceneAdapter = {
   getStats?(context: LiteExplorerContext): LiteStats | Promise<LiteStats>;
   focusEntity?(entity: LiteEntity, context: LiteExplorerContext): AdapterResult | Promise<AdapterResult>;
   setEntityVisible?(entity: LiteEntity, visible: boolean, context: LiteExplorerContext): AdapterResult | Promise<AdapterResult>;
+  playAnimationGroup?(entity: LiteEntity, context: LiteExplorerContext): AdapterResult | Promise<AdapterResult>;
+  stopAnimationGroup?(entity: LiteEntity, context: LiteExplorerContext): AdapterResult | Promise<AdapterResult>;
   getEntitySnapshot?(entity: LiteEntity, context: LiteExplorerContext): AdapterResult<unknown> | Promise<AdapterResult<unknown>>;
   pickEntityId?(x: number, y: number, context: LiteExplorerContext): AdapterResult<string | null> | Promise<AdapterResult<string | null>>;
   dispose?(): void;

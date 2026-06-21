@@ -46,7 +46,7 @@ For every explorer feature, record:
 | Meshes/surfaces | To verify | — | — | — | |
 | Lights | To verify | — | — | — | |
 | Materials | To verify | — | — | — | |
-| Textures | To verify | — | — | — | |
+| Textures | Material `Texture2D` slots and public `Texture2D` metadata | Yes, metadata only | No reliable runtime write path in 1.2.0 | Derived from mesh materials | No source URL/image, pixel readback, or preview; UV fields and `invertY` remain read-only |
 | Transforms | To verify | — | — | — | |
 | Visibility | To verify | — | — | — | |
 | Statistics | To verify | — | — | — | |
@@ -773,3 +773,5 @@ Extensions                Post-MVP
 ```
 
 The explorer should be honest about what the public API exposes. A smaller explorer with explicit limitations is preferable to a seemingly capable explorer coupled to private engine internals.
+
+For Babylon Lite 1.2.0 textures, this means listing public dimensions, usage, and UV metadata without editable controls or previews. `invertY` is consumed during upload, and UV-transform shader features are fixed by loader-time flags that the public API cannot add or invalidate after material creation.

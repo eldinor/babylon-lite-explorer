@@ -1,6 +1,7 @@
 import type { ComponentChildren } from "preact";
 import { Fragment } from "preact";
 import { useRef } from "preact/hooks";
+import bpLogoUrl from "../assets/bplogo.svg";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { useExplorerRuntime } from "./runtime";
 
@@ -134,7 +135,9 @@ function SelectionBar() {
   const actionLabels: Record<string, string> = {
     "copy-entity-snapshot": "Copy",
     "toggle-visible": "Visible",
-    "focus-selected": "Focus"
+    "focus-selected": "Focus",
+    "play-animation": "PLAY",
+    "stop-animation": "STOP"
   };
   const actions = selected ? commands.list(selected).filter((command) => command.id in actionLabels) : [];
   const run = async (id: string) => {
@@ -158,7 +161,10 @@ function StatusBar({ left, right }: { left: ComponentChildren; right: ComponentC
     stats.meshCount !== undefined && `Meshes ${stats.meshCount}`,
     stats.lightCount !== undefined && `Lights ${stats.lightCount}`
   ].filter(Boolean);
-  return <footer class="ble-status"><span class="ble-status-zone">{left}{items.length ? items.map((item) => <span key={String(item)}>{item}</span>) : <span>Ready</span>}</span><span class="ble-status-zone">{right}</span></footer>;
+  return <footer class="ble-status">
+    <span class="ble-status-zone">{left}{items.length ? items.map((item) => <span key={String(item)}>{item}</span>) : <span>Ready</span>}</span>
+    <span class="ble-status-zone">{right}<a class="ble-footer-logo" href="https://babylonpress.org/" target="_blank" rel="noreferrer" title="Created by BabylonPress"><img src={bpLogoUrl} alt="BabylonPress" /></a></span>
+  </footer>;
 }
 
 function Notifications() {

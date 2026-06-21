@@ -13,6 +13,11 @@ type FlatTreeRow = {
   setSize: number;
 };
 
+function isPlayingAnimation(entity: LiteEntity): boolean {
+  if (entity.kind !== "animationGroup" || !entity.source || typeof entity.source !== "object") return false;
+  return "isPlaying" in entity.source && (entity.source as { isPlaying?: unknown }).isPlaying === true;
+}
+
 function flattenVisibleTree(tree: readonly LiteEntity[], expanded: ReadonlySet<string>, expandAll: boolean): FlatTreeRow[] {
   const rows: FlatTreeRow[] = [];
   const visit = (entities: readonly LiteEntity[], level: number, parentId: string | null) => {
@@ -74,6 +79,7 @@ export function SceneExplorer() {
           const expanded = expandAll || signals.expandedIds.value.has(entity.id);
           const selected = signals.selectedEntityId.value === entity.id;
           const hasChildren = !!entity.children?.length;
+          const playing = isPlayingAnimation(entity);
           return <div
             class={`ble-tree-row${selected ? " is-selected" : ""}`}
             role="treeitem"
@@ -101,7 +107,7 @@ export function SceneExplorer() {
                   else if (row.parentId) { event.preventDefault(); focusRow(rows.findIndex((candidate) => candidate.entity.id === row.parentId)); }
                 }
               }}
-            ><span class={`ble-kind ble-kind-${entity.kind}`} aria-hidden="true" />{entity.label}</button>
+            ><span class={`ble-kind ble-kind-${entity.kind}${playing ? " is-playing" : ""}`} aria-hidden="true" />{entity.label}</button>
           </div>;
         })}
       </div>

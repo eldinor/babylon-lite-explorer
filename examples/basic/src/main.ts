@@ -9,6 +9,7 @@ import {
   createSceneContext,
   createSolidTexture2D,
   createSphere,
+  loadEnvironment,
   registerScene,
   startEngine,
 } from "@babylonjs/lite";
@@ -21,6 +22,11 @@ const camera = createArcRotateCamera(-Math.PI / 2, Math.PI / 2.5, 4, { x: 0, y: 
 scene.camera = camera;
 attachControl(camera, canvas, scene);
 addToScene(scene, createHemisphericLight([0, 1, 0], 1));
+
+await loadEnvironment(scene, "https://assets.babylonjs.com/core/environments/environmentSpecular.env", {
+  brdfUrl: "/brdf-lut.png",
+});
+
 const sphere = createSphere(engine, { segments: 16, diameter: 2 });
 sphere.name = "Sphere";
 sphere.position.x = -1.25;
