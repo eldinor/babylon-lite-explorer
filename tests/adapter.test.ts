@@ -35,6 +35,57 @@ describe("official adapter", () => {
     expect(secondIds).toEqual(firstIds);
   });
 
+  it("exposes and edits public properties for each camera type", async () => {
+    const base = {
+      fov: 0.8,
+      nearPlane: 0.1,
+      farPlane: 100,
+      viewport: { x: 0, y: 0, width: 1, height: 1 },
+      children: [],
+      worldMatrix: { length: 16 },
+      worldMatrixVersion: 1,
+      parent: null
+    };
+    const cases = [
+      {
+        camera: { ...base, alpha: 0.2, beta: 1, radius: 5, target: { x: 0, y: 0, z: 0 }, inertia: 0.9, panningInertia: 0.8, lowerRadiusLimit: 2 },
+        expected: ["alpha", "beta", "radius", "target", "inertia", "panningInertia", "lowerRadiusLimit"],
+        edits: [["target", [1, 2, 3]], ["radius", 8], ["inertia", 2]] as const
+      },
+      {
+        camera: { ...base, position: { x: 1, y: 2, z: 3 }, target: { x: 0, y: 0, z: 0 }, speed: 2, angularSensitivity: 2000, inertia: 0.9 },
+        expected: ["position", "target", "speed", "angularSensitivity", "inertia"],
+        edits: [["position", [4, 5, 6]], ["speed", 3]] as const
+      },
+      {
+        camera: {
+          ...base,
+          center: { x: 10, y: 0, z: 0 }, yaw: 0, pitch: 0.5, radius: 20,
+          position: { x: 30, y: 0, z: 0 }, upVector: { x: 1, y: 0, z: 0 },
+          limits: { planetRadius: 10, radiusMin: 11, radiusMax: 50, pitchMin: 0, pitchMax: 1.5, yawMin: -Infinity, yawMax: Infinity, pitchDisabledRadiusScale: null }
+        },
+        expected: ["center", "yaw", "pitch", "radius", "position", "upVector", "limits.radiusMin", "limits.pitchMax"],
+        edits: [["center", [0, 10, 0]], ["yaw", 1], ["limits.radiusMin", 12]] as const
+      }
+    ];
+
+    for (const item of cases) {
+      const data = fakeScene();
+      (data.scene as { camera: unknown }).camera = item.camera;
+      const context = { scene: data.scene, engine: {} };
+      const adapter = createOfficialLiteSceneAdapter();
+      const tree = await adapter.getSceneTree(context);
+      const entity = tree[0].children?.find((section) => section.label === "Nodes")?.children?.find((node) => node.kind === "camera")!;
+      const paths = (await adapter.getProperties(entity, context)).map((property) => property.path);
+      expect(paths).toEqual(expect.arrayContaining(["viewport.width", ...item.expected]));
+      for (const [path, value] of item.edits) expect((await adapter.setProperty?.(entity, path, value, context))?.ok).toBe(true);
+    }
+
+    expect(cases[0].camera).toMatchObject({ target: { x: 1, y: 2, z: 3 }, radius: 8, inertia: 1 });
+    expect(cases[1].camera).toMatchObject({ position: { x: 4, y: 5, z: 6 }, speed: 3 });
+    expect(cases[2].camera).toMatchObject({ center: { x: 0, y: 10, z: 0 }, yaw: 1, limits: { radiusMin: 12 } });
+  });
+
   it("reconstructs public transform ancestors above scene meshes", async () => {
     const data = fakeScene();
     const root = {

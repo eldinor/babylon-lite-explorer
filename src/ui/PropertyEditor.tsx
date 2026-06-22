@@ -2,9 +2,22 @@ import { useEffect, useState } from "preact/hooks";
 import type { PropertyDescriptor } from "../adapter/propertyDescriptors";
 import { useExplorerRuntime } from "./runtime";
 
+export function formatEditorNumber(value: number, step?: number): string {
+  if (!Number.isFinite(value)) return String(value);
+  const stepDecimals = step && step < 1
+    ? Math.min(8, Math.max(0, Math.ceil(-Math.log10(step))))
+    : 0;
+  const decimals = Math.max(3, stepDecimals);
+  if (value !== 0 && Math.abs(value) < 10 ** -decimals) return String(Number(value.toPrecision(3)));
+  return String(Number(value.toFixed(decimals)));
+}
+
 export function PropertyEditor({ descriptor }: { descriptor: PropertyDescriptor }) {
   const { refresh } = useExplorerRuntime();
-  if (descriptor.kind === "readonly" || descriptor.readonly) return <span class="ble-readonly" title={String(descriptor.value)}>{String(descriptor.value)}</span>;
+  if (descriptor.kind === "readonly" || descriptor.readonly) {
+    const displayed = descriptor.kind === "number" ? formatEditorNumber(descriptor.value, descriptor.step) : String(descriptor.value);
+    return <span class="ble-readonly" title={String(descriptor.value)}>{displayed}</span>;
+  }
   if (descriptor.kind === "boolean") return <input type="checkbox" checked={descriptor.value} onChange={(event) => void refresh.setProperty(descriptor, event.currentTarget.checked)} />;
   if (descriptor.kind === "vector3" || descriptor.kind === "color3" || descriptor.kind === "color4") return <TupleEditor descriptor={descriptor} />;
   if (descriptor.kind === "number") return <ScalarEditor descriptor={descriptor} />;
@@ -27,8 +40,8 @@ function TextEditor({ descriptor }: { descriptor: Extract<PropertyDescriptor, { 
 
 function ScalarEditor({ descriptor }: { descriptor: Extract<PropertyDescriptor, { kind: "number" }> }) {
   const { refresh } = useExplorerRuntime();
-  const [value, setValue] = useState(String(descriptor.value));
-  useEffect(() => setValue(String(descriptor.value)), [descriptor.value]);
+  const [value, setValue] = useState(formatEditorNumber(descriptor.value, descriptor.step));
+  useEffect(() => setValue(formatEditorNumber(descriptor.value, descriptor.step)), [descriptor.value, descriptor.step]);
   return <input type="number" value={value} min={descriptor.min} max={descriptor.max} step={descriptor.step} onInput={(event) => {
     const next = event.currentTarget.value;
     setValue(next);
@@ -36,14 +49,14 @@ function ScalarEditor({ descriptor }: { descriptor: Extract<PropertyDescriptor, 
     if (next !== "" && Number.isFinite(parsed) && parsed !== descriptor.value) void refresh.setProperty(descriptor, parsed);
   }} onKeyDown={(event) => {
     if (event.key === "Enter") event.currentTarget.blur();
-    if (event.key === "Escape") { setValue(String(descriptor.value)); void refresh.setProperty(descriptor, descriptor.value); event.currentTarget.blur(); }
+    if (event.key === "Escape") { setValue(formatEditorNumber(descriptor.value, descriptor.step)); void refresh.setProperty(descriptor, descriptor.value); event.currentTarget.blur(); }
   }} />;
 }
 
 function TupleEditor({ descriptor }: { descriptor: Extract<PropertyDescriptor, { kind: "vector3" | "color3" | "color4" }> }) {
   const { refresh } = useExplorerRuntime();
-  const [values, setValues] = useState(() => descriptor.value.map(String));
-  useEffect(() => setValues(descriptor.value.map(String)), [descriptor.value]);
+  const [values, setValues] = useState(() => descriptor.value.map((value) => formatEditorNumber(value, 0.01)));
+  useEffect(() => setValues(descriptor.value.map((value) => formatEditorNumber(value, 0.01))), [descriptor.value]);
   return <div class="ble-tuple">{values.map((value, index) => <input key={index} aria-label={`${descriptor.label} ${"XYZW"[index]}`} type="number" step="0.01" value={value} onInput={(event) => {
     const next = [...values];
     next[index] = event.currentTarget.value;
@@ -52,6 +65,6 @@ function TupleEditor({ descriptor }: { descriptor: Extract<PropertyDescriptor, {
     if (next.every((part) => part !== "") && tuple.every(Number.isFinite)) void refresh.setProperty(descriptor, tuple);
   }} onKeyDown={(event) => {
     if (event.key === "Enter") event.currentTarget.blur();
-    if (event.key === "Escape") { setValues(descriptor.value.map(String)); void refresh.setProperty(descriptor, [...descriptor.value]); event.currentTarget.blur(); }
+    if (event.key === "Escape") { setValues(descriptor.value.map((value) => formatEditorNumber(value, 0.01))); void refresh.setProperty(descriptor, [...descriptor.value]); event.currentTarget.blur(); }
   }} />)}</div>;
 }

@@ -7,7 +7,6 @@ import {
   createHemisphericLight,
   createPbrMaterial,
   createSceneContext,
-  createSolidTexture2D,
   createSphere,
   loadEnvironment,
   registerScene,
@@ -30,20 +29,13 @@ await loadEnvironment(scene, "https://assets.babylonjs.com/core/environments/env
 const sphere = createSphere(engine, { segments: 16, diameter: 2 });
 sphere.name = "Sphere";
 sphere.position.x = -1.25;
-const sphereMaterial = createPbrMaterial();
-// Babylon Lite 1.2.0 predates the lazy fallback textures now present upstream.
-// Supply neutral textures until that fix reaches a published release.
-sphereMaterial.baseColorTexture = createSolidTexture2D(engine, 1, 1, 1, 1);
-sphereMaterial.ormTexture = createSolidTexture2D(engine, 1, 1, 1, 1);
-sphere.material = sphereMaterial;
+sphere.material = createPbrMaterial();
 addToScene(scene, sphere);
 
 const box = createBox(engine, 1.5);
 box.name = "Blue box";
 box.position.x = 1.25;
 box.material = createPbrMaterial({
-  baseColorTexture: createSolidTexture2D(engine, 1, 1, 1, 1),
-  ormTexture: createSolidTexture2D(engine, 1, 1, 1, 1),
   baseColorFactor: [0.05, 0.25, 0.95, 1],
   metallicFactor: 0.1,
   roughnessFactor: 0.35,

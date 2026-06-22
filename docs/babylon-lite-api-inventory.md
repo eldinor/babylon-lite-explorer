@@ -1,12 +1,14 @@
-# Babylon Lite 1.2.0 Public API Inventory
+# Babylon Lite 1.3.0 Public API Inventory
 
-Audited from `node_modules/@babylonjs/lite/index.d.ts` on 2026-06-20. The package exports one public root entry point (`@babylonjs/lite`). Re-audit this file when upgrading the peer dependency.
+Audited from `node_modules/@babylonjs/lite/index.d.ts` on 2026-06-22. The package exports one public root entry point (`@babylonjs/lite`). Re-audit this file when upgrading the peer dependency.
 
 | Explorer feature | Verified public surface | Read | Write | Enumerate | MVP support |
 |---|---|---:|---:|---:|---|
 | Scene | `SceneContext` | Yes | Limited | N/A | Yes |
-| Camera | `SceneContext.camera`, `Camera` | Yes | `fov`, `nearPlane`, `farPlane` | One | Yes |
-| Arc camera fields | `ArcRotateCamera` | Yes | Public fields | One | Read-only until explicitly registered as arc camera |
+| Camera | `SceneContext.camera`, `Camera` | Yes | `fov`, `nearPlane`, `farPlane`, optional viewport; see projection-cache limitation below | One | Yes, with upstream limitation |
+| Arc camera fields | `ArcRotateCamera` | Yes | Orbit, target, inertia, and defined limit fields | Structurally identified | Yes |
+| Free camera fields | `FreeCamera` | Yes | Position, target, speed, sensitivity, and inertia | Structurally identified | Yes |
+| Geospatial camera fields | `GeospatialCamera` | Yes | Center, yaw, pitch, radius, and finite limits; derived vectors read-only | Structurally identified | Yes |
 | Meshes | `SceneContext.meshes`, `Mesh` | Yes | Public node fields | Yes | Yes |
 | Lights | `SceneContext.lights`, `LightBase` | Yes | Type-specific fields require explicit knowledge | Yes | Base read-only |
 | Animation groups | `SceneContext.animationGroups` | Yes | Not audited | Yes | Read-only summary |
@@ -29,14 +31,16 @@ Audited from `node_modules/@babylonjs/lite/index.d.ts` on 2026-06-20. The packag
 - `SceneNode.name`, `children`, `position`, `rotation`, `scaling`, and `visible`
 - `Mesh.id`, `material`, `thinInstances`, and `receiveShadows`
 - `Material.name`
-- `Camera.fov`, `nearPlane`, and `farPlane`
+- `Camera.fov`, `nearPlane`, `farPlane`, and `viewport`
+- Documented `ArcRotateCamera`, `FreeCamera`, and `GeospatialCamera` fields when their complete public shape is present
 - `EngineContext.drawCallCount` and `gpuFrameTimeMs`
 
 ## Deliberately unsupported discovery
 
+- Babylon Lite 1.3.0 does not publicly invalidate the cached projection matrix when `Camera.fov`, `nearPlane`, or `farPlane` changes. `getProjectionMatrix()` reuses its cache while `worldMatrixVersion` and the aspect ratio remain unchanged, so a public assignment may not affect rendering until camera movement or an aspect-ratio change invalidates the cache. The official adapter deliberately does not write the private `_projVer`, `_vpVer`, or other underscore-prefixed cache fields.
 - Textures are not globally enumerable through `SceneContext`; the official adapter derives referenced `Texture2D` values from documented material slots and deduplicates them by object identity.
 - `Texture2D` does not expose its original URL, source image, or pixels. The public GPU handles (`texture`, `view`, and `sampler`) are insufficient for a portable preview without a documented readback API, so the official adapter does not render texture thumbnails or inspect private loader metadata.
-- Texture UV fields and `invertY` are read-only in the official adapter. In Babylon Lite 1.2.0, `invertY` is consumed during upload and UV-transform shader support is compiled from loader-time feature flags; changing the public fields and rebuilding a material cannot reliably alter an existing renderable.
+- Texture UV fields and `invertY` remain read-only in the official adapter. Babylon Lite 1.3.0 documents them as build-time fields: changing them after pipeline compilation requires a material rebuild, but no general public rebuild operation is exposed by the API used here.
 - Transform nodes not reachable through a public camera/mesh child hierarchy are not discoverable.
 - The glTF loader preserves public transform-node names but assigns generated render meshes names such as `gltf_mesh_0`. It does not retain the original glTF `mesh.name` on the public `Mesh`, so the official adapter cannot recover that exact name; callers may use the named parent transform as a node-level label.
 - Concrete light and material kinds are not inferred from private tags or constructors.

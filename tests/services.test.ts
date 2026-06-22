@@ -3,10 +3,18 @@ import { createExplorerSignals } from "../src/signals/createExplorerSignals";
 import { NotificationService } from "../src/services/notificationService";
 import { RefreshController } from "../src/services/refreshController";
 import { ShellService } from "../src/services/shellService";
+import { formatEditorNumber } from "../src/ui/PropertyEditor";
 
 const capabilities = { editable: false, focusable: false, visibilityToggle: false, serializableSnapshot: false };
 
 describe("services", () => {
+  it("formats editor numbers with readable precision", () => {
+    expect(formatEditorNumber(2.499361165785293)).toBe("2.499");
+    expect(formatEditorNumber(-12.34567)).toBe("-12.346");
+    expect(formatEditorNumber(0.0001, 0.0001)).toBe("0.0001");
+    expect(formatEditorNumber(0.000012345)).toBe("0.0000123");
+  });
+
   it("auto-dismisses notifications after the configured duration", () => {
     vi.useFakeTimers();
     const signals = createExplorerSignals();

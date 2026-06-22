@@ -3,8 +3,11 @@ import {
   setSubtreeVisible,
   stopAnimation,
   type AnimationGroup,
+  type ArcRotateCamera,
   type Camera,
   type EngineContext,
+  type FreeCamera,
+  type GeospatialCamera,
   type GpuPicker,
   type LightBase,
   type Material,
@@ -107,6 +110,39 @@ function collectPublicMaterialTextures(material: Material): TextureUsage[] {
 
 function asTuple3(value: { x: number; y: number; z: number }): readonly [number, number, number] {
   return [value.x, value.y, value.z];
+}
+
+function isVec3(value: unknown): value is { x: number; y: number; z: number } {
+  if (!value || typeof value !== "object") return false;
+  const vector = value as Record<string, unknown>;
+  return typeof vector.x === "number" && typeof vector.y === "number" && typeof vector.z === "number";
+}
+
+function isArcRotateCamera(camera: Camera): camera is ArcRotateCamera {
+  const value = camera as Camera & Record<string, unknown>;
+  return typeof value.alpha === "number" && typeof value.beta === "number"
+    && typeof value.radius === "number" && isVec3(value.target)
+    && typeof value.inertia === "number" && typeof value.panningInertia === "number";
+}
+
+function isFreeCamera(camera: Camera): camera is FreeCamera {
+  const value = camera as Camera & Record<string, unknown>;
+  return isVec3(value.position) && isVec3(value.target)
+    && typeof value.speed === "number" && typeof value.angularSensitivity === "number"
+    && typeof value.inertia === "number";
+}
+
+function isGeospatialCamera(camera: Camera): camera is GeospatialCamera {
+  const value = camera as Camera & Record<string, unknown>;
+  return isVec3(value.center) && typeof value.yaw === "number" && typeof value.pitch === "number"
+    && typeof value.radius === "number" && isVec3(value.position) && isVec3(value.upVector)
+    && !!value.limits && typeof value.limits === "object";
+}
+
+function setVector(target: { x: number; y: number; z: number }, value: readonly [number, number, number]): void {
+  const observable = target as typeof target & { set?: (x: number, y: number, z: number) => void };
+  if (typeof observable.set === "function") observable.set(value[0], value[1], value[2]);
+  else Object.assign(target, { x: value[0], y: value[1], z: value[2] });
 }
 
 function section(id: string, label: string, children: LiteEntity[]): LiteEntity {
@@ -299,6 +335,71 @@ export function createOfficialLiteSceneAdapter(): LiteSceneAdapter {
     { kind: "vector3", path: "scaling", label: "Scaling", value: asTuple3(node.scaling), section: "Transform" }
   ];
 
+  const cameraProperties = (camera: Camera): PropertyDescriptor[] => {
+    const values: PropertyDescriptor[] = [
+      { kind: "number", path: "fov", label: "Field of view", value: camera.fov, min: 0.01, max: Math.PI, step: 0.01, section: "Camera" },
+      { kind: "number", path: "nearPlane", label: "Near plane", value: camera.nearPlane, min: 0.0001, step: 0.01, section: "Camera" },
+      { kind: "number", path: "farPlane", label: "Far plane", value: camera.farPlane, min: 0.001, step: 1, section: "Camera" }
+    ];
+    if (camera.viewport) {
+      values.push(
+        { kind: "number", path: "viewport.x", label: "X", value: camera.viewport.x, min: 0, max: 1, step: 0.01, section: "Viewport" },
+        { kind: "number", path: "viewport.y", label: "Y", value: camera.viewport.y, min: 0, max: 1, step: 0.01, section: "Viewport" },
+        { kind: "number", path: "viewport.width", label: "Width", value: camera.viewport.width, min: 0, max: 1, step: 0.01, section: "Viewport" },
+        { kind: "number", path: "viewport.height", label: "Height", value: camera.viewport.height, min: 0, max: 1, step: 0.01, section: "Viewport" }
+      );
+    }
+    if (isArcRotateCamera(camera)) {
+      values.unshift({ kind: "readonly", path: "$cameraType", label: "Type", value: "Arc rotate", section: "Camera" });
+      values.push(
+        { kind: "number", path: "alpha", label: "Alpha", value: camera.alpha, step: 0.01, section: "Orbit" },
+        { kind: "number", path: "beta", label: "Beta", value: camera.beta, step: 0.01, section: "Orbit" },
+        { kind: "number", path: "radius", label: "Radius", value: camera.radius, min: 0.0001, step: 0.1, section: "Orbit" },
+        { kind: "vector3", path: "target", label: "Target", value: asTuple3(camera.target), section: "Orbit" },
+        { kind: "number", path: "inertia", label: "Inertia", value: camera.inertia, min: 0, max: 1, step: 0.01, section: "Controls" },
+        { kind: "number", path: "panningInertia", label: "Panning inertia", value: camera.panningInertia, min: 0, max: 1, step: 0.01, section: "Controls" }
+      );
+      const limits = [
+        ["lowerAlphaLimit", "Minimum alpha"], ["upperAlphaLimit", "Maximum alpha"],
+        ["lowerBetaLimit", "Minimum beta"], ["upperBetaLimit", "Maximum beta"],
+        ["lowerRadiusLimit", "Minimum radius"], ["upperRadiusLimit", "Maximum radius"]
+      ] as const;
+      for (const [path, label] of limits) if (typeof camera[path] === "number") {
+        values.push({ kind: "number", path, label, value: camera[path]!, step: 0.01, section: "Limits" });
+      }
+    } else if (isFreeCamera(camera)) {
+      values.unshift({ kind: "readonly", path: "$cameraType", label: "Type", value: "Free", section: "Camera" });
+      values.push(
+        { kind: "vector3", path: "position", label: "Position", value: asTuple3(camera.position), section: "Transform" },
+        { kind: "vector3", path: "target", label: "Target", value: asTuple3(camera.target), section: "Transform" },
+        { kind: "number", path: "speed", label: "Speed", value: camera.speed, min: 0, step: 0.1, section: "Controls" },
+        { kind: "number", path: "angularSensitivity", label: "Angular sensitivity", value: camera.angularSensitivity, min: 0.0001, step: 1, section: "Controls" },
+        { kind: "number", path: "inertia", label: "Inertia", value: camera.inertia, min: 0, max: 1, step: 0.01, section: "Controls" }
+      );
+    } else if (isGeospatialCamera(camera)) {
+      values.unshift({ kind: "readonly", path: "$cameraType", label: "Type", value: "Geospatial", section: "Camera" });
+      values.push(
+        { kind: "vector3", path: "center", label: "Center", value: asTuple3(camera.center), section: "Orbit" },
+        { kind: "number", path: "yaw", label: "Yaw", value: camera.yaw, step: 0.01, section: "Orbit" },
+        { kind: "number", path: "pitch", label: "Pitch", value: camera.pitch, step: 0.01, section: "Orbit" },
+        { kind: "number", path: "radius", label: "Radius", value: camera.radius, min: 0.0001, step: 1, section: "Orbit" },
+        { kind: "vector3", path: "position", label: "Position", value: asTuple3(camera.position), readonly: true, section: "Derived" },
+        { kind: "vector3", path: "upVector", label: "Up vector", value: asTuple3(camera.upVector), readonly: true, section: "Derived" }
+      );
+      const limits = [
+        ["radiusMin", "Minimum radius"], ["radiusMax", "Maximum radius"],
+        ["pitchMin", "Minimum pitch"], ["pitchMax", "Maximum pitch"],
+        ["yawMin", "Minimum yaw"], ["yawMax", "Maximum yaw"]
+      ] as const;
+      for (const [path, label] of limits) if (Number.isFinite(camera.limits[path])) {
+        values.push({ kind: "number", path: `limits.${path}`, label, value: camera.limits[path], step: 0.01, section: "Limits" });
+      }
+    } else {
+      values.unshift({ kind: "readonly", path: "$cameraType", label: "Type", value: "Camera", section: "Camera" });
+    }
+    return values;
+  };
+
   const getProperties = (entity: LiteEntity): PropertyDescriptor[] => {
     const source = entity.source;
     const base: PropertyDescriptor[] = [
@@ -310,11 +411,7 @@ export function createOfficialLiteSceneAdapter(): LiteSceneAdapter {
     if (knownKind === "mesh" || knownKind === "transform") return [...base, ...nodeProperties(source as SceneNode)];
     if (knownKind === "camera") {
       const camera = source as Camera;
-      return [...base,
-        { kind: "number", path: "fov", label: "Field of view", value: camera.fov, min: 0.01, max: Math.PI, step: 0.01, section: "Camera" },
-        { kind: "number", path: "nearPlane", label: "Near plane", value: camera.nearPlane, min: 0.0001, step: 0.01, section: "Camera" },
-        { kind: "number", path: "farPlane", label: "Far plane", value: camera.farPlane, min: 0.001, step: 1, section: "Camera" }
-      ];
+      return [...base, ...cameraProperties(camera)];
     }
     if (knownKind === "light") {
       const light = source as LightBase & { intensity?: number; direction?: SceneNode["position"]; position?: SceneNode["position"] };
@@ -400,6 +497,47 @@ export function createOfficialLiteSceneAdapter(): LiteSceneAdapter {
         if (path === "nearPlane") camera.nearPlane = Math.max(0.0001, value);
         if (path === "farPlane") camera.farPlane = Math.max(camera.nearPlane + 0.0001, value);
         return ok();
+      }
+      if (kind === "camera") {
+        const camera = source as Camera;
+        if (path.startsWith("viewport.") && camera.viewport && typeof value === "number" && Number.isFinite(value)) {
+          const field = path.slice("viewport.".length);
+          if (field !== "x" && field !== "y" && field !== "width" && field !== "height") return fail("invalid", `Invalid value for ${path}.`);
+          camera.viewport[field] = clamp01(value);
+          return ok();
+        }
+        if (isArcRotateCamera(camera)) {
+          if ((path === "alpha" || path === "beta") && typeof value === "number" && Number.isFinite(value)) camera[path] = value;
+          else if (path === "radius" && typeof value === "number" && Number.isFinite(value)) camera.radius = Math.max(0.0001, value);
+          else if (path === "target" && Array.isArray(value) && value.length === 3 && value.every(Number.isFinite)) camera.target = { x: value[0], y: value[1], z: value[2] };
+          else if ((path === "inertia" || path === "panningInertia") && typeof value === "number" && Number.isFinite(value)) camera[path] = clamp01(value);
+          else if (["lowerAlphaLimit", "upperAlphaLimit", "lowerBetaLimit", "upperBetaLimit", "lowerRadiusLimit", "upperRadiusLimit"].includes(path)
+            && typeof value === "number" && Number.isFinite(value)) {
+            (camera as ArcRotateCamera & Record<string, number | undefined>)[path] = value;
+          } else return fail("invalid", `Invalid value for ${path}.`);
+          return ok();
+        }
+        if (isFreeCamera(camera)) {
+          if ((path === "position" || path === "target") && Array.isArray(value) && value.length === 3 && value.every(Number.isFinite)) {
+            setVector(camera[path], value as [number, number, number]);
+          } else if (path === "speed" && typeof value === "number" && Number.isFinite(value)) camera.speed = Math.max(0, value);
+          else if (path === "angularSensitivity" && typeof value === "number" && Number.isFinite(value)) camera.angularSensitivity = Math.max(0.0001, value);
+          else if (path === "inertia" && typeof value === "number" && Number.isFinite(value)) camera.inertia = clamp01(value);
+          else return fail("invalid", `Invalid value for ${path}.`);
+          return ok();
+        }
+        if (isGeospatialCamera(camera)) {
+          if (path === "center" && Array.isArray(value) && value.length === 3 && value.every(Number.isFinite)) camera.center = { x: value[0], y: value[1], z: value[2] };
+          else if ((path === "yaw" || path === "pitch") && typeof value === "number" && Number.isFinite(value)) camera[path] = value;
+          else if (path === "radius" && typeof value === "number" && Number.isFinite(value)) camera.radius = Math.max(0.0001, value);
+          else if (path.startsWith("limits.") && typeof value === "number" && Number.isFinite(value)) {
+            const field = path.slice("limits.".length);
+            if (!(["radiusMin", "radiusMax", "pitchMin", "pitchMax", "yawMin", "yawMax"] as string[]).includes(field)) return fail("invalid", `Invalid value for ${path}.`);
+            (camera.limits as unknown as Record<string, number>)[field] = value;
+          } else return fail("invalid", `Invalid value for ${path}.`);
+          return ok();
+        }
+        return fail("unsupported", "This camera property is not available on a recognized public camera type.");
       }
       if (kind === "light") {
         const light = source as LightBase & { intensity?: number; direction?: SceneNode["position"]; position?: SceneNode["position"] };
