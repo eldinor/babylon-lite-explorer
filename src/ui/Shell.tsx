@@ -1,5 +1,4 @@
 import type { ComponentChildren } from "preact";
-import { Fragment } from "preact";
 import { useRef } from "preact/hooks";
 import bpLogoUrl from "../assets/bplogo.svg";
 import { ErrorBoundary } from "./ErrorBoundary";
@@ -27,22 +26,29 @@ export function Shell({ title }: { title: string }) {
     </section>;
   };
   const renderSingle = () => {
-    const stackedPanes = [...panes].sort((a, b) => {
-      const sideOrder = (a.side === "left" ? 0 : 1) - (b.side === "left" ? 0 : 1);
-      return sideOrder || (a.order ?? 0) - (b.order ?? 0) || a.key.localeCompare(b.key);
-    });
     const setPercent = (value: number) => {
       signals.singlePanePercent.value = value;
       try { localStorage.setItem("ble.singlePanePercent", String(value)); } catch { /* optional persistence */ }
     };
-    return <div class="ble-single-stack" style={{ gridTemplateRows: `${signals.singlePanePercent.value}% 5px minmax(0, 1fr)` }}>{stackedPanes.map((pane, index) => {
-        const Content = pane.content;
-        return <Fragment key={pane.key}>{index === 1 && <ResizeHandle axis="vertical" onChange={setPercent} />}
-        <section class={`ble-pane ble-pane-single ble-pane-single-${pane.side}`}>
-          <div class="ble-pane-heading"><span>{pane.title}</span>{pane.side === "left" && <PickingToggle />}</div>
-          <div class="ble-pane-content"><ErrorBoundary><Content /></ErrorBoundary></div>
-        </section></Fragment>;
-      })}</div>;
+    const renderSingleSide = (side: "left" | "right") => {
+      const choices = panes.filter((pane) => pane.side === side);
+      const selectedKey = signals.selectedPanes.value[side];
+      const selected = choices.find((pane) => pane.key === selectedKey) ?? choices[0];
+      return <section class={`ble-pane ble-pane-single ble-pane-single-${side}`}>
+        <div class="ble-tabs" role="tablist" aria-label={`${side} panels`}>{choices.map((pane) => <button type="button" role="tab" aria-selected={pane.key === selected?.key} onClick={() => shell.selectPane(pane.key)} key={pane.key}>{pane.title}</button>)}{side === "left" && <PickingToggle />}</div>
+        <div class="ble-pane-content">{choices.map((pane) => {
+          const active = pane.key === selected?.key;
+          if (!active && !pane.keepMounted) return null;
+          const Content = pane.content;
+          return <div role="tabpanel" hidden={!active} key={pane.key}><ErrorBoundary><Content /></ErrorBoundary></div>;
+        })}</div>
+      </section>;
+    };
+    return <div class="ble-single-stack" style={{ gridTemplateRows: `${signals.singlePanePercent.value}% 5px minmax(0, 1fr)` }}>
+      {renderSingleSide("left")}
+      <ResizeHandle axis="vertical" onChange={setPercent} />
+      {renderSingleSide("right")}
+    </div>;
   };
   if (signals.layout.value === "split") {
     return <div class="ble-split-shell">

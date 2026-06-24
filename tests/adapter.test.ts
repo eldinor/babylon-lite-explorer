@@ -39,7 +39,7 @@ describe("default adapter", () => {
       Node: "Node",
       Shader: "Shader",
       "PBR View": "PBR View",
-      Custom: "Custom / Other"
+      Custom: "Undetermined / Custom"
     });
   });
 
@@ -238,8 +238,9 @@ describe("default adapter", () => {
     const material = tree[0].children?.find((item) => item.label === "Materials")?.children?.[0];
     expect(material).toBeDefined();
     const properties = await adapter.getProperties(material!, context);
-    expect(properties.map((item) => item.path)).toContain("baseColorFactor");
+    expect(properties.map((item) => item.path)).toEqual(expect.arrayContaining(["baseColorFactor", "environmentIntensity"]));
     expect((await adapter.setProperty?.(material!, "baseColorFactor", [2, -1, 0.5, 1.5], context))?.ok).toBe(true);
+    expect((await adapter.setProperty?.(material!, "environmentIntensity", 1.75, context))?.ok).toBe(true);
     expect((data.material as typeof data.material & { baseColorFactor: number[] }).baseColorFactor).toEqual([1, 0, 0.5, 1]);
     expect(await adapter.getEntitySnapshot?.(material!, context)).toEqual({
       ok: true,
@@ -248,9 +249,32 @@ describe("default adapter", () => {
         baseColorFactor: [1, 0, 0.5, 1],
         metallicFactor: 0.2,
         roughnessFactor: 0.4,
-        alpha: 1
+        alpha: 1,
+        environmentIntensity: 1.75
       }
     });
+  });
+
+  it("exposes and edits public Standard material values", async () => {
+    const data = fakeScene();
+    Object.assign(data.material, {
+      diffuseColor: [1, 0.5, 0.25], alpha: 1, specularColor: [1, 1, 1], specularPower: 64,
+      emissiveColor: [0, 0, 0], ambientColor: [0, 0, 0], bumpLevel: 1, ambientTexLevel: 1,
+      lightmapLevel: 1, opacityLevel: 1, reflectionLevel: 1
+    });
+    const context = { scene: data.scene, engine: {} };
+    const adapter = createDefaultLiteSceneAdapter();
+    const tree = await adapter.getSceneTree(context);
+    const material = tree[0].children?.find((item) => item.label === "Materials")?.children?.[0]!;
+    const properties = await adapter.getProperties(material, context);
+    expect(properties.map((item) => item.path)).toEqual(expect.arrayContaining([
+      "diffuseColor", "alpha", "specularColor", "specularPower", "emissiveColor", "ambientColor",
+      "bumpLevel", "ambientTexLevel", "lightmapLevel", "opacityLevel", "reflectionLevel"
+    ]));
+    expect((await adapter.setProperty?.(material, "diffuseColor", [0.2, 0.3, 0.4], context))?.ok).toBe(true);
+    expect((await adapter.setProperty?.(material, "specularPower", 128, context))?.ok).toBe(true);
+    expect((await adapter.setProperty?.(material, "reflectionLevel", 0.5, context))?.ok).toBe(true);
+    expect(data.material).toMatchObject({ diffuseColor: [0.2, 0.3, 0.4], specularPower: 128, reflectionLevel: 0.5 });
   });
 
   it("derives and deduplicates public material textures", async () => {

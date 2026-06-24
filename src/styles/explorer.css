@@ -88,6 +88,11 @@
 .ble-property-row { display: grid; grid-template-columns: minmax(90px, 40%) minmax(0, 1fr) 24px; min-height: 28px; align-items: center; border-bottom: 1px solid color-mix(in srgb, var(--ble-border) 60%, transparent); }
 .ble-property-row > label { padding: 4px 8px; color: var(--ble-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ble-property-control { min-width: 0; padding: 2px 6px; }
+.ble-tools { min-height: 100%; padding: 10px; }
+.ble-tools section { display: grid; gap: 8px; }
+.ble-tools h3 { margin: 0 0 2px; color: var(--ble-muted); font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
+.ble-tools button { width: 100%; padding: 4px 8px; }
+.ble-tools p { margin: 4px 0 0; color: var(--ble-muted); font-size: 11px; }
 .ble-copy-value { width: 20px; min-height: 20px !important; padding: 0; color: var(--ble-muted) !important; }
 .ble-readonly { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ble-tuple { display: flex; gap: 3px; }

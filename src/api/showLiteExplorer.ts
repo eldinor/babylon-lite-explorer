@@ -11,6 +11,7 @@ import { StatsService } from "../services/statsService";
 import { App } from "../ui/App";
 import { PropertiesPanel } from "../ui/PropertiesPanel";
 import { SceneExplorer } from "../ui/SceneExplorer";
+import { ToolsPanel } from "../ui/ToolsPanel";
 import type { ExplorerRuntime } from "../ui/runtime";
 import type { LiteExplorerContext, LiteExplorerHandle, LiteExplorerOptions } from "./types";
 
@@ -67,6 +68,7 @@ export function showLiteExplorer(context: LiteExplorerContext, options: LiteExpl
   const disposables = new DisposableStore();
   disposables.add(shell.addSidePane({ key: "scene-explorer", title: "Scene Explorer", side: "left", order: 10, content: SceneExplorer, keepMounted: true }));
   disposables.add(shell.addSidePane({ key: "properties", title: "Properties", side: "right", order: 10, content: PropertiesPanel, keepMounted: true }));
+  disposables.add(shell.addSidePane({ key: "tools", title: "Tools", side: "right", order: 20, content: ToolsPanel }));
   disposables.add(commands.register({ id: "refresh", label: "Refresh", run: () => refresh.refreshTree() }));
   disposables.add(commands.register({ id: "clear-selection", label: "Clear selection", when: (entity) => !!entity, run: () => refresh.select(null) }));
   disposables.add(commands.register({

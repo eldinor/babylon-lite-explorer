@@ -15,6 +15,7 @@ import {
   type PbrMaterialProps,
   type SceneContext,
   type SceneNode,
+  type StandardMaterialProps,
   type Texture2D
 } from "@babylonjs/lite";
 import type { LiteExplorerContext } from "../../api/types";
@@ -156,11 +157,21 @@ function section(id: string, label: string, children: LiteEntity[]): LiteEntity 
 }
 
 type PublicPbrMaterial = Material & Partial<Pick<PbrMaterialProps,
-  "baseColorFactor" | "metallicFactor" | "roughnessFactor" | "alpha" | "doubleSided"
+  "baseColorFactor" | "metallicFactor" | "roughnessFactor" | "alpha" | "doubleSided" | "environmentIntensity"
 >>;
 
 function isPublicPbrMaterial(material: Material): material is PublicPbrMaterial {
   return "baseColorFactor" in material || "metallicFactor" in material || "roughnessFactor" in material;
+}
+
+type PublicStandardMaterial = Material & Partial<Pick<StandardMaterialProps,
+  "diffuseColor" | "alpha" | "specularColor" | "specularPower" | "emissiveColor" | "ambientColor"
+  | "bumpLevel" | "ambientTexLevel" | "lightmapLevel" | "opacityLevel" | "reflectionLevel"
+>>;
+
+function isPublicStandardMaterial(material: Material): material is PublicStandardMaterial {
+  const value = material as Material & Record<string, unknown>;
+  return Array.isArray(value.diffuseColor) && Array.isArray(value.specularColor) && typeof value.specularPower === "number";
 }
 
 function getPublicMaterialType(material: Material, visited = new Set<object>()): string {
@@ -174,8 +185,8 @@ function getPublicMaterialType(material: Material, visited = new Set<object>()):
   if (value.inputs && typeof value.inputs === "object") return "Node";
   if (typeof value.vertexSource === "string" && typeof value.fragmentSource === "string") return "Shader";
   if (isPublicPbrMaterial(material)) return "PBR";
-  if (Array.isArray(value.diffuseColor) && Array.isArray(value.specularColor) && typeof value.specularPower === "number") return "Standard";
-  return "Custom / Other";
+  if (isPublicStandardMaterial(material)) return "Standard";
+  return "Undetermined / Custom";
 }
 
 const clamp01 = (value: number) => Math.min(1, Math.max(0, value));
@@ -454,7 +465,23 @@ export function createDefaultLiteSceneAdapter(): LiteSceneAdapter {
         if (typeof material.metallicFactor === "number") values.push({ kind: "number", path: "metallicFactor", label: "Metallic", value: material.metallicFactor, min: 0, max: 1, step: 0.01, section: "Material" });
         if (typeof material.roughnessFactor === "number") values.push({ kind: "number", path: "roughnessFactor", label: "Roughness", value: material.roughnessFactor, min: 0, max: 1, step: 0.01, section: "Material" });
         if (typeof material.alpha === "number") values.push({ kind: "number", path: "alpha", label: "Alpha", value: material.alpha, min: 0, max: 1, step: 0.01, section: "Material" });
+        values.push({ kind: "number", path: "environmentIntensity", label: "Environment intensity", value: material.environmentIntensity ?? 1, min: 0, step: 0.01, section: "Environment" });
         if (typeof material.doubleSided === "boolean") values.push({ kind: "boolean", path: "doubleSided", label: "Double sided", value: material.doubleSided, section: "Material", readonly: true });
+      }
+      if (isPublicStandardMaterial(material)) {
+        if (material.diffuseColor) values.push({ kind: "color3", path: "diffuseColor", label: "Diffuse color", value: [...material.diffuseColor], section: "Material" });
+        if (typeof material.alpha === "number") values.push({ kind: "number", path: "alpha", label: "Alpha", value: material.alpha, min: 0, max: 1, step: 0.01, section: "Material" });
+        if (material.specularColor) values.push({ kind: "color3", path: "specularColor", label: "Specular color", value: [...material.specularColor], section: "Material" });
+        if (typeof material.specularPower === "number") values.push({ kind: "number", path: "specularPower", label: "Specular power", value: material.specularPower, min: 0, step: 1, section: "Material" });
+        if (material.emissiveColor) values.push({ kind: "color3", path: "emissiveColor", label: "Emissive color", value: [...material.emissiveColor], section: "Material" });
+        if (material.ambientColor) values.push({ kind: "color3", path: "ambientColor", label: "Ambient color", value: [...material.ambientColor], section: "Material" });
+        const textureLevels = [
+          ["bumpLevel", "Bump level"], ["ambientTexLevel", "Ambient level"], ["lightmapLevel", "Lightmap level"],
+          ["opacityLevel", "Opacity level"], ["reflectionLevel", "Reflection level"]
+        ] as const;
+        for (const [path, label] of textureLevels) if (typeof material[path] === "number") {
+          values.push({ kind: "number", path, label, value: material[path], min: 0, step: 0.01, section: "Texture Levels" });
+        }
       }
       return values;
     }
@@ -614,13 +641,31 @@ export function createDefaultLiteSceneAdapter(): LiteSceneAdapter {
       if (kind === "material") {
         const material = source as Material;
         if (path === "name" && typeof value === "string") { material.name = value; return ok(); }
-        if (!isPublicPbrMaterial(material)) return fail("unsupported", "Only verified public PBR fields are editable.");
-        if (path === "baseColorFactor" && Array.isArray(value) && value.length === 4 && value.every(Number.isFinite)) {
-          material.baseColorFactor = [clamp01(Number(value[0])), clamp01(Number(value[1])), clamp01(Number(value[2])), clamp01(Number(value[3]))];
-        } else if ((path === "metallicFactor" || path === "roughnessFactor" || path === "alpha") && typeof value === "number" && Number.isFinite(value)) {
-          material[path] = clamp01(value);
+        if (isPublicPbrMaterial(material)) {
+          if (path === "baseColorFactor" && isNumberTuple(value, 4)) {
+            material.baseColorFactor = [clamp01(value[0]), clamp01(value[1]), clamp01(value[2]), clamp01(value[3])];
+          } else if ((path === "metallicFactor" || path === "roughnessFactor" || path === "alpha") && typeof value === "number" && Number.isFinite(value)) {
+            material[path] = clamp01(value);
+          } else if (path === "environmentIntensity" && typeof value === "number" && Number.isFinite(value)) {
+            material.environmentIntensity = Math.max(0, value);
+          } else {
+            return fail("invalid", `Invalid value for ${path}.`);
+          }
+        } else if (isPublicStandardMaterial(material)) {
+          if ((path === "diffuseColor" || path === "specularColor" || path === "emissiveColor" || path === "ambientColor") && isNumberTuple(value, 3)) {
+            material[path] = [clamp01(value[0]), clamp01(value[1]), clamp01(value[2])];
+          } else if (path === "alpha" && typeof value === "number" && Number.isFinite(value)) {
+            material.alpha = clamp01(value);
+          } else if (path === "specularPower" && typeof value === "number" && Number.isFinite(value)) {
+            material.specularPower = Math.max(0, value);
+          } else if ((path === "bumpLevel" || path === "ambientTexLevel" || path === "lightmapLevel" || path === "opacityLevel" || path === "reflectionLevel")
+            && typeof value === "number" && Number.isFinite(value)) {
+            material[path] = Math.max(0, value);
+          } else {
+            return fail("invalid", `Invalid value for ${path}.`);
+          }
         } else {
-          return fail("invalid", `Invalid value for ${path}.`);
+          return fail("unsupported", "This material has no verified editable public family.");
         }
         const { markMaterialUboDirty } = await import("@babylonjs/lite");
         markMaterialUboDirty(material);

@@ -53,11 +53,23 @@ Notifications dismiss automatically after three seconds. Configure `notification
 
 ## Public API coverage
 
-The default adapter currently exposes the public scene camera, meshes, mesh hierarchy, lights, derived materials, and animation groups. Material properties identify PBR, Standard, Node, Shader, material-view, and custom/other families from their documented public fields. The adapter edits documented scene-node transforms and visibility, base camera projection/viewport fields, recognized arc-rotate/free/geospatial camera fields, and documented light fields. See [the audited API inventory](docs/babylon-lite-api-inventory.md).
+The default adapter currently exposes the public scene camera, meshes, mesh hierarchy, lights, derived materials, and animation groups. Material properties identify PBR, Standard, Node, Shader, material-view, and undetermined/custom families from their documented public fields. PBR materials expose environment intensity; Standard materials expose their public colors, alpha, specular power, and texture levels. The adapter edits documented scene-node transforms and visibility, base camera projection/viewport fields, recognized arc-rotate/free/geospatial camera fields, and documented light fields. See [the audited API inventory](docs/babylon-lite-api-inventory.md).
 
 Selecting **Scene** exposes its public clear color, image-processing exposure, contrast, tone-mapping state and type, environment primary color, and environment Y rotation. These values are editable through the documented `SceneContext` fields.
 
-The Basic example loads `environmentSpecular.env`; the Boombox and Animated GLB examples do not load environment textures. Babylon Lite returns public `EnvironmentTextures` from its environment loaders, but does not expose the loaded object through a public `SceneContext` field. The Explorer therefore cannot discover an environment texture from the scene alone. Environment intensity is a per-PBR-material field rather than a scene setting.
+### Environment textures
+
+The Basic example loads `environmentSpecular.env`; the Boombox and Animated GLB examples do not load environment textures.
+
+`loadEnvironment()` returns a public `EnvironmentTextures` object and stores the environment internally for rendering. However, `SceneContext` exposes no public `environmentTextures` field, `hasEnvironment` flag, or general `scene.textures` collection. The Explorer therefore cannot reliably determine from the scene alone whether an environment texture is present. Reading private state such as `_envTextures` would make the Explorer dependent on implementation details, so the default adapter intentionally does not do it.
+
+Ordinary material textures can sometimes be discovered by following documented texture properties on public materials. Environment textures are not exposed through those properties. An application can know that an environment is present by retaining the loader result itself:
+
+```ts
+const environment = await loadEnvironment(scene, url, options);
+```
+
+The current Explorer cannot add that retained object alongside its automatically discovered entities because a custom adapter replaces the default adapter rather than extending it. Future adapter composition is intended to support this case. Environment intensity is a per-PBR-material field, not a scene-level environment setting.
 
 Babylon Lite 1.3.0 projection fields have a runtime cache-invalidation limitation. Assigning `camera.fov`, `camera.nearPlane`, or `camera.farPlane` updates the public value, but `getProjectionMatrix()` caches by `worldMatrixVersion` and aspect ratio rather than those projection values. The rendered projection can therefore remain unchanged until the camera moves or the aspect ratio changes. Babylon Lite exposes no public projection-cache invalidation function, so the default adapter does not modify the private cache fields as a workaround.
 
