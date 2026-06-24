@@ -11,6 +11,7 @@ import {
   startEngine,
 } from "@babylonjs/lite";
 import { showLiteExplorer } from "../../../src";
+import { demoUrl } from "../../demoUrl";
 
 const canvas = document.querySelector<HTMLCanvasElement>("#renderCanvas")!;
 const engine = await createEngine(canvas);
@@ -60,5 +61,5 @@ await registerScene(scene);
 await startEngine(engine);
 showLiteExplorer(
   { engine, scene, canvas },
-  { features: { canvasPicking: true }, userGuideUrl: "/examples/user-guide/" },
+  { features: { canvasPicking: true }, userGuideUrl: demoUrl("user-guide/") },
 );

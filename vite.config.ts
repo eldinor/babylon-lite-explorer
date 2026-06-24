@@ -22,6 +22,7 @@ const importExtractedCss = (): Plugin => ({
 });
 
 export default defineConfig({
+  publicDir: false,
   plugins: [preact(), importExtractedCss()],
   define: {
     __BABYLON_LITE_VERSION__: JSON.stringify(babylonLitePackage.version),

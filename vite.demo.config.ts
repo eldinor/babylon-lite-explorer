@@ -7,9 +7,9 @@ import babylonLitePackage from "./node_modules/@babylonjs/lite/package.json";
 
 const projectRoot = fileURLToPath(new URL(".", import.meta.url));
 
-export default defineConfig({
+export default defineConfig(({ command }) => ({
   root: "examples",
-  base: "/examples/",
+  base: command === "build" ? (process.env.DEMO_BASE ?? "./") : "/examples/",
   publicDir: "../public",
   plugins: [preact()],
   define: {
@@ -32,4 +32,4 @@ export default defineConfig({
       }
     }
   }
-});
+}));

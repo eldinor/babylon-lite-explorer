@@ -12,6 +12,7 @@ import {
   stopAnimation,
 } from "@babylonjs/lite";
 import { showLiteExplorer } from "../../../src";
+import { demoUrl } from "../../demoUrl";
 
 const canvas = document.querySelector<HTMLCanvasElement>("#renderCanvas")!;
 const engine = await createEngine(canvas);
@@ -32,4 +33,4 @@ attachControl(camera, canvas, scene);
 
 await registerScene(scene);
 await startEngine(engine);
-showLiteExplorer({ engine, scene, canvas }, { features: { canvasPicking: true }, userGuideUrl: "/examples/user-guide/" });
+showLiteExplorer({ engine, scene, canvas }, { features: { canvasPicking: true }, userGuideUrl: demoUrl("user-guide/") });

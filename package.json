@@ -2,7 +2,7 @@
   "name": "babylon-lite-explorer",
   "version": "0.1.0",
   "description": "A small, public-API-only explorer for Babylon Lite",
-  "license": "Apache-2.0",
+  "license": "MIT",
   "author": {
     "name": "Andrei Stepanov",
     "email": "eldinor@gmail.com",
@@ -30,11 +30,23 @@
     "./styles.css": "./dist/lite-explorer.css"
   },
   "files": [
-    "dist"
+    "dist/index.js",
+    "dist/index.d.ts",
+    "dist/lite-explorer.css",
+    "dist/adapter/default/createDefaultLiteSceneAdapter.d.ts",
+    "dist/adapter/registered/createRegisteredSceneAdapter.d.ts",
+    "dist/adapter/LiteSceneAdapter.d.ts",
+    "dist/adapter/propertyDescriptors.d.ts",
+    "dist/api/showLiteExplorer.d.ts",
+    "dist/api/types.d.ts",
+    "dist/core/disposable.d.ts",
+    "dist/services/commandService.d.ts",
+    "dist/services/shellService.d.ts",
+    "dist/signals/createExplorerSignals.d.ts"
   ],
   "scripts": {
     "dev": "vite",
-    "demo": "vite --host localhost --port 5173 --open /examples/",
+    "demo": "vite --config vite.demo.config.ts --configLoader runner --host localhost --port 5173 --open /examples/",
     "build": "npm run build:npm && npm run build:demo",
     "build:npm": "vite build --configLoader runner && tsc -p tsconfig.build.json",
     "build:demo": "vite build --config vite.demo.config.ts --configLoader runner",

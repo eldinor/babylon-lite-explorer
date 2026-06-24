@@ -13,6 +13,7 @@ import {
   startEngine,
 } from "@babylonjs/lite";
 import { showLiteExplorer } from "../../../src";
+import { demoUrl } from "../../demoUrl";
 
 const canvas = document.querySelector<HTMLCanvasElement>("#renderCanvas")!;
 const engine = await createEngine(canvas);
@@ -23,7 +24,7 @@ attachControl(camera, canvas, scene);
 addToScene(scene, createHemisphericLight([0, 1, 0], 1));
 
 await loadEnvironment(scene, "https://assets.babylonjs.com/core/environments/environmentSpecular.env", {
-  brdfUrl: "/brdf-lut.png",
+  brdfUrl: demoUrl("brdf-lut.png"),
   skipSkybox: true,
   skipGround: true,
 });
@@ -49,5 +50,5 @@ await registerScene(scene);
 await startEngine(engine);
 showLiteExplorer(
   { engine, scene, canvas },
-  { features: { canvasPicking: true }, userGuideUrl: "/examples/user-guide/" },
+  { features: { canvasPicking: true }, userGuideUrl: demoUrl("user-guide/") },
 );
