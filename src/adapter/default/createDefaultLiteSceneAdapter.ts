@@ -99,7 +99,12 @@ function collectPublicMaterialTextures(material: Material): TextureUsage[] {
     add("clearCoat.bumpTexture", clearCoat.bumpTexture);
   }
   const sheen = nested("sheen");
-  if (sheen) add("sheen.texture", sheen.texture);
+  if (sheen) {
+    add("sheen.texture", sheen.texture);
+    add("sheen.roughnessTexture", sheen.roughnessTexture);
+  }
+  const anisotropy = nested("anisotropy");
+  if (anisotropy) add("anisotropy.texture", anisotropy.texture);
   const iridescence = nested("iridescence");
   if (iridescence) {
     add("iridescence.texture", iridescence.texture);
@@ -111,6 +116,11 @@ function collectPublicMaterialTextures(material: Material): TextureUsage[] {
     const refraction = subsurface.refraction && typeof subsurface.refraction === "object" ? subsurface.refraction as Record<string, unknown> : null;
     if (thickness) add("subsurface.thickness.texture", thickness.texture);
     if (refraction) add("subsurface.refraction.texture", refraction.texture);
+    const translucency = subsurface.translucency && typeof subsurface.translucency === "object" ? subsurface.translucency as Record<string, unknown> : null;
+    if (translucency) {
+      add("subsurface.translucency.colorTexture", translucency.colorTexture);
+      add("subsurface.translucency.intensityTexture", translucency.intensityTexture);
+    }
   }
   return usages;
 }
@@ -198,35 +208,11 @@ const clamp01 = (value: number) => Math.min(1, Math.max(0, value));
 export function createDefaultLiteSceneAdapter(): LiteSceneAdapter {
   const objectIds = new WeakMap<object, string>();
   const entityTypes = new WeakMap<object, LiteEntityKind>();
-  const animationClocks = new WeakMap<AnimationGroup, { time: number; publicTime: number; sampledAt: number; wasPlaying: boolean }>();
   let nextId = 1;
   const pickers = new Set<GpuPicker>();
   const pickerByScene = new WeakMap<object, GpuPicker>();
 
-  const getAnimationTime = (group: AnimationGroup): number => {
-    const now = performance.now();
-    const publicTime = group.currentFrame;
-    let clock = animationClocks.get(group);
-    if (!clock) {
-      clock = { time: publicTime, publicTime, sampledAt: now, wasPlaying: group.isPlaying };
-      animationClocks.set(group, clock);
-      return publicTime;
-    }
-    if (publicTime !== clock.publicTime) {
-      clock.time = publicTime;
-    } else if (group.isPlaying && clock.wasPlaying) {
-      clock.time += ((now - clock.sampledAt) / 1000) * group.speedRatio;
-      if (group.duration > 0) {
-        clock.time = group.loopAnimation
-          ? ((clock.time % group.duration) + group.duration) % group.duration
-          : Math.min(group.duration, Math.max(0, clock.time));
-      }
-    }
-    clock.publicTime = publicTime;
-    clock.sampledAt = now;
-    clock.wasPlaying = group.isPlaying;
-    return clock.time;
-  };
+  const getAnimationTime = (group: AnimationGroup): number => group.currentTime;
 
   const idFor = (kind: LiteEntityKind, source: object, explicit?: string): string => {
     const existing = objectIds.get(source);
@@ -410,7 +396,10 @@ export function createDefaultLiteSceneAdapter(): LiteSceneAdapter {
         { kind: "number", path: "radius", label: "Radius", value: camera.radius, min: 0.0001, step: 0.1, section: "Orbit" },
         { kind: "vector3", path: "target", label: "Target", value: asTuple3(camera.target), section: "Orbit" },
         { kind: "number", path: "inertia", label: "Inertia", value: camera.inertia, min: 0, max: 1, step: 0.01, section: "Controls" },
-        { kind: "number", path: "panningInertia", label: "Panning inertia", value: camera.panningInertia, min: 0, max: 1, step: 0.01, section: "Controls" }
+        { kind: "number", path: "panningInertia", label: "Panning inertia", value: camera.panningInertia, min: 0, max: 1, step: 0.01, section: "Controls" },
+        { kind: "number", path: "angularSensibility", label: "Angular sensibility", value: camera.angularSensibility, min: 0.0001, step: 1, section: "Controls" },
+        { kind: "number", path: "panningSensibility", label: "Panning sensibility", value: camera.panningSensibility, min: 0.0001, step: 1, section: "Controls" },
+        { kind: "number", path: "wheelPrecision", label: "Wheel precision", value: camera.wheelPrecision, min: 0.0001, step: 0.1, section: "Controls" }
       );
       const limits = [
         ["lowerAlphaLimit", "Minimum alpha"], ["upperAlphaLimit", "Maximum alpha"],
@@ -627,6 +616,8 @@ export function createDefaultLiteSceneAdapter(): LiteSceneAdapter {
           else if (path === "radius" && typeof value === "number" && Number.isFinite(value)) camera.radius = Math.max(0.0001, value);
           else if (path === "target" && Array.isArray(value) && value.length === 3 && value.every(Number.isFinite)) camera.target = { x: value[0], y: value[1], z: value[2] };
           else if ((path === "inertia" || path === "panningInertia") && typeof value === "number" && Number.isFinite(value)) camera[path] = clamp01(value);
+          else if ((path === "angularSensibility" || path === "panningSensibility" || path === "wheelPrecision")
+            && typeof value === "number" && Number.isFinite(value)) camera[path] = Math.max(0.0001, value);
           else if (["lowerAlphaLimit", "upperAlphaLimit", "lowerBetaLimit", "upperBetaLimit", "lowerRadiusLimit", "upperRadiusLimit"].includes(path)
             && typeof value === "number" && Number.isFinite(value)) {
             (camera as ArcRotateCamera & Record<string, number | undefined>)[path] = value;
@@ -721,13 +712,10 @@ export function createDefaultLiteSceneAdapter(): LiteSceneAdapter {
     if (!source || typeof source !== "object" || entityTypes.get(source) !== "animationGroup") return fail("unsupported", "This entity is not an animation group.");
     const selected = source as AnimationGroup;
     if (!context.scene.animationGroups.includes(selected)) return fail("unsupported", "This animation group does not belong to the current scene.");
-    const now = performance.now();
     for (const group of context.scene.animationGroups) {
       stopAnimation(group);
-      animationClocks.set(group, { time: 0, publicTime: 0, sampledAt: now, wasPlaying: false });
     }
     playAnimation(selected);
-    animationClocks.set(selected, { time: 0, publicTime: 0, sampledAt: now, wasPlaying: true });
     return ok();
   };
 
@@ -738,7 +726,6 @@ export function createDefaultLiteSceneAdapter(): LiteSceneAdapter {
     const selected = source as AnimationGroup;
     if (!context.scene.animationGroups.includes(selected)) return fail("unsupported", "This animation group does not belong to the current scene.");
     stopAnimation(selected);
-    animationClocks.set(selected, { time: 0, publicTime: 0, sampledAt: performance.now(), wasPlaying: false });
     return ok();
   };
 

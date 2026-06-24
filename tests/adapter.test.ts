@@ -117,9 +117,16 @@ describe("default adapter", () => {
     };
     const cases = [
       {
-        camera: { ...base, alpha: 0.2, beta: 1, radius: 5, target: { x: 0, y: 0, z: 0 }, inertia: 0.9, panningInertia: 0.8, lowerRadiusLimit: 2 },
-        expected: ["alpha", "beta", "radius", "target", "inertia", "panningInertia", "lowerRadiusLimit"],
-        edits: [["target", [1, 2, 3]], ["radius", 8], ["inertia", 2]] as const
+        camera: {
+          ...base, alpha: 0.2, beta: 1, radius: 5, target: { x: 0, y: 0, z: 0 },
+          inertia: 0.9, panningInertia: 0.8, angularSensibility: 1000,
+          panningSensibility: 50, wheelPrecision: 3, lowerRadiusLimit: 2
+        },
+        expected: [
+          "alpha", "beta", "radius", "target", "inertia", "panningInertia",
+          "angularSensibility", "panningSensibility", "wheelPrecision", "lowerRadiusLimit"
+        ],
+        edits: [["target", [1, 2, 3]], ["radius", 8], ["inertia", 2], ["wheelPrecision", 4]] as const
       },
       {
         camera: { ...base, position: { x: 1, y: 2, z: 3 }, target: { x: 0, y: 0, z: 0 }, speed: 2, angularSensitivity: 2000, inertia: 0.9 },
@@ -150,7 +157,7 @@ describe("default adapter", () => {
       for (const [path, value] of item.edits) expect((await adapter.setProperty?.(entity, path, value, context))?.ok).toBe(true);
     }
 
-    expect(cases[0].camera).toMatchObject({ target: { x: 1, y: 2, z: 3 }, radius: 8, inertia: 1 });
+    expect(cases[0].camera).toMatchObject({ target: { x: 1, y: 2, z: 3 }, radius: 8, inertia: 1, wheelPrecision: 4 });
     expect(cases[1].camera).toMatchObject({ position: { x: 4, y: 5, z: 6 }, speed: 3 });
     expect(cases[2].camera).toMatchObject({ center: { x: 0, y: 10, z: 0 }, yaw: 1, limits: { radiusMin: 12 } });
   });
@@ -319,7 +326,13 @@ describe("default adapter", () => {
       vOffset: 0.25,
       invertY: true
     };
-    Object.assign(data.material, { baseColorTexture: texture, ormTexture: texture });
+    Object.assign(data.material, {
+      baseColorTexture: texture,
+      ormTexture: texture,
+      anisotropy: { texture },
+      sheen: { texture, roughnessTexture: texture },
+      subsurface: { translucency: { colorTexture: texture, intensityTexture: texture } }
+    });
     const context = { scene: data.scene, engine: {} };
     const adapter = createDefaultLiteSceneAdapter();
     const tree = await adapter.getSceneTree(context);
@@ -328,12 +341,17 @@ describe("default adapter", () => {
     expect(textures?.[0].label).toBe("Red / baseColorTexture");
     const properties = await adapter.getProperties(textures![0], context);
     expect(properties.find((item) => item.path === "width")).toMatchObject({ value: 1024, readonly: true });
-    expect(properties.find((item) => item.path === "usages")).toMatchObject({ value: "Red / baseColorTexture, Red / ormTexture" });
+    const usages = [
+      "Red / baseColorTexture", "Red / ormTexture", "Red / sheen.texture",
+      "Red / sheen.roughnessTexture", "Red / anisotropy.texture",
+      "Red / subsurface.translucency.colorTexture", "Red / subsurface.translucency.intensityTexture"
+    ].join(", ");
+    expect(properties.find((item) => item.path === "usages")).toMatchObject({ value: usages });
     expect(properties.find((item) => item.path === "invertY")).toMatchObject({ value: true, readonly: true });
     expect(await adapter.getEntitySnapshot?.(textures![0], context)).toEqual({
       ok: true,
       value: {
-        usages: "Red / baseColorTexture, Red / ormTexture",
+        usages,
         width: 1024,
         height: 512,
         uScale: 2,
@@ -351,7 +369,8 @@ describe("default adapter", () => {
     data.scene.animationGroups.push({
       name: "Swim",
       duration: 2.5,
-      currentFrame: 42,
+      currentTime: 0.7,
+      targetedAnimations: [],
       isPlaying: true,
       speedRatio: 1.25,
       loopAnimation: true,
@@ -366,8 +385,8 @@ describe("default adapter", () => {
     expect(await adapter.getProperties(animation!, context)).toEqual(expect.arrayContaining([
       expect.objectContaining({ path: "name", value: "Swim" }),
       expect.objectContaining({ path: "duration", value: 2.5, readonly: true }),
-      expect.objectContaining({ path: "currentTime", value: 42, readonly: true }),
-      expect.objectContaining({ path: "currentFrame", value: 2520, readonly: true }),
+      expect.objectContaining({ path: "currentTime", value: 0.7, readonly: true }),
+      expect.objectContaining({ path: "currentFrame", value: 42, readonly: true }),
       expect.objectContaining({ path: "isPlaying", value: true, readonly: true }),
       expect.objectContaining({ path: "speedRatio", value: 1.25, readonly: true }),
       expect.objectContaining({ path: "loopAnimation", value: true, readonly: true })
@@ -375,10 +394,9 @@ describe("default adapter", () => {
   });
 
   it("plays one animation from the start and stops the others", async () => {
-    const now = vi.spyOn(performance, "now").mockReturnValue(1_000);
     const data = fakeScene();
-    const first = { name: "Idle", duration: 2, currentFrame: 1, isPlaying: true, speedRatio: 1, loopAnimation: true, weight: 1 };
-    const second = { name: "Swim", duration: 3, currentFrame: 2, isPlaying: false, speedRatio: 1, loopAnimation: true, weight: 1 };
+    const first = { name: "Idle", duration: 2, currentTime: 1, targetedAnimations: [], isPlaying: true, speedRatio: 1, loopAnimation: true, weight: 1 };
+    const second = { name: "Swim", duration: 3, currentTime: 2, targetedAnimations: [], isPlaying: false, speedRatio: 1, loopAnimation: true, weight: 1 };
     data.scene.animationGroups.push(first as never, second as never);
     const context = { scene: data.scene, engine: {} };
     const adapter = createDefaultLiteSceneAdapter();
@@ -388,20 +406,18 @@ describe("default adapter", () => {
     const animation = animations?.find((item) => item.label === "Swim");
 
     expect((await adapter.playAnimationGroup?.(animation!, context))?.ok).toBe(true);
-    expect(first).toMatchObject({ isPlaying: false, currentFrame: 0 });
-    expect(second).toMatchObject({ isPlaying: true, currentFrame: 0 });
-    now.mockReturnValue(1_500);
+    expect(first).toMatchObject({ isPlaying: false, currentTime: 0 });
+    expect(second).toMatchObject({ isPlaying: true, currentTime: 0 });
     expect((await adapter.getProperties(idle!, context)).find((item) => item.path === "currentTime")?.value).toBe(0);
+    second.currentTime = 0.5;
     expect((await adapter.getProperties(animation!, context)).find((item) => item.path === "currentTime")?.value).toBe(0.5);
     expect((await adapter.stopAnimationGroup?.(animation!, context))?.ok).toBe(true);
-    expect(second).toMatchObject({ isPlaying: false, currentFrame: 0 });
-    now.mockRestore();
+    expect(second).toMatchObject({ isPlaying: false, currentTime: 0 });
   });
 
-  it("tracks live playback when Babylon Lite leaves public currentFrame at zero", async () => {
-    const now = vi.spyOn(performance, "now").mockReturnValue(1_000);
+  it("reads live playback from Babylon Lite currentTime", async () => {
     const data = fakeScene();
-    const group = { name: "Swim", duration: 3, frameRate: 60, currentFrame: 0, isPlaying: true, speedRatio: 1, loopAnimation: true, weight: 1 };
+    const group = { name: "Swim", duration: 3, frameRate: 60, currentTime: 0, targetedAnimations: [], isPlaying: true, speedRatio: 1, loopAnimation: true, weight: 1 };
     data.scene.animationGroups.push(group as never);
     const context = { scene: data.scene, engine: {} };
     const adapter = createDefaultLiteSceneAdapter();
@@ -409,12 +425,11 @@ describe("default adapter", () => {
     const animation = tree[0].children?.find((item) => item.label === "Animation Groups")?.children?.[0];
 
     await adapter.getProperties(animation!, context);
-    now.mockReturnValue(1_500);
+    group.currentTime = 0.5;
     const properties = await adapter.getProperties(animation!, context);
 
     expect(properties.find((item) => item.path === "currentTime")?.value).toBe(0.5);
     expect(properties.find((item) => item.path === "currentFrame")?.value).toBe(30);
-    now.mockRestore();
   });
 
   it("handles a larger public mesh collection", async () => {
