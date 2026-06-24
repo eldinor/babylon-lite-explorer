@@ -13,6 +13,7 @@ export type ExplorerRuntime = {
   notifications: NotificationService;
   commands: CommandService;
   shell: ShellService;
+  userGuideUrl: string;
   setLayout(layout: LiteExplorerLayout): void;
   setTheme(theme: LiteExplorerTheme): void;
   setPickingActive(active: boolean): void;

@@ -102,6 +102,11 @@
 .ble-footer-logo { display: inline-flex; flex: 0 0 auto; align-items: center; justify-content: center; height: 24px; padding: 2px 0 2px 4px; opacity: .82; }
 .ble-footer-logo:hover, .ble-footer-logo:focus-visible { opacity: 1; }
 .ble-footer-logo img { display: block; width: 17px; height: 19px; object-fit: contain; }
+.ble-footer-help { display: inline-flex; flex: 0 0 auto; align-items: center; justify-content: center; width: 18px; height: 18px; border: 1px solid var(--ble-muted); border-radius: 50%; color: var(--ble-muted); font-weight: 700; line-height: 1; text-decoration: none; opacity: .82; }
+.ble-footer-help:hover, .ble-footer-help:focus-visible { border-color: var(--ble-text); color: var(--ble-text); opacity: 1; }
+.ble-footer-github { display: inline-flex; flex: 0 0 auto; align-items: center; justify-content: center; width: 20px; height: 24px; color: var(--ble-muted); opacity: .82; }
+.ble-footer-github:hover, .ble-footer-github:focus-visible { color: var(--ble-text); opacity: 1; }
+.ble-footer-github svg { display: block; width: 17px; height: 17px; }
 .ble-selection-status { display: flex; align-items: center; gap: 7px; min-height: 26px; padding: 3px 9px; overflow: hidden; border-top: 1px solid var(--ble-border); background: var(--ble-panel); }
 .ble-selection-status span { flex: 0 0 auto; color: var(--ble-muted); }
 .ble-selection-status strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

@@ -137,6 +137,7 @@ export function showLiteExplorer(context: LiteExplorerContext, options: LiteExpl
     notifications,
     commands,
     shell,
+    userGuideUrl: options.userGuideUrl ?? "https://github.com/eldinor/babylon-lite-inspector/blob/main/docs/user-guide.md",
     setLayout(nextLayout) {
       signals.layout.value = nextLayout;
       host.dataset.layout = nextLayout;

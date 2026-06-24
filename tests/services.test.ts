@@ -3,6 +3,7 @@ import { createExplorerSignals } from "../src/signals/createExplorerSignals";
 import { NotificationService } from "../src/services/notificationService";
 import { RefreshController } from "../src/services/refreshController";
 import { ShellService } from "../src/services/shellService";
+import { StatsService } from "../src/services/statsService";
 import { formatEditorNumber } from "../src/ui/PropertyEditor";
 
 const capabilities = { editable: false, focusable: false, visibilityToggle: false, serializableSnapshot: false };
@@ -13,6 +14,30 @@ describe("services", () => {
     expect(formatEditorNumber(-12.34567)).toBe("-12.346");
     expect(formatEditorNumber(0.0001, 0.0001)).toBe("0.0001");
     expect(formatEditorNumber(0.000012345)).toBe("0.0000123");
+  });
+
+  it("measures frame time from animation frames", async () => {
+    vi.useFakeTimers();
+    let frame: FrameRequestCallback | undefined;
+    const request = vi.fn((callback: FrameRequestCallback) => { frame = callback; return 1; });
+    const cancel = vi.fn();
+    vi.stubGlobal("requestAnimationFrame", request);
+    vi.stubGlobal("cancelAnimationFrame", cancel);
+    const signals = createExplorerSignals();
+    signals.context.value = { scene: {}, engine: {} };
+    signals.adapter.value = { getSceneTree: () => [], getProperties: () => [], getStats: () => ({ drawCallCount: 4 }) };
+    const stats = new StatsService(signals);
+    stats.start();
+    frame?.(100);
+    frame?.(116);
+    frame?.(134);
+    await vi.advanceTimersByTimeAsync(500);
+    expect(signals.stats.value.drawCallCount).toBe(4);
+    expect(signals.stats.value.frameMs).toBe(17);
+    stats.dispose();
+    expect(cancel).toHaveBeenCalledWith(1);
+    vi.unstubAllGlobals();
+    vi.useRealTimers();
   });
 
   it("auto-dismisses notifications after the configured duration", () => {
@@ -122,5 +147,32 @@ describe("services", () => {
     expect(await controller.setProperty(signals.properties.value[0], 8)).toBe(false);
     expect(signals.properties.value[0]).toMatchObject({ value: 2 });
     expect(signals.notifications.value[0].message).toBe("Nope");
+  });
+
+  it("serializes writes to the same entity property", async () => {
+    const signals = createExplorerSignals();
+    signals.context.value = { scene: {}, engine: {} };
+    signals.tree.value = [{ id: "one", label: "One", kind: "mesh", source: {}, capabilities }];
+    signals.selectedEntityId.value = "one";
+    const applied: number[] = [];
+    const resolvers: Array<() => void> = [];
+    const setProperty = vi.fn((_entity, _path, value) => new Promise<{ ok: true; value: undefined }>((resolve) => {
+      resolvers.push(() => { applied.push(value as number); resolve({ ok: true, value: undefined }); });
+    }));
+    signals.adapter.value = { getSceneTree: () => signals.tree.value, getProperties: () => [], setProperty };
+    const controller = new RefreshController(signals, new NotificationService(signals));
+    const descriptor = { kind: "number" as const, path: "value", label: "Value", value: 0 };
+
+    const first = controller.setProperty(descriptor, 1);
+    const second = controller.setProperty(descriptor, 2);
+    await Promise.resolve();
+    expect(setProperty).toHaveBeenCalledTimes(1);
+    resolvers[0]();
+    await first;
+    await Promise.resolve();
+    expect(setProperty).toHaveBeenCalledTimes(2);
+    resolvers[1]();
+    await second;
+    expect(applied).toEqual([1, 2]);
   });
 });

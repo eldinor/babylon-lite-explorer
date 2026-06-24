@@ -6,6 +6,7 @@ import type { NotificationService } from "./notificationService";
 export class RefreshController {
   private generation = 0;
   private disposed = false;
+  private readonly propertyWrites = new Map<string, Promise<boolean>>();
 
   constructor(private readonly signals: ExplorerSignals, private readonly notifications: NotificationService) {}
 
@@ -64,16 +65,37 @@ export class RefreshController {
     }
   }
 
-  async setProperty(descriptor: PropertyDescriptor, value: unknown): Promise<boolean> {
+  setProperty(descriptor: PropertyDescriptor, value: unknown): Promise<boolean> {
     const context = this.signals.context.value;
     const adapter = this.signals.adapter.value;
     const entity = this.signals.selectedEntity.value;
-    if (!context || !adapter?.setProperty || !entity) return false;
+    if (!context || !adapter?.setProperty || !entity || this.disposed) return Promise.resolve(false);
+    const key = `${entity.id}\u0000${descriptor.path}`;
+    const previous = this.propertyWrites.get(key) ?? Promise.resolve(true);
+    const queued = previous.then(
+      () => this.performPropertyWrite(entity, descriptor, value, context, adapter.setProperty!),
+      () => this.performPropertyWrite(entity, descriptor, value, context, adapter.setProperty!)
+    );
+    this.propertyWrites.set(key, queued);
+    void queued.finally(() => {
+      if (this.propertyWrites.get(key) === queued) this.propertyWrites.delete(key);
+    });
+    return queued;
+  }
+
+  private async performPropertyWrite(
+    entity: NonNullable<ExplorerSignals["selectedEntity"]["value"]>,
+    descriptor: PropertyDescriptor,
+    value: unknown,
+    context: NonNullable<ExplorerSignals["context"]["value"]>,
+    write: NonNullable<NonNullable<ExplorerSignals["adapter"]["value"]>["setProperty"]>
+  ): Promise<boolean> {
+    if (this.disposed) return false;
     try {
-      const result = await adapter.setProperty(entity, descriptor.path, value, context);
+      const result = await write(entity, descriptor.path, value, context);
       if (!result.ok) { this.notifications.push(result.message); return false; }
       if (descriptor.path === "name") await this.refreshTree();
-      else await this.refreshProperties();
+      else if (this.signals.selectedEntityId.value === entity.id) await this.refreshProperties();
       this.signals.sceneVersion.value++;
       return true;
     } catch (error) {
@@ -82,5 +104,5 @@ export class RefreshController {
     }
   }
 
-  dispose(): void { this.disposed = true; this.generation++; }
+  dispose(): void { this.disposed = true; this.generation++; this.propertyWrites.clear(); }
 }

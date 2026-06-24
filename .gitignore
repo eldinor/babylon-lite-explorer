@@ -3,6 +3,7 @@ node_modules/
 
 # Build and test output
 dist/
+demo-dist/
 coverage/
 .vite/
 *.tsbuildinfo
@@ -10,6 +11,7 @@ coverage/
 # Local caches and archives
 .npm/
 .npm-cache/
+.package-test/
 *.tgz
 *.log
 

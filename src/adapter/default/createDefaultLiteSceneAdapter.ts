@@ -1,4 +1,8 @@
 import {
+  createGpuPicker,
+  disposePicker,
+  markMaterialUboDirty,
+  pickAsync,
   playAnimation,
   setSubtreeVisible,
   stopAnimation,
@@ -198,7 +202,6 @@ export function createDefaultLiteSceneAdapter(): LiteSceneAdapter {
   let nextId = 1;
   const pickers = new Set<GpuPicker>();
   const pickerByScene = new WeakMap<object, GpuPicker>();
-  let disposePickerPublic: ((picker: GpuPicker) => void) | undefined;
 
   const getAnimationTime = (group: AnimationGroup): number => {
     const now = performance.now();
@@ -667,7 +670,6 @@ export function createDefaultLiteSceneAdapter(): LiteSceneAdapter {
         } else {
           return fail("unsupported", "This material has no verified editable public family.");
         }
-        const { markMaterialUboDirty } = await import("@babylonjs/lite");
         markMaterialUboDirty(material);
         return ok();
       }
@@ -722,15 +724,13 @@ export function createDefaultLiteSceneAdapter(): LiteSceneAdapter {
   const pickEntityId: NonNullable<LiteSceneAdapter["pickEntityId"]> = async (x, y, context) => {
     if (!isPublicScene(context.scene)) return fail("unsupported", "Canvas picking requires a public Babylon Lite SceneContext.");
     try {
-      const lite = await import("@babylonjs/lite");
       let picker = pickerByScene.get(context.scene);
       if (!picker) {
-        picker = lite.createGpuPicker(context.scene);
+        picker = createGpuPicker(context.scene);
         pickerByScene.set(context.scene, picker);
         pickers.add(picker);
       }
-      disposePickerPublic = lite.disposePicker;
-      const result = await lite.pickAsync(picker, x, y);
+      const result = await pickAsync(picker, x, y);
       if (!result.hit || !result.pickedMesh) return ok(null);
       return ok(objectIds.get(result.pickedMesh) ?? null);
     } catch (error) {
@@ -757,7 +757,7 @@ export function createDefaultLiteSceneAdapter(): LiteSceneAdapter {
     stopAnimationGroup,
     getEntitySnapshot,
     dispose() {
-      if (disposePickerPublic) for (const picker of pickers) disposePickerPublic(picker);
+      for (const picker of pickers) disposePicker(picker);
       pickers.clear();
     }
   };

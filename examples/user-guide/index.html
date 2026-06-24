@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>User Guide — Babylon Lite Explorer</title>
+    <style>
+      :root { color-scheme: dark; font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
+      * { box-sizing: border-box; }
+      html { scroll-behavior: smooth; }
+      body { margin: 0; background: #111318; color: #edf1f7; line-height: 1.65; }
+      a { color: #71b7ff; }
+      .layout { display: grid; grid-template-columns: 230px minmax(0, 760px); gap: 56px; width: min(1100px, calc(100% - 40px)); margin: 0 auto; padding: 48px 0 80px; }
+      nav { position: sticky; top: 28px; align-self: start; }
+      nav strong { display: block; margin-bottom: 12px; color: #fff; }
+      nav a { display: block; padding: 5px 0; color: #9da9ba; text-decoration: none; }
+      nav a:hover, nav a:focus-visible { color: #71b7ff; }
+      main { min-width: 0; }
+      .back { display: inline-block; margin-bottom: 28px; text-decoration: none; }
+      h1 { margin: 0; font-size: clamp(2.4rem, 7vw, 4.8rem); line-height: 1; letter-spacing: -.05em; }
+      .lead { max-width: 650px; margin: 18px 0 48px; color: #aab4c3; font-size: 1.1rem; }
+      section { margin: 0 0 52px; scroll-margin-top: 24px; }
+      h2 { margin: 0 0 14px; padding-bottom: 8px; border-bottom: 1px solid #303744; font-size: 1.55rem; }
+      h3 { margin: 26px 0 8px; font-size: 1rem; }
+      p, li { color: #bac3d0; }
+      ul { padding-left: 21px; }
+      code { border: 1px solid #303744; border-radius: 4px; background: #191d24; color: #d9e7ff; font: .92em ui-monospace, SFMono-Regular, Consolas, monospace; }
+      :not(pre) > code { padding: 2px 5px; }
+      pre { overflow: auto; padding: 18px; border: 1px solid #303744; border-radius: 10px; background: #191d24; }
+      pre code { border: 0; background: transparent; }
+      table { width: 100%; border-collapse: collapse; }
+      th, td { padding: 9px 10px; border-bottom: 1px solid #303744; text-align: left; }
+      th { color: #edf1f7; }
+      td { color: #bac3d0; }
+      .note { padding: 14px 16px; border-left: 3px solid #58a6ff; background: #191d24; color: #bac3d0; }
+      @media (max-width: 760px) { .layout { display: block; padding-top: 28px; } nav { position: static; margin-bottom: 40px; } nav a { display: inline-block; margin-right: 14px; } }
+    </style>
+  </head>
+  <body>
+    <div class="layout">
+      <nav aria-label="User Guide sections">
+        <strong>Babylon Lite Explorer</strong>
+        <a href="#scene-explorer">Scene Explorer</a>
+        <a href="#properties">Properties</a>
+        <a href="#tools">Tools</a>
+        <a href="#layouts">Layouts and themes</a>
+        <a href="#shortcuts">Keyboard shortcuts</a>
+        <a href="#limitations">Current limitations</a>
+      </nav>
+      <main>
+        <a class="back" href="../">&larr; Examples</a>
+        <h1>User Guide</h1>
+        <p class="lead">Inspect and safely edit the Babylon Lite objects that are available through documented public APIs.</p>
+
+        <section id="scene-explorer">
+          <h2>Scene Explorer</h2>
+          <p>The tree lists the public scene, camera, lights, meshes and transform hierarchy, materials, material textures, and animation groups. Select an item to inspect it.</p>
+          <ul>
+            <li>Use Search to filter by label.</li>
+            <li>Use arrow keys to move through and expand the tree.</li>
+            <li>Enable Pick to select a mesh by clicking the canvas. Camera drags are ignored.</li>
+            <li>Selection actions appear between the panes and status bar when supported.</li>
+          </ul>
+        </section>
+
+        <section id="properties">
+          <h2>Properties</h2>
+          <p>Editable controls are shown only for verified public writes. Changes are applied to the scene and then read back through the adapter.</p>
+          <h3>Scene</h3>
+          <p>Clear color, image-processing exposure and contrast, tone mapping, environment primary color, and environment Y rotation.</p>
+          <h3>Materials</h3>
+          <p>PBR factors and environment intensity; Standard colors, alpha, specular power, and texture levels. The displayed family is inferred from public fields.</p>
+          <h3>Copying</h3>
+          <p>The copy button beside a row copies that value. The selection Copy action exports a safe public-property snapshot of the selected entity.</p>
+        </section>
+
+        <section id="tools">
+          <h2>Tools</h2>
+          <h3>Upload GLB</h3>
+          <p>Loads a self-contained local <code>.glb</code> through Babylon Lite and adds its asset container to the current scene.</p>
+          <h3>Export Scene</h3>
+          <p>Downloads a JSON inspection snapshot containing the public values visible to the Explorer. It is not a <code>.babylon</code> or GLB file and is not intended to reconstruct the scene.</p>
+        </section>
+
+        <section id="layouts">
+          <h2>Layouts and themes</h2>
+          <p><strong>Single</strong> stacks Scene Explorer above the right-side Properties/Tools tabs. Drag the divider to resize the panes. <strong>Split</strong> docks the tree at the left and Properties/Tools at the right, leaving the canvas interactive between them.</p>
+          <p>Dark and light themes, the selected layout, and the Single divider position are stored locally in the browser.</p>
+        </section>
+
+        <section id="shortcuts">
+          <h2>Keyboard shortcuts</h2>
+          <table>
+            <thead><tr><th>Shortcut</th><th>Action</th></tr></thead>
+            <tbody>
+              <tr><td><code>Ctrl+Shift+L</code></td><td>Switch layout</td></tr>
+              <tr><td><code>Ctrl+Shift+Y</code></td><td>Switch theme</td></tr>
+              <tr><td><code>Ctrl+Shift+E</code></td><td>Show or hide Explorer</td></tr>
+              <tr><td><code>Ctrl+Shift+F</code></td><td>Focus scene search</td></tr>
+              <tr><td><code>Escape</code></td><td>Clear selection while focus is inside Explorer</td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section id="limitations">
+          <h2>Current limitations</h2>
+          <div class="note">The default adapter never reads underscore-prefixed or otherwise private Babylon Lite state.</div>
+          <ul>
+            <li>Environment textures cannot be discovered because the public scene has no texture collection or environment-texture field.</li>
+            <li>Original texture URLs and preview pixels are not retained through the current public texture API.</li>
+            <li>An empty PBR material has no public family discriminator and may appear as Undetermined / Custom.</li>
+            <li>Export Scene is a diagnostic JSON snapshot because Babylon Lite exposes no public scene serializer.</li>
+            <li>A custom adapter currently replaces the default adapter; future composition will allow additional application-owned entities.</li>
+          </ul>
+        </section>
+      </main>
+    </div>
+  </body>
+</html>

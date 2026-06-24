@@ -15,7 +15,7 @@ it("mounts independent instances and disposes idempotently", async () => {
   expect(document.querySelector(".ble-root")?.getAttribute("data-layout")).toBe("single");
   expect(document.querySelector(".ble-root")?.querySelectorAll(".ble-single-stack > .ble-pane")).toHaveLength(2);
   expect(document.querySelector(".ble-toolbar strong")?.textContent).toBe("Babylon Lite 1.3.0 Explorer 0.1.0");
-  expect([...document.querySelector(".ble-root")!.querySelectorAll(".ble-pane-heading")].map((item) => item.textContent)).toEqual(["Scene Explorer", "Properties"]);
+  expect([...document.querySelector(".ble-root")!.querySelectorAll<HTMLButtonElement>('.ble-tabs button[role="tab"]')].map((item) => item.textContent)).toEqual(["Scene Explorer", "Properties", "Tools"]);
   first.hide(); first.show(); first.toggle(); first.toggle();
   first.dispose(); first.dispose();
   expect(document.querySelectorAll(".ble-root")).toHaveLength(1);
@@ -34,6 +34,21 @@ it("supports the split two-column layout", async () => {
   expect(document.querySelector(".ble-split-dock-right .ble-pane-right")).not.toBeNull();
   handle.dispose();
   vi.useRealTimers();
+});
+
+it("opens Tools after Properties", async () => {
+  const data = fakeScene();
+  const handle = showLiteExplorer({ scene: data.scene, engine: {} });
+  await handle.ready;
+  const tools = [...document.querySelectorAll<HTMLButtonElement>('.ble-tabs button[role="tab"]')]
+    .find((button) => button.textContent === "Tools");
+  tools?.click();
+  await waitFor(() => {
+    const buttons = [...document.querySelectorAll<HTMLButtonElement>(".ble-tools button")].map((button) => button.textContent);
+    expect(buttons).toEqual(["Upload GLB", "Export Scene"]);
+  });
+  expect(document.querySelector<HTMLInputElement>('.ble-tools input[type="file"]')?.accept).toContain(".glb");
+  handle.dispose();
 });
 
 it("switches layouts from the header without refresh or hide controls", async () => {
@@ -99,7 +114,19 @@ it("links the footer logo to BabylonPress", async () => {
   expect(link?.href).toBe("https://babylonpress.org/");
   expect(link?.target).toBe("_blank");
   expect(link?.querySelector("img")?.alt).toBe("BabylonPress");
+  const help = document.querySelector<HTMLAnchorElement>(".ble-footer-help");
+  expect(help?.href).toBe("https://github.com/eldinor/babylon-lite-inspector/blob/main/docs/user-guide.md");
+  expect(help?.textContent).toBe("?");
+  const github = document.querySelector<HTMLAnchorElement>(".ble-footer-github");
+  expect(github?.href).toBe("https://github.com/eldinor/babylon-lite-inspector");
+  expect(github?.getAttribute("aria-label")).toBe("Babylon Lite Explorer on GitHub");
+  expect(github?.querySelector("svg")).not.toBeNull();
   handle.dispose();
+
+  const custom = showLiteExplorer({ scene: data.scene, engine: {} }, { userGuideUrl: "https://example.com/guide" });
+  await custom.ready;
+  expect(document.querySelector<HTMLAnchorElement>(".ble-footer-help")?.href).toBe("https://example.com/guide");
+  custom.dispose();
 });
 
 it("can disable keyboard shortcuts", async () => {

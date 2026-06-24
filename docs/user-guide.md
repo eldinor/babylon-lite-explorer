@@ -1,0 +1,77 @@
+# Babylon Lite Explorer User Guide
+
+Babylon Lite Explorer inspects and safely edits Babylon Lite objects available through documented public APIs.
+
+## Scene Explorer
+
+The tree lists the public scene, camera, lights, meshes and transform hierarchy, materials, material textures, and animation groups. Select an item to inspect it.
+
+- Use Search to filter entities by label.
+- Use the arrow keys to move through and expand the tree.
+- Enable Pick to select a mesh by clicking the canvas. Camera drags are ignored.
+- Supported selection actions appear between the panes and status bar.
+
+## Properties
+
+Editable controls are shown only for verified public writes. Changes are applied to the scene and then read back through the adapter.
+
+### Scene
+
+Scene properties include clear color, image-processing exposure and contrast, tone mapping, environment primary color, and environment Y rotation.
+
+### Materials
+
+PBR materials expose their factors and environment intensity. Standard materials expose their colors, alpha, specular power, and texture levels. The material family is inferred from documented public fields.
+
+An empty PBR material has no public family discriminator and may therefore appear as **Undetermined / Custom**.
+
+### Copying values
+
+The copy button beside a property copies that value. The selection **Copy** action exports a safe public-property snapshot of the selected entity.
+
+## Tools
+
+### Upload GLB
+
+**Upload GLB** loads a self-contained local `.glb` through Babylon Lite and adds its asset container to the current scene.
+
+### Export Scene
+
+**Export Scene** downloads a JSON inspection snapshot containing the public values visible to the Explorer. It is not a `.babylon` or GLB file and cannot reconstruct the scene. Babylon Lite does not currently expose a public scene serializer.
+
+## Layouts and themes
+
+**Single** stacks Scene Explorer above the right-side Properties and Tools tabs. Drag the divider to resize the panes.
+
+**Split** docks Scene Explorer at the left and Properties or Tools at the right, leaving the canvas interactive between them.
+
+Dark and light themes, the selected layout, and the Single divider position are stored locally in the browser.
+
+## Keyboard shortcuts
+
+| Shortcut | Action |
+| --- | --- |
+| `Ctrl+Shift+L` | Switch layout |
+| `Ctrl+Shift+Y` | Switch theme |
+| `Ctrl+Shift+E` | Show or hide Explorer |
+| `Ctrl+Shift+F` | Focus scene search |
+| `Escape` | Clear selection while focus is inside Explorer |
+
+Keyboard shortcuts can be disabled with `keyboardShortcutsEnabled: false`.
+
+## Environment textures
+
+Babylon Lite's environment loaders return a public `EnvironmentTextures` object, but `SceneContext` has no public environment-texture field, presence flag, or general texture collection. The Explorer therefore cannot determine from the scene alone whether an environment is loaded.
+
+The default adapter intentionally does not inspect private state such as `_envTextures`. Applications can retain the value returned by `loadEnvironment()`, but adding that object alongside automatically discovered entities requires the planned adapter-composition support.
+
+Environment intensity is a per-PBR-material property rather than a scene-level setting.
+
+## Current limitations
+
+- The default adapter never reads underscore-prefixed or otherwise private Babylon Lite state.
+- Environment textures cannot be discovered from the public scene.
+- Original texture URLs and preview pixels are not retained through the current public texture API.
+- Empty PBR materials cannot be reliably distinguished from custom empty materials.
+- Export Scene is a diagnostic JSON snapshot, not a scene serialization format.
+- A custom adapter currently replaces the default adapter instead of extending it.

@@ -22,7 +22,10 @@
   "scripts": {
     "dev": "vite",
     "demo": "vite --host localhost --port 5173 --open /examples/",
-    "build": "vite build && tsc -p tsconfig.build.json",
+    "build": "npm run build:npm && npm run build:demo",
+    "build:npm": "vite build --configLoader runner && tsc -p tsconfig.build.json",
+    "build:demo": "vite build --config vite.demo.config.ts --configLoader runner",
+    "verify:package": "npm run build:npm && node scripts/verify-package.mjs",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest"

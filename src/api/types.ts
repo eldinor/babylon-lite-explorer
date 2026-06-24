@@ -33,6 +33,8 @@ export type LiteExplorerOptions = {
   notificationsEnabled?: boolean;
   /** Enable global explorer keyboard shortcuts. Defaults to true. */
   keyboardShortcutsEnabled?: boolean;
+  /** User Guide URL opened by the footer help icon. */
+  userGuideUrl?: string;
   title?: string;
 };
 

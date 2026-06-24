@@ -26,4 +26,4 @@ attachControl(camera, canvas, scene);
 
 await registerScene(scene);
 await startEngine(engine);
-showLiteExplorer({ engine, scene, canvas }, { features: { canvasPicking: true } });
+showLiteExplorer({ engine, scene, canvas }, { features: { canvasPicking: true }, userGuideUrl: "/examples/user-guide/" });

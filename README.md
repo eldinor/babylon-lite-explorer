@@ -12,6 +12,8 @@ The default adapter uses the `@babylonjs/lite` installation from your applicatio
 
 ## Use
 
+[Read the detailed User Guide](docs/user-guide.md).
+
 ```ts
 import { showLiteExplorer } from "babylon-lite-explorer";
 
@@ -25,6 +27,7 @@ const explorer = showLiteExplorer(
     notificationDurationMs: 3000,
     notificationsEnabled: true,
     keyboardShortcutsEnabled: true,
+    userGuideUrl: "https://example.com/babylon-lite-explorer-guide",
   },
 );
 
@@ -38,6 +41,8 @@ explorer.dispose();
 ```
 
 Each call owns independent state. `dispose()` is idempotent. Caller-provided adapters remain caller-owned and are not disposed by the explorer.
+
+Set `userGuideUrl` to change the page opened by the footer `?` icon. It defaults to this repository's Markdown guide; the bundled demo points it to the in-app HTML guide.
 
 `layout: "single"` is the compact default and stacks Properties beneath Scene Explorer at the top-right. Use `layout: "split"` for simultaneous side-by-side columns at the top-left.
 
@@ -92,9 +97,15 @@ npm install
 npm run demo
 npm run typecheck
 npm test
-npm run build
+npm run build:npm
+npm run build:demo
+npm run verify:package
 ```
 
 `npm run demo` serves and opens the examples at `http://localhost:5173/examples/`.
+
+`npm run build:npm` creates the publishable library in `dist/`. `npm run build:demo` creates the static multi-page examples app in `demo-dist/`. `npm run build` runs both builds.
+
+`npm run verify:package` packs the npm artifact, installs it into a temporary Vite consumer, and verifies that one JavaScript import emits both the Explorer JavaScript and CSS.
 
 Vite builds the ESM library and CSS. Preact, Signals, and Babylon Lite are externalized.
