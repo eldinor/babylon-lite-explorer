@@ -61,11 +61,13 @@ describe("default adapter", () => {
     ]));
 
     expect((await adapter.setProperty?.(scene, "imageProcessing.exposure", 1.5, context))?.ok).toBe(true);
-    expect((await adapter.setProperty?.(scene, "imageProcessing.toneMappingType", "aces", context))?.ok).toBe(true);
+    expect((await adapter.setProperty?.(scene, "imageProcessing.toneMappingType", "aces", context))?.ok).toBe(false);
+    const originalClearColor = data.scene.clearColor;
     expect((await adapter.setProperty?.(scene, "clearColor", [0.2, 0.3, 0.4, 1], context))?.ok).toBe(true);
     expect((await adapter.setProperty?.(scene, "environmentPrimaryColor", [0.4, 0.5, 0.6], context))?.ok).toBe(true);
     expect((await adapter.setProperty?.(scene, "envRotationY", Math.PI, context))?.ok).toBe(true);
-    expect(data.scene.imageProcessing).toMatchObject({ exposure: 1.5, toneMappingType: "aces" });
+    expect(data.scene.imageProcessing).toMatchObject({ exposure: 1.5, toneMappingType: "standard" });
+    expect(data.scene.clearColor).toBe(originalClearColor);
     expect(data.scene.clearColor).toEqual({ r: 0.2, g: 0.3, b: 0.4, a: 1 });
     expect(data.scene.environmentPrimaryColor).toEqual([0.4, 0.5, 0.6]);
     expect(data.scene.envRotationY).toBe(Math.PI);
@@ -193,12 +195,40 @@ describe("default adapter", () => {
         visible: true,
         position: [3, 4, 5],
         rotation: [0, 0, 0],
-        scaling: [1, 1, 1]
+        scaling: [1, 1, 1],
+        skinned: "No",
+        hasMorphTargets: "No"
       }
     });
     const rejected = await adapter.setProperty?.(entity, "scaling", [1, 0, 1], context);
     expect(rejected?.ok).toBe(false);
     expect(data.mesh.scaling).toMatchObject({ x: 1, y: 1, z: 1 });
+  });
+
+  it("reports public mesh skeleton and morph-target state", async () => {
+    const data = fakeScene();
+    const weights = new Float32Array([0.25, 0.75]);
+    Object.assign(data.mesh, {
+      skeleton: { boneCount: 18 },
+      morphTargets: { count: 2, weights }
+    });
+    const context = { scene: data.scene, engine: {} };
+    const adapter = createDefaultLiteSceneAdapter();
+    const tree = await adapter.getSceneTree(context);
+    const mesh = tree[0].children?.find((item) => item.label === "Nodes")?.children?.find((item) => item.kind === "mesh")!;
+    const properties = await adapter.getProperties(mesh, context);
+
+    expect(mesh.meta?.liveProperties).toBe(true);
+    expect(Object.fromEntries(properties.filter((property) => property.section === "Deformation").map((property) => [property.path, property.value]))).toEqual({
+      skinned: "Yes",
+      boneCount: 18,
+      hasMorphTargets: "Yes",
+      morphTargetCount: 2,
+      morphWeights: "[0.25, 0.75]"
+    });
+
+    weights.set([0.5, 0.125]);
+    expect((await adapter.getProperties(mesh, context)).find((property) => property.path === "morphWeights")?.value).toBe("[0.5, 0.125]");
   });
 
   it("returns an empty tree for unsupported scene values", async () => {

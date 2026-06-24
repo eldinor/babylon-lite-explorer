@@ -192,14 +192,10 @@ it("shows public scene settings when Scene is selected", async () => {
       "Environment Y rotation"
     ]));
   });
-  const toneMappingType = document.querySelector<HTMLSelectElement>(".ble-property-control select");
-  expect([...toneMappingType!.options].map((option) => [option.value, option.textContent])).toEqual([
-    ["standard", "Standard"],
-    ["aces", "ACES"]
-  ]);
-  toneMappingType!.value = "aces";
-  toneMappingType!.dispatchEvent(new Event("change", { bubbles: true }));
-  await waitFor(() => expect(data.scene.imageProcessing.toneMappingType).toBe("aces"));
+  const readonlyValues = [...document.querySelectorAll<HTMLElement>(".ble-property-control .ble-readonly")]
+    .map((value) => value.textContent);
+  expect(readonlyValues).toEqual(expect.arrayContaining(["false", "standard"]));
+  expect(document.querySelector(".ble-property-control select")).toBeNull();
   handle.dispose();
 });
 

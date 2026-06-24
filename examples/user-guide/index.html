@@ -67,9 +67,11 @@
           <h2>Properties</h2>
           <p>Editable controls are shown only for verified public writes. Changes are applied to the scene and then read back through the adapter.</p>
           <h3>Scene</h3>
-          <p>Clear color, image-processing exposure and contrast, tone mapping, environment primary color, and environment Y rotation.</p>
+          <p>Clear color, image-processing exposure and contrast, tone mapping, environment primary color, and environment Y rotation. Tone-mapping enabled state and type are read-only because Babylon Lite compiles them into material shaders during scene registration. Set them before calling <code>registerScene()</code>; exposure and contrast remain editable at runtime.</p>
           <h3>Materials</h3>
           <p>PBR factors and environment intensity; Standard colors, alpha, specular power, and texture levels. The displayed family is inferred from public fields.</p>
+          <h3>Mesh deformation</h3>
+          <p>The <strong>Deformation</strong> section shows <strong>Skinned: Yes/No</strong>, <strong>Bone count</strong>, <strong>Morph targets: Yes/No</strong>, <strong>Morph target count</strong>, and <strong>Current weights</strong>. Morph weights refresh while that mesh is selected. Bone animation can deform a mesh without changing its own position, rotation, or scaling.</p>
           <h3>Copying</h3>
           <p>The copy button beside a row copies that value. The selection Copy action exports a safe public-property snapshot of the selected entity.</p>
         </section>

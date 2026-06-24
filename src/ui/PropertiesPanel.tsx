@@ -7,7 +7,7 @@ export function PropertiesPanel() {
   const { signals, notifications, refresh } = useExplorerRuntime();
   const entity = signals.selectedEntity.value;
   useEffect(() => {
-    if (entity?.kind !== "animationGroup") return;
+    if (entity?.kind !== "animationGroup" && entity?.meta?.liveProperties !== true) return;
     const timer = setInterval(() => { void refresh.refreshProperties(); }, 100);
     return () => clearInterval(timer);
   }, [entity?.id, refresh]);

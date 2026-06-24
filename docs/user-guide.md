@@ -19,11 +19,17 @@ Editable controls are shown only for verified public writes. Changes are applied
 
 Scene properties include clear color, image-processing exposure and contrast, tone mapping, environment primary color, and environment Y rotation.
 
+Tone-mapping enabled state and type are read-only because Babylon Lite compiles them into material shaders during scene registration. Set them before calling `registerScene()`. Exposure and contrast remain editable at runtime.
+
 ### Materials
 
 PBR materials expose their factors and environment intensity. Standard materials expose their colors, alpha, specular power, and texture levels. The material family is inferred from documented public fields.
 
 An empty PBR material has no public family discriminator and may therefore appear as **Undetermined / Custom**.
+
+### Mesh deformation
+
+The **Deformation** section reports **Skinned: Yes/No**, **Bone count**, **Morph targets: Yes/No**, **Morph target count**, and **Current weights**. Morph weights refresh while that mesh is selected. Skeletal animation usually deforms vertices through bone matrices without changing the mesh's own position, rotation, or scaling.
 
 ### Copying values
 

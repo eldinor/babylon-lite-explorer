@@ -250,7 +250,8 @@ export function createDefaultLiteSceneAdapter(): LiteSceneAdapter {
       kind,
       source: node,
       children: children.length ? children : undefined,
-      capabilities: { editable: true, focusable: false, visibilityToggle: kind === "mesh", serializableSnapshot: true }
+      capabilities: { editable: true, focusable: false, visibilityToggle: kind === "mesh", serializableSnapshot: true },
+      meta: kind === "mesh" && (node as Mesh).morphTargets ? { liveProperties: true } : undefined
     };
   };
 
@@ -370,6 +371,23 @@ export function createDefaultLiteSceneAdapter(): LiteSceneAdapter {
     { kind: "vector3", path: "scaling", label: "Scaling", value: asTuple3(node.scaling), section: "Transform" }
   ];
 
+  const meshDeformationProperties = (mesh: Mesh): PropertyDescriptor[] => {
+    const skeleton = mesh.skeleton;
+    const morphTargets = mesh.morphTargets;
+    const values: PropertyDescriptor[] = [
+      { kind: "readonly", path: "skinned", label: "Skinned", value: skeleton ? "Yes" : "No", section: "Deformation" },
+      { kind: "readonly", path: "hasMorphTargets", label: "Morph targets", value: morphTargets ? "Yes" : "No", section: "Deformation" }
+    ];
+    if (skeleton) values.splice(1, 0, { kind: "number", path: "boneCount", label: "Bone count", value: skeleton.boneCount, readonly: true, section: "Deformation" });
+    if (morphTargets) {
+      values.push(
+        { kind: "number", path: "morphTargetCount", label: "Morph target count", value: morphTargets.count, readonly: true, section: "Deformation" },
+        { kind: "readonly", path: "morphWeights", label: "Current weights", value: `[${Array.from(morphTargets.weights, (weight) => Number(weight.toFixed(4))).join(", ")}]`, section: "Deformation" }
+      );
+    }
+    return values;
+  };
+
   const cameraProperties = (camera: Camera): PropertyDescriptor[] => {
     const values: PropertyDescriptor[] = [
       { kind: "number", path: "fov", label: "Field of view", value: camera.fov, min: 0.01, max: Math.PI, step: 0.01, section: "Camera" },
@@ -443,7 +461,8 @@ export function createDefaultLiteSceneAdapter(): LiteSceneAdapter {
     ];
     if (!source || typeof source !== "object") return base;
     const knownKind = entityTypes.get(source);
-    if (knownKind === "mesh" || knownKind === "transform") return [...base, ...nodeProperties(source as SceneNode)];
+    if (knownKind === "mesh") return [...base, ...nodeProperties(source as Mesh), ...meshDeformationProperties(source as Mesh)];
+    if (knownKind === "transform") return [...base, ...nodeProperties(source as SceneNode)];
     if (knownKind === "camera") {
       const camera = source as Camera;
       return [...base, ...cameraProperties(camera)];
@@ -530,12 +549,13 @@ export function createDefaultLiteSceneAdapter(): LiteSceneAdapter {
       const imageProcessing = scene.imageProcessing;
       if (typeof imageProcessing.exposure === "number") values.push({ kind: "number", path: "imageProcessing.exposure", label: "Exposure", value: imageProcessing.exposure, min: 0, step: 0.01, section: "Image Processing" });
       if (typeof imageProcessing.contrast === "number") values.push({ kind: "number", path: "imageProcessing.contrast", label: "Contrast", value: imageProcessing.contrast, min: 0, step: 0.01, section: "Image Processing" });
-      if (typeof imageProcessing.toneMappingEnabled === "boolean") values.push({ kind: "boolean", path: "imageProcessing.toneMappingEnabled", label: "Tone mapping", value: imageProcessing.toneMappingEnabled, section: "Image Processing" });
+      if (typeof imageProcessing.toneMappingEnabled === "boolean") values.push({ kind: "boolean", path: "imageProcessing.toneMappingEnabled", label: "Tone mapping", value: imageProcessing.toneMappingEnabled, readonly: true, section: "Image Processing" });
       values.push({
         kind: "select",
         path: "imageProcessing.toneMappingType",
         label: "Tone mapping type",
         value: imageProcessing.toneMappingType ?? "standard",
+        readonly: true,
         options: [
           { value: "standard", label: "Standard" },
           { value: "aces", label: "ACES" }
@@ -557,15 +577,16 @@ export function createDefaultLiteSceneAdapter(): LiteSceneAdapter {
       if (kind === "scene") {
         const scene = source as SceneContext;
         if (path === "clearColor" && isNumberTuple(value, 4)) {
-          scene.clearColor = { r: clamp01(value[0]), g: clamp01(value[1]), b: clamp01(value[2]), a: clamp01(value[3]) };
+          // Babylon Lite's default render task retains this object from scene creation.
+          // Mutate it in place so the renderer observes edits made by the Explorer.
+          scene.clearColor.r = clamp01(value[0]);
+          scene.clearColor.g = clamp01(value[1]);
+          scene.clearColor.b = clamp01(value[2]);
+          scene.clearColor.a = clamp01(value[3]);
         } else if (path === "imageProcessing.exposure" && typeof value === "number" && Number.isFinite(value)) {
           scene.imageProcessing.exposure = Math.max(0, value);
         } else if (path === "imageProcessing.contrast" && typeof value === "number" && Number.isFinite(value)) {
           scene.imageProcessing.contrast = Math.max(0, value);
-        } else if (path === "imageProcessing.toneMappingEnabled" && typeof value === "boolean") {
-          scene.imageProcessing.toneMappingEnabled = value;
-        } else if (path === "imageProcessing.toneMappingType" && (value === "standard" || value === "aces")) {
-          scene.imageProcessing.toneMappingType = value;
         } else if (path === "environmentPrimaryColor" && isNumberTuple(value, 3)) {
           scene.environmentPrimaryColor = [clamp01(value[0]), clamp01(value[1]), clamp01(value[2])];
         } else if (path === "envRotationY" && typeof value === "number" && Number.isFinite(value)) {

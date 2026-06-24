@@ -60,7 +60,11 @@ Notifications dismiss automatically after three seconds. Configure `notification
 
 The default adapter currently exposes the public scene camera, meshes, mesh hierarchy, lights, derived materials, and animation groups. Material properties identify PBR, Standard, Node, Shader, material-view, and undetermined/custom families from their documented public fields. PBR materials expose environment intensity; Standard materials expose their public colors, alpha, specular power, and texture levels. The adapter edits documented scene-node transforms and visibility, base camera projection/viewport fields, recognized arc-rotate/free/geospatial camera fields, and documented light fields. See [the audited API inventory](docs/babylon-lite-api-inventory.md).
 
-Selecting **Scene** exposes its public clear color, image-processing exposure, contrast, tone-mapping state and type, environment primary color, and environment Y rotation. These values are editable through the documented `SceneContext` fields.
+Mesh properties include a **Deformation** section showing whether the mesh is skinned, its public bone count, whether morph targets are present, the morph-target count, and current morph weights. Morph weights refresh while that mesh is selected. Skeletal animation usually changes bone matrices and deforms vertices without changing the mesh's own position, rotation, or scaling.
+
+Selecting **Scene** exposes its public clear color, image-processing exposure, contrast, tone-mapping state and type, environment primary color, and environment Y rotation. Clear color, exposure, contrast, environment primary color, and environment Y rotation are editable through documented `SceneContext` fields.
+
+Tone-mapping enabled state and type are read-only. Babylon Lite reads them while building material shaders during `registerScene()` and exposes no public scene-wide pipeline rebuild for changing them safely at runtime. Set both values before registering the scene.
 
 ### Environment textures
 
@@ -103,6 +107,8 @@ npm run verify:package
 ```
 
 `npm run demo` serves and opens the examples at `http://localhost:5173/examples/`.
+
+The demo includes Basic PBR, inline Node Material, remote Boombox GLB, and animated shark scenes, plus the HTML User Guide.
 
 `npm run build:npm` creates the publishable library in `dist/`. `npm run build:demo` creates the static multi-page examples app in `demo-dist/`. `npm run build` runs both builds.
 

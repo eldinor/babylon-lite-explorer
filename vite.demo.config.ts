@@ -24,6 +24,7 @@ export default defineConfig({
       input: {
         index: resolve(projectRoot, "examples/index.html"),
         basic: resolve(projectRoot, "examples/basic/index.html"),
+        nodeMaterial: resolve(projectRoot, "examples/node-material/index.html"),
         boombox: resolve(projectRoot, "examples/boombox/index.html"),
         animatedGlb: resolve(projectRoot, "examples/animated-glb/index.html"),
         userGuide: resolve(projectRoot, "examples/user-guide/index.html")

@@ -24,6 +24,8 @@ addToScene(scene, createHemisphericLight([0, 1, 0], 1));
 
 await loadEnvironment(scene, "https://assets.babylonjs.com/core/environments/environmentSpecular.env", {
   brdfUrl: "/brdf-lut.png",
+  skipSkybox: true,
+  skipGround: true,
 });
 
 const sphere = createSphere(engine, { segments: 16, diameter: 2 });
@@ -45,4 +47,7 @@ addToScene(scene, box);
 
 await registerScene(scene);
 await startEngine(engine);
-showLiteExplorer({ engine, scene, canvas }, { features: { canvasPicking: true }, userGuideUrl: "/examples/user-guide/" });
+showLiteExplorer(
+  { engine, scene, canvas },
+  { features: { canvasPicking: true }, userGuideUrl: "/examples/user-guide/" },
+);
