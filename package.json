@@ -2,6 +2,19 @@
   "name": "babylon-lite-explorer",
   "version": "0.1.0",
   "description": "A small, public-API-only explorer for Babylon Lite",
+  "license": "Apache-2.0",
+  "author": {
+    "name": "Andrei Stepanov",
+    "email": "eldinor@gmail.com",
+    "url": "https://babylonpress.org/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/eldinor/babylon-lite-explorer.git"
+  },
+  "bugs": {
+    "url": "https://github.com/eldinor/babylon-lite-explorer/issues"
+  },
   "type": "module",
   "sideEffects": [
     "**/*.css"

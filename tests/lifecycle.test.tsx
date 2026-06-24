@@ -115,10 +115,10 @@ it("links the footer logo to BabylonPress", async () => {
   expect(link?.target).toBe("_blank");
   expect(link?.querySelector("img")?.alt).toBe("BabylonPress");
   const help = document.querySelector<HTMLAnchorElement>(".ble-footer-help");
-  expect(help?.href).toBe("https://github.com/eldinor/babylon-lite-inspector/blob/main/docs/user-guide.md");
+  expect(help?.href).toBe("https://github.com/eldinor/babylon-lite-explorer/blob/main/docs/user-guide.md");
   expect(help?.textContent).toBe("?");
   const github = document.querySelector<HTMLAnchorElement>(".ble-footer-github");
-  expect(github?.href).toBe("https://github.com/eldinor/babylon-lite-inspector");
+  expect(github?.href).toBe("https://github.com/eldinor/babylon-lite-explorer");
   expect(github?.getAttribute("aria-label")).toBe("Babylon Lite Explorer on GitHub");
   expect(github?.querySelector("svg")).not.toBeNull();
   handle.dispose();
@@ -324,6 +324,11 @@ it("virtualizes a large expanded Scene Explorer", async () => {
   await waitFor(() => expect(document.querySelectorAll(".ble-tree-row").length).toBeGreaterThan(5));
   expect(document.querySelectorAll(".ble-tree-row").length).toBeLessThan(50);
   expect(document.querySelector<HTMLElement>(".ble-tree-virtual")?.style.height).toBe(`${(10_000 + 5) * 25}px`);
+  const scroller = document.querySelector<HTMLElement>(".ble-tree-scroll")!;
+  scroller.scrollTop = 125_000;
+  scroller.dispatchEvent(new Event("scroll"));
+  await waitFor(() => expect(document.querySelector("[data-tree-index=\"5000\"]")).not.toBeNull());
+  expect(document.querySelector("[data-tree-index=\"1\"]")).toBeNull();
   handle.dispose();
 });
 

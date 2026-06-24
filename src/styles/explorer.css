@@ -61,7 +61,9 @@
 .ble-tabs .ble-pick-toggle { margin-left: auto; padding: 0 7px; }
 .ble-pick-toggle { min-height: 21px !important; border-color: transparent !important; background: transparent !important; color: var(--ble-muted) !important; font-weight: 500; }
 .ble-pick-toggle.is-active { border-color: var(--ble-accent) !important; background: color-mix(in srgb, var(--ble-accent) 22%, transparent) !important; color: var(--ble-text) !important; }
-.ble-pane-content { min-height: 0; overflow: auto; }
+.ble-pane-content { min-height: 0; overflow: hidden; }
+.ble-pane-content > [role="tabpanel"] { height: 100%; min-height: 0; overflow: auto; }
+.ble-pane-content > [role="tabpanel"] > .ble-explorer { overflow: hidden; }
 .ble-explorer { display: grid; grid-template-rows: auto minmax(0, 1fr); height: 100%; min-height: 0; }
 .ble-properties { min-height: 100%; }
 .ble-search { display: block; padding: 6px; border-bottom: 1px solid var(--ble-border); }

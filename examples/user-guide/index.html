@@ -84,6 +84,12 @@
           <p>Downloads a JSON inspection snapshot containing the public values visible to the Explorer. It is not a <code>.babylon</code> or GLB file and is not intended to reconstruct the scene.</p>
         </section>
 
+        <section id="statistics">
+          <h2>Status bar statistics</h2>
+          <p><strong>Frame interval</strong> is the average time between browser <code>requestAnimationFrame</code> callbacks, sampled over 500 ms. It reflects display refresh and VSync as well as application load; it is not CPU or GPU render duration. For example, <code>6.9 ms</code> is approximately 145 FPS.</p>
+          <p><strong>GPU</strong> appears separately only when Babylon Lite GPU timing is enabled and reports a positive measurement. Explorer does not enable GPU timing automatically. Draw, mesh, and light values come from the current engine and scene.</p>
+        </section>
+
         <section id="layouts">
           <h2>Layouts and themes</h2>
           <p><strong>Single</strong> stacks Scene Explorer above the right-side Properties/Tools tabs. Drag the divider to resize the panes. <strong>Split</strong> docks the tree at the left and Properties/Tools at the right, leaving the canvas interactive between them.</p>

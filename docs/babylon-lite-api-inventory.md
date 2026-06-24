@@ -1,49 +1,88 @@
-# Babylon Lite 1.4.0 Public API Inventory
+# Babylon Lite 1.4.0 public API inventory
 
-Audited from `node_modules/@babylonjs/lite/index.d.ts` on 2026-06-24. The package exports one public root entry point (`@babylonjs/lite`). Re-audit this file when upgrading the peer dependency.
+Audited on 2026-06-24 against the installed `@babylonjs/lite@1.4.0` declarations and the default Explorer adapter. Babylon Lite exposes one public package entry point: `@babylonjs/lite`.
 
-| Explorer feature | Verified public surface | Read | Write | Enumerate | MVP support |
-|---|---|---:|---:|---:|---|
-| Scene | `SceneContext` | Yes | Limited | N/A | Yes |
-| Camera | `SceneContext.camera`, `Camera` | Yes | `fov`, `nearPlane`, `farPlane`, optional viewport; see projection-cache limitation below | One | Yes, with upstream limitation |
-| Arc camera fields | `ArcRotateCamera` | Yes | Orbit, target, inertia, control sensitivities, and defined limit fields | Structurally identified | Yes |
-| Free camera fields | `FreeCamera` | Yes | Position, target, speed, sensitivity, and inertia | Structurally identified | Yes |
-| Geospatial camera fields | `GeospatialCamera` | Yes | Center, yaw, pitch, radius, and finite limits; derived vectors read-only | Structurally identified | Yes |
-| Meshes | `SceneContext.meshes`, `Mesh` | Yes | Public node fields | Yes | Yes |
-| Lights | `SceneContext.lights`, `LightBase` | Yes | Type-specific fields require explicit knowledge | Yes | Base read-only |
-| Animation groups | `SceneContext.animationGroups`, `AnimationGroup.currentTime`, `targetedAnimations` | Yes | Playback actions only | Yes | Live read-only summary |
-| Transform hierarchy | `SceneNode.children` | Yes | Public observable vectors | Yes | Yes |
-| Visibility | `SceneNode.visible`, `setMeshVisible` | Yes | Yes | N/A | Yes |
-| Materials | `Mesh.material`, `Material.name` | Yes | Concrete public props | Derived from meshes | Common fields plus verified PBR-like props |
-| Textures | Public PBR/Standard material `Texture2D` slots | Metadata only | No reliable runtime write path | Derived from mesh materials | Read-only metadata; no preview or source URL |
-| Draw calls | `EngineContext.drawCallCount` | Yes | No | N/A | Yes |
-| GPU frame time | `EngineContext.gpuFrameTimeMs`, `isGpuTimingSupported`, `setGpuTimingEnabled` | Yes | Opt-in | N/A | Display only; explorer never opts in by default |
-| Render lifecycle | `onBeforeRender(SceneContext, callback)` | Yes | Registration has no documented removal handle | N/A | Not used in MVP lifecycle |
-| Scene disposal | `onSceneDispose(SceneContext, callback)` | Yes | Registration has no documented removal handle | N/A | Not used in MVP lifecycle |
-| Canvas picking | `createGpuPicker`, `pickAsync`, `disposePicker`, `PickingInfo.pickedMesh` | Yes | No | N/A | Opt-in |
+This inventory describes what the default adapter currently uses. A public Babylon Lite feature is not automatically Explorer-supported until it is listed here.
 
-## Public structures used
+## Implemented coverage
 
-- `SceneContext.camera`
-- `SceneContext.meshes`
-- `SceneContext.lights`
-- `SceneContext.animationGroups`
-- `SceneNode.name`, `children`, `position`, `rotation`, `scaling`, and `visible`
-- `Mesh.id`, `material`, `thinInstances`, and `receiveShadows`
-- `Material.name`
-- `Camera.fov`, `nearPlane`, `farPlane`, and `viewport`
-- Documented `ArcRotateCamera`, `FreeCamera`, and `GeospatialCamera` fields when their complete public shape is present
-- `EngineContext.drawCallCount` and `gpuFrameTimeMs`
+| Explorer feature | Babylon Lite 1.4.0 public surface | Explorer behavior |
+| --- | --- | --- |
+| Scene tree | `SceneContext.camera`, `meshes`, `lights`, `animationGroups` | Enumerates these public collections and reconstructs reachable transform ancestors. |
+| Scene settings | `clearColor`, `imageProcessing`, `environmentPrimaryColor`, `envRotationY` | Edits clear color, exposure, contrast, environment primary color, and environment rotation. Tone-mapping enabled state and type are read-only. |
+| Transform nodes | `SceneNode.name`, `children`, `position`, `rotation`, `scaling`, `visible` | Reads and edits name and transforms. Visibility is applied to the subtree with `setSubtreeVisible()`. Zero scaling components are rejected. |
+| Mesh deformation | `Mesh.skeleton`, `Mesh.morphTargets` | Shows skinned state, bone count, morph-target state/count, and all current public weights. Morph weights refresh while selected. |
+| Base cameras | `Camera.fov`, `nearPlane`, `farPlane`, `viewport` | Reads and edits finite projection and viewport values, subject to the cache limitation below. |
+| ArcRotate camera | `ArcRotateCamera` | Edits orbit, target, inertia, `angularSensibility`, `panningSensibility`, `wheelPrecision`, and defined limits. |
+| Free camera | `FreeCamera` | Edits position, target, speed, angular sensitivity, and inertia. |
+| Geospatial camera | `GeospatialCamera` | Edits center, yaw, pitch, radius, and finite limits; derived position/up vectors are read-only. |
+| Lights | `SceneContext.lights`, `LightBase` and structural public fields | Shows public light type and edits available intensity, position, and direction fields. |
+| Materials | `Mesh.material`, `Material`, `MaterialView`, PBR/Standard public properties | Derives materials from meshes, deduplicates by identity, identifies verified families structurally, and edits the documented values listed below. |
+| Textures | Public `Texture2D` slots on discovered materials | Derives and deduplicates referenced 2D textures. Shows usages, dimensions, UV transform, and `invertY` read-only. |
+| Animation groups | `AnimationGroup.name`, `duration`, `frameRate`, `currentTime`, `isPlaying`, `speedRatio`, `loopAnimation` | Shows live time and derived frame, and provides Play/Stop actions. `targetedAnimations` is public in 1.4.0 but is not yet displayed. |
+| Canvas picking | `createGpuPicker()`, `pickAsync()`, `disposePicker()` | Optional mesh selection from short primary-pointer clicks. Picker resources are disposed with the Explorer. |
+| Statistics | Browser `requestAnimationFrame`; `EngineContext.drawCallCount`, `gpuFrameTimeMs`, `surfaces`; scene collections | Shows the averaged browser frame interval, draw calls, available GPU time, surface count, and scene object counts. Frame interval is not render duration, and Explorer does not enable GPU timing itself. |
+| Upload GLB | `loadGltf()`, `addToScene()` | Loads a local self-contained `.glb` into the current public scene. |
+| Export Scene | Adapter property descriptors | Downloads an inspection snapshot of public values. This is not Babylon serialization. |
 
-## Deliberately unsupported discovery
+## Editable material values
 
-- Babylon Lite 1.4.0 does not publicly invalidate the cached projection matrix when `Camera.fov`, `nearPlane`, or `farPlane` changes. `getProjectionMatrix()` reuses its cache while `worldMatrixVersion` and the aspect ratio remain unchanged, so a public assignment may not affect rendering until camera movement or an aspect-ratio change invalidates the cache. The default adapter deliberately does not write private cache fields.
-- Textures are not globally enumerable through `SceneContext`; the default adapter derives referenced `Texture2D` values from documented material slots and deduplicates them by object identity.
-- `Texture2D` does not expose its original URL, source image, or pixels. The public GPU handles (`texture`, `view`, and `sampler`) are insufficient for a portable preview without a documented readback API, so the default adapter does not render texture thumbnails or inspect private loader metadata.
-- Texture UV fields and `invertY` remain read-only in the default adapter. Babylon Lite 1.4.0 documents them as build-time fields: changing them after pipeline compilation requires a material rebuild.
-- Transform nodes not reachable through a public camera/mesh child hierarchy are not discoverable.
-- The glTF loader preserves public transform-node names but assigns generated render meshes names such as `gltf_mesh_0`. It does not retain the original glTF `mesh.name` on the public `Mesh`, so the default adapter cannot recover that exact name; callers may use the named parent transform as a node-level label.
-- Concrete light and material kinds are not inferred from private tags or constructors.
-- Frame graph and render tasks are not included until their public enumeration/lifecycle surface is separately audited.
+The adapter calls `markMaterialUboDirty()` after supported material writes.
 
-Callers can expose application-owned entities through `createRegisteredSceneAdapter`.
+- PBR: `name`, `baseColorFactor`, `metallicFactor`, `roughnessFactor`, `alpha`, and `environmentIntensity`. `doubleSided` is displayed read-only because it affects pipeline state.
+- Standard: `name`, `diffuseColor`, `specularColor`, `specularPower`, `emissiveColor`, `ambientColor`, `alpha`, `bumpLevel`, `ambientTexLevel`, `lightmapLevel`, `opacityLevel`, and `reflectionLevel`.
+- Node, Shader, material-view, and undetermined/custom families are identified where their public shape permits it, but their family-specific values are not edited by the default adapter.
+
+An empty `createPbrMaterial()` result still has no stable public family discriminator. See [the material-type API issue](babylon-lite-material-type-issue.md).
+
+## Discovered texture slots
+
+The default adapter follows these documented material references:
+
+- Direct slots: base color, normal, ORM, emissive, specular-glossiness, occlusion, metallic-reflectance, reflectance, diffuse, bump, specular, ambient, lightmap, opacity, and 2D reflection textures.
+- Clear coat: texture, roughness texture, and bump texture.
+- Sheen: color texture and the 1.4.0 separate roughness texture.
+- Anisotropy: the 1.4.0 anisotropy texture.
+- Iridescence: main and thickness textures.
+- Subsurface: thickness, refraction, and the 1.4.0 translucency color/intensity textures.
+
+Cube reflection textures and environment textures are not treated as `Texture2D` entries.
+
+## Public 1.4.0 surfaces not currently shown
+
+- `metadata?: LiteMetadata` on scene nodes, materials, and animation groups, including `metadata.gltf.extras`.
+- `AnimationGroup.targetedAnimations` and masks.
+- Skeleton/bone editing, morph-weight editing through `setMorphTargetWeights()`, thin-instance data, VAT controls, material plugins, frame graphs, render tasks, physics, navigation, sprites, text, and additional surfaces.
+- Application-retained objects that are not reachable from the public scene collections.
+
+These are omissions from the default Explorer adapter, not claims that Babylon Lite lacks the APIs.
+
+## Public API limitations affecting Explorer
+
+### Environment discovery
+
+`loadEnvironment()` returns `EnvironmentTextures`, but `SceneContext` has no public environment-texture field, presence flag, or general texture collection. Explorer cannot determine from the scene alone whether an environment is loaded and intentionally does not inspect private `_envTextures` state.
+
+### Tone mapping after registration
+
+`imageProcessing.toneMappingEnabled` and `toneMappingType` are public, but PBR material groups consume them while shaders are built during `registerScene()`. `rebuildMaterial()` reuses the already-created group builder and does not switch that scene-wide shader configuration. Explorer therefore displays both fields read-only. See [the runtime tone-mapping API issue](babylon-lite-runtime-tone-mapping-issue.md).
+
+### Camera projection cache
+
+Assigning `camera.fov`, `nearPlane`, or `farPlane` changes the public value, but `getProjectionMatrix()` is documented and implemented as cached by `worldMatrixVersion` and aspect ratio. Rendering may retain the previous projection until camera movement or an aspect-ratio change invalidates the cache. Explorer does not modify private cache fields.
+
+### Texture source and previews
+
+`Texture2D` exposes GPU handles, dimensions, UV transforms, and `invertY`, but no original URL/source image or portable pixel-readback API. Explorer cannot provide reliable previews and keeps texture metadata read-only.
+
+### Names and enumeration
+
+- The glTF loader preserves node names on public transform nodes, while generated render meshes may use names such as `gltf_mesh_0`; the original glTF mesh name is not recoverable from the public `Mesh` object.
+- Transform nodes not reachable from a public camera/mesh hierarchy cannot be discovered from `SceneContext`.
+- Concrete light and material kinds are never inferred from private tags or constructors.
+
+## Lifecycle APIs deliberately unused
+
+`onBeforeRender()` and `onSceneDispose()` are public but return no removal handle. The Explorer avoids registering callbacks it cannot detach. Its live UI refresh uses Explorer-owned timers that are removed on disposal.
+
+Callers can replace the default behavior with `createRegisteredSceneAdapter`; custom adapters currently replace rather than extend the default adapter.

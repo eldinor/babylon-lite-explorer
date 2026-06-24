@@ -56,6 +56,8 @@ Canvas picking is also optional. Set `features.canvasPicking: true` to add a Pic
 
 Notifications dismiss automatically after three seconds. Configure `notificationDurationMs`, or set it to `0` for manual dismissal. Set `notificationsEnabled: false` to disable notifications completely. These options are ready for a future preferences UI.
 
+The footer's **Frame interval** is the average interval between browser animation frames over 500 ms, not CPU or GPU render duration. Babylon Lite GPU time appears separately when its GPU timing is enabled and available; Explorer does not enable it automatically.
+
 ## Public API coverage
 
 The default adapter currently exposes the public scene camera, meshes, mesh hierarchy, lights, derived materials, and animation groups. Material properties identify PBR, Standard, Node, Shader, material-view, and undetermined/custom families from their documented public fields. PBR materials expose environment intensity; Standard materials expose their public colors, alpha, specular power, and texture levels. The adapter edits documented scene-node transforms and visibility, base camera projection/viewport fields, recognized arc-rotate/free/geospatial camera fields, and documented light fields. See [the audited API inventory](docs/babylon-lite-api-inventory.md).
@@ -108,10 +110,15 @@ npm run verify:package
 
 `npm run demo` serves and opens the examples at `http://localhost:5173/examples/`.
 
-The demo includes Basic PBR, inline Node Material, remote Boombox GLB, and animated shark scenes, plus the HTML User Guide.
+The demo includes Basic PBR, inline Node Material, a 100-mesh grid, remote Boombox GLB, and animated shark scenes, plus the HTML User Guide.
 
 `npm run build:npm` creates the publishable library in `dist/`. `npm run build:demo` creates the static multi-page examples app in `demo-dist/`. `npm run build` runs both builds.
 
 `npm run verify:package` packs the npm artifact, installs it into a temporary Vite consumer, and verifies that one JavaScript import emits both the Explorer JavaScript and CSS.
 
 Vite builds the ESM library and CSS. Preact, Signals, and Babylon Lite are externalized.
+
+## Further documentation
+
+- [Babylon Lite 1.4.0 public API inventory](docs/babylon-lite-api-inventory.md)
+- [Babylon Lite 1.4.0 migration notes](docs/babylon-lite-1.4.0-migration.md)

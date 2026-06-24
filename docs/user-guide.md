@@ -45,6 +45,12 @@ The copy button beside a property copies that value. The selection **Copy** acti
 
 **Export Scene** downloads a JSON inspection snapshot containing the public values visible to the Explorer. It is not a `.babylon` or GLB file and cannot reconstruct the scene. Babylon Lite does not currently expose a public scene serializer.
 
+## Status bar statistics
+
+**Frame interval** is the average time between browser `requestAnimationFrame` callbacks, sampled over 500 ms. It reflects display refresh and VSync as well as application load; it is not CPU or GPU render duration. For example, `6.9 ms` is approximately 145 FPS.
+
+**GPU** is shown separately only when Babylon Lite GPU timing is enabled and reports a positive measurement. The Explorer does not enable GPU timing automatically. Draw, mesh, and light values come from the current Babylon Lite engine and scene.
+
 ## Layouts and themes
 
 **Single** stacks Scene Explorer above the right-side Properties and Tools tabs. Drag the divider to resize the panes.

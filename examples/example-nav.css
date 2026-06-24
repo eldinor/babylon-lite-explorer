@@ -1,0 +1,23 @@
+.example-home-link {
+  position: fixed;
+  top: 10px;
+  left: 50%;
+  z-index: 1000000;
+  padding: 6px 11px;
+  border: 1px solid rgb(255 255 255 / 24%);
+  border-radius: 999px;
+  background: rgb(17 19 24 / 82%);
+  box-shadow: 0 3px 12px rgb(0 0 0 / 30%);
+  color: #edf1f7;
+  font: 600 12px/1.2 system-ui, sans-serif;
+  text-decoration: none;
+  transform: translateX(-50%);
+  backdrop-filter: blur(7px);
+}
+
+.example-home-link:hover,
+.example-home-link:focus-visible {
+  border-color: #58a6ff;
+  color: #8bc7ff;
+  outline: none;
+}
