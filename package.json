@@ -1,7 +1,7 @@
 {
   "name": "babylon-lite-explorer",
   "version": "0.1.0",
-  "description": "A small, official-API-only explorer for Babylon Lite",
+  "description": "A small, public-API-only explorer for Babylon Lite",
   "type": "module",
   "sideEffects": [
     "**/*.css"
@@ -21,6 +21,7 @@
   ],
   "scripts": {
     "dev": "vite",
+    "demo": "vite --host localhost --port 5173 --open /examples/",
     "build": "vite build && tsc -p tsconfig.build.json",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",

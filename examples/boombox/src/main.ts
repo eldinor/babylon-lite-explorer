@@ -7,7 +7,7 @@ import {
   createSceneContext,
   loadGltf,
   registerScene,
-  startEngine
+  startEngine,
 } from "@babylonjs/lite";
 import { showLiteExplorer } from "../../../src";
 
@@ -17,10 +17,7 @@ const scene = createSceneContext(engine);
 
 addToScene(scene, createHemisphericLight([0, 1, 0], 1));
 
-const boombox = await loadGltf(
-  engine,
-  "https://playground.babylonjs.com/scenes/BoomBox.glb"
-);
+const boombox = await loadGltf(engine, "https://playground.babylonjs.com/scenes/BoomBox.glb");
 addToScene(scene, boombox);
 
 const camera = createDefaultCamera(scene);

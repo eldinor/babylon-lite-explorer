@@ -2,7 +2,7 @@ import "./styles/explorer.css";
 
 export { showLiteExplorer } from "./api/showLiteExplorer";
 export type { LiteExplorerContext, LiteExplorerFeatures, LiteExplorerHandle, LiteExplorerLayout, LiteExplorerMode, LiteExplorerOptions, LiteExplorerTheme } from "./api/types";
-export { createOfficialLiteSceneAdapter } from "./adapter/official/createOfficialLiteSceneAdapter";
+export { createDefaultLiteSceneAdapter } from "./adapter/default/createDefaultLiteSceneAdapter";
 export { createRegisteredSceneAdapter } from "./adapter/registered/createRegisteredSceneAdapter";
 export type { LiteEntityRegistration } from "./adapter/registered/createRegisteredSceneAdapter";
 export { fail, ok } from "./adapter/LiteSceneAdapter";

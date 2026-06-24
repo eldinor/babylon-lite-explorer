@@ -1,4 +1,4 @@
-# Babylon Lite Explorer — Official API-Only Build Plan
+# Babylon Lite Explorer — Public API-Only Build Plan
 
 **Target stack:** Preact, `@preact/signals`, TypeScript, and scoped plain CSS.
 
@@ -10,7 +10,7 @@
 
 ## 1. Non-negotiable API policy
 
-The explorer must use official Babylon Lite APIs only.
+The explorer must use built-in Babylon Lite APIs only.
 
 It must not:
 
@@ -55,7 +55,7 @@ For every explorer feature, record:
 Rules for this inventory:
 
 1. The installed package declarations are the version-specific source of truth.
-2. Official Babylon Lite documentation and repository source may clarify behavior, but implementation must remain within exported/public declarations.
+2. Built-in Babylon Lite documentation and repository source may clarify behavior, but implementation must remain within exported/public declarations.
 3. Every default-adapter read or write must link to an inventory entry in a code comment or test name.
 4. Features without verified public support remain disabled.
 5. Upgrading Babylon Lite requires rerunning this audit and adapter compatibility tests.
@@ -89,8 +89,8 @@ There is no generic reflective fallback adapter.
 
 Two supported adapter paths exist:
 
-1. `createOfficialLiteSceneAdapter()` uses only verified Babylon Lite public APIs.
-2. A caller supplies a custom adapter or explicit entity registry for application-owned data that the official API cannot enumerate.
+1. `createDefaultLiteSceneAdapter()` uses only verified Babylon Lite public APIs.
+2. A caller supplies a custom adapter or explicit entity registry for application-owned data that the public API cannot enumerate.
 
 ---
 
@@ -301,7 +301,7 @@ export type PropertyDescriptor =
   | (PropertyBase & { kind: "color4"; value: readonly [number, number, number, number] });
 ```
 
-Only properties with verified public write support may be editable in the official adapter.
+Only properties with verified public write support may be editable in the default adapter.
 
 Safeguards:
 
@@ -446,7 +446,7 @@ Requirements:
 - pane content is isolated by an error boundary;
 - property rows have consistent label/control columns;
 - unsupported capabilities are absent or visibly disabled with an explanation;
-- empty official-API results show a useful message directing users to explicit registration/custom adapters;
+- empty built-in-API results show a useful message directing users to explicit registration/custom adapters;
 - no UI code examines source-object keys.
 
 ### Accessibility
@@ -593,8 +593,8 @@ src/
     types.ts
   adapter/
     LiteSceneAdapter.ts
-    official/
-      createOfficialLiteSceneAdapter.ts
+    built-in/
+      createDefaultLiteSceneAdapter.ts
       capabilities.ts
       entityIdentity.ts
     registered/
@@ -648,12 +648,12 @@ tests/
 - Inventory the installed Babylon Lite public declarations.
 - Identify which categories can be publicly enumerated.
 - Identify verified public read/write operations.
-- Add a test or static check rejecting underscore-prefixed access in the official adapter.
+- Add a test or static check rejecting underscore-prefixed access in the default adapter.
 
 ### Phase 1: Small vertical slice
 
 - Mount and dispose one explorer.
-- Create the official adapter skeleton and registered adapter.
+- Create the default adapter skeleton and registered adapter.
 - Display a stable read-only tree.
 - Select an entity and display read-only descriptors.
 - Implement one verified safe edit, if the public API supports it.
@@ -673,7 +673,7 @@ Do not build statistics or a large shell abstraction until this slice works agai
 ### Phase 3: Verified statistics
 
 - Add FPS/frame time only through documented APIs or explorer-owned timing.
-- Add draw/GPU metrics only when official APIs explicitly expose them.
+- Add draw/GPU metrics only when public APIs explicitly expose them.
 - Sample at a throttled rate independently from tree/property rendering.
 
 ### Post-MVP
@@ -690,10 +690,10 @@ Do not build statistics or a large shell abstraction until this slice works agai
 
 ## 18. Test requirements
 
-### Official API policy
+### Public API policy
 
-- official adapter imports only public package entry points;
-- official adapter contains no underscore-prefixed property access;
+- default adapter imports only public package entry points;
+- default adapter contains no underscore-prefixed property access;
 - unsupported categories return empty/unsupported results rather than probing;
 - UI never reads entity source keys;
 - each supported operation maps to the API inventory.
@@ -728,7 +728,7 @@ Do not build statistics or a large shell abstraction until this slice works agai
 
 ### UI
 
-- empty official API support shows guidance rather than an empty unexplained panel;
+- empty public API support shows guidance rather than an empty unexplained panel;
 - property panel isolates unknown adapter output;
 - pane error boundaries prevent full-explorer crashes;
 - tree, tabs, buttons, inputs, and notifications meet the defined keyboard/ARIA behavior.
@@ -741,7 +741,7 @@ Do not build statistics or a large shell abstraction until this slice works agai
 - The exact supported Babylon Lite public API is documented in the inventory.
 - `handle.ready` resolves after initial startup or rejects with an actionable error.
 - `dispose()` fully and idempotently cleans owned resources.
-- Officially enumerable entities appear in Scene Explorer.
+- Publicly enumerable entities appear in Scene Explorer.
 - Non-enumerable categories can be supplied through explicit registration.
 - Search, expand/collapse, and stable selection work.
 - Properties are descriptor-driven and read-only by default.
@@ -765,7 +765,7 @@ Fluent UI                 Scoped plain CSS
 Observable collections    Per-instance Signals
 Shell service             Small registration service
 Property lines            Typed PropertyRow components
-Scene object model        Official API-only adapter
+Scene object model        Public API-only adapter
 Fallback reflection       Not allowed
 Missing enumeration       Explicit host registration
 Watcher service           Manual, coordinated refresh first

@@ -1,9 +1,76 @@
 import { describe, expect, it, vi } from "vitest";
-import { createOfficialLiteSceneAdapter } from "../src/adapter/official/createOfficialLiteSceneAdapter";
+import { createDefaultLiteSceneAdapter } from "../src/adapter/default/createDefaultLiteSceneAdapter";
 import { findEntityById } from "../src/signals/treeUtils";
 import { fakeScene } from "./helpers";
 
-describe("official adapter", () => {
+describe("default adapter", () => {
+  it("classifies supported material families from public fields", async () => {
+    const data = fakeScene();
+    const materials = [
+      { name: "PBR", baseColorFactor: [1, 1, 1, 1], metallicFactor: 1, roughnessFactor: 1 },
+      { name: "Standard", diffuseColor: [1, 1, 1], specularColor: [1, 1, 1], specularPower: 64 },
+      { name: "Node", inputs: {} },
+      { name: "Shader", vertexSource: "@vertex fn main() {}", fragmentSource: "@fragment fn main() {}" },
+      { name: "PBR View", source: { baseColorFactor: [1, 1, 1, 1], metallicFactor: 0, roughnessFactor: 1 } },
+      { name: "Custom" }
+    ];
+    data.scene.meshes = materials.map((material, index) => ({
+      ...data.mesh,
+      id: `material-mesh-${index}`,
+      name: `Material mesh ${index}`,
+      children: [],
+      position: { ...data.mesh.position },
+      rotation: { ...data.mesh.rotation },
+      scaling: { ...data.mesh.scaling },
+      material
+    })) as typeof data.scene.meshes;
+    const context = { scene: data.scene, engine: {} };
+    const adapter = createDefaultLiteSceneAdapter();
+    const tree = await adapter.getSceneTree(context);
+    const entities = tree[0].children?.find((item) => item.label === "Materials")?.children ?? [];
+    const types = new Map<string, string>();
+    for (const entity of entities) {
+      const properties = await adapter.getProperties(entity, context);
+      types.set(entity.label, String(properties.find((property) => property.path === "$materialType")?.value));
+    }
+    expect(Object.fromEntries(types)).toEqual({
+      PBR: "PBR",
+      Standard: "Standard",
+      Node: "Node",
+      Shader: "Shader",
+      "PBR View": "PBR View",
+      Custom: "Custom / Other"
+    });
+  });
+
+  it("exposes and edits public scene image-processing and environment values", async () => {
+    const data = fakeScene();
+    const context = { scene: data.scene, engine: {} };
+    const adapter = createDefaultLiteSceneAdapter();
+    const scene = (await adapter.getSceneTree(context))[0];
+    const properties = await adapter.getProperties(scene, context);
+
+    expect(properties.map((property) => property.path)).toEqual(expect.arrayContaining([
+      "clearColor",
+      "imageProcessing.exposure",
+      "imageProcessing.contrast",
+      "imageProcessing.toneMappingEnabled",
+      "imageProcessing.toneMappingType",
+      "environmentPrimaryColor",
+      "envRotationY"
+    ]));
+
+    expect((await adapter.setProperty?.(scene, "imageProcessing.exposure", 1.5, context))?.ok).toBe(true);
+    expect((await adapter.setProperty?.(scene, "imageProcessing.toneMappingType", "aces", context))?.ok).toBe(true);
+    expect((await adapter.setProperty?.(scene, "clearColor", [0.2, 0.3, 0.4, 1], context))?.ok).toBe(true);
+    expect((await adapter.setProperty?.(scene, "environmentPrimaryColor", [0.4, 0.5, 0.6], context))?.ok).toBe(true);
+    expect((await adapter.setProperty?.(scene, "envRotationY", Math.PI, context))?.ok).toBe(true);
+    expect(data.scene.imageProcessing).toMatchObject({ exposure: 1.5, toneMappingType: "aces" });
+    expect(data.scene.clearColor).toEqual({ r: 0.2, g: 0.3, b: 0.4, a: 1 });
+    expect(data.scene.environmentPrimaryColor).toEqual([0.4, 0.5, 0.6]);
+    expect(data.scene.envRotationY).toBe(Math.PI);
+  });
+
   it("enumerates only the public scene collections", async () => {
     const data = fakeScene();
     (data.scene as { camera: unknown }).camera = {
@@ -14,7 +81,7 @@ describe("official adapter", () => {
       worldMatrix: { length: 16 },
       worldMatrixVersion: 1
     };
-    const adapter = createOfficialLiteSceneAdapter();
+    const adapter = createDefaultLiteSceneAdapter();
     const tree = await adapter.getSceneTree({ scene: data.scene, engine: {} });
     expect(tree[0].children?.map((item) => item.label)).toEqual(["Nodes", "Materials"]);
     const nodes = tree[0].children?.find((item) => item.label === "Nodes")?.children;
@@ -26,7 +93,7 @@ describe("official adapter", () => {
     const data = fakeScene();
     const duplicate = { ...data.mesh, id: undefined, position: { ...data.mesh.position }, name: "Sphere" };
     data.scene.meshes.push(duplicate as unknown as typeof data.mesh);
-    const adapter = createOfficialLiteSceneAdapter();
+    const adapter = createDefaultLiteSceneAdapter();
     const first = await adapter.getSceneTree({ scene: data.scene, engine: {} });
     const second = await adapter.getSceneTree({ scene: data.scene, engine: {} });
     const firstIds = first[0].children?.find((item) => item.label === "Nodes")?.children?.filter((item) => item.kind === "mesh").map((item) => item.id);
@@ -73,7 +140,7 @@ describe("official adapter", () => {
       const data = fakeScene();
       (data.scene as { camera: unknown }).camera = item.camera;
       const context = { scene: data.scene, engine: {} };
-      const adapter = createOfficialLiteSceneAdapter();
+      const adapter = createDefaultLiteSceneAdapter();
       const tree = await adapter.getSceneTree(context);
       const entity = tree[0].children?.find((section) => section.label === "Nodes")?.children?.find((node) => node.kind === "camera")!;
       const paths = (await adapter.getProperties(entity, context)).map((property) => property.path);
@@ -100,7 +167,7 @@ describe("official adapter", () => {
       worldMatrixVersion: 1
     };
     data.mesh.parent = root as unknown as typeof data.mesh.parent;
-    const tree = await createOfficialLiteSceneAdapter().getSceneTree({ scene: data.scene, engine: {} });
+    const tree = await createDefaultLiteSceneAdapter().getSceneTree({ scene: data.scene, engine: {} });
     const nodes = tree[0].children?.find((item) => item.label === "Nodes")?.children;
     const transformRoot = nodes?.find((item) => item.label === "BoomBox root");
     expect(transformRoot?.kind).toBe("transform");
@@ -111,7 +178,7 @@ describe("official adapter", () => {
   it("returns descriptors and applies safe public transform edits", async () => {
     const data = fakeScene();
     const context = { scene: data.scene, engine: {} };
-    const adapter = createOfficialLiteSceneAdapter();
+    const adapter = createDefaultLiteSceneAdapter();
     const tree = await adapter.getSceneTree(context);
     const meshId = tree[0].children?.find((item) => item.label === "Nodes")?.children?.find((item) => item.kind === "mesh")?.id as string;
     const entity = findEntityById(tree, meshId)!;
@@ -135,7 +202,7 @@ describe("official adapter", () => {
   });
 
   it("returns an empty tree for unsupported scene values", async () => {
-    expect(await createOfficialLiteSceneAdapter().getSceneTree({ scene: {}, engine: {} })).toEqual([]);
+    expect(await createDefaultLiteSceneAdapter().getSceneTree({ scene: {}, engine: {} })).toEqual([]);
   });
 
   it("updates render visibility through the public subtree API", async () => {
@@ -153,7 +220,7 @@ describe("official adapter", () => {
     };
     data.mesh.children.push(child as never);
     const context = { scene: data.scene, engine: {} };
-    const adapter = createOfficialLiteSceneAdapter();
+    const adapter = createDefaultLiteSceneAdapter();
     const tree = await adapter.getSceneTree(context);
     const entity = tree[0].children?.find((item) => item.label === "Nodes")?.children?.find((item) => item.kind === "mesh");
 
@@ -166,7 +233,7 @@ describe("official adapter", () => {
     const data = fakeScene();
     Object.assign(data.material, { baseColorFactor: [1, 0, 0, 1], metallicFactor: 0.2, roughnessFactor: 0.4, alpha: 1 });
     const context = { scene: data.scene, engine: {} };
-    const adapter = createOfficialLiteSceneAdapter();
+    const adapter = createDefaultLiteSceneAdapter();
     const tree = await adapter.getSceneTree(context);
     const material = tree[0].children?.find((item) => item.label === "Materials")?.children?.[0];
     expect(material).toBeDefined();
@@ -200,7 +267,7 @@ describe("official adapter", () => {
     };
     Object.assign(data.material, { baseColorTexture: texture, ormTexture: texture });
     const context = { scene: data.scene, engine: {} };
-    const adapter = createOfficialLiteSceneAdapter();
+    const adapter = createDefaultLiteSceneAdapter();
     const tree = await adapter.getSceneTree(context);
     const textures = tree[0].children?.find((item) => item.label === "Textures")?.children;
     expect(textures).toHaveLength(1);
@@ -237,7 +304,7 @@ describe("official adapter", () => {
       weight: 1
     } as never);
     const context = { scene: data.scene, engine: {} };
-    const adapter = createOfficialLiteSceneAdapter();
+    const adapter = createDefaultLiteSceneAdapter();
     const tree = await adapter.getSceneTree(context);
     const animation = tree[0].children?.find((item) => item.label === "Animation Groups")?.children?.[0];
 
@@ -260,7 +327,7 @@ describe("official adapter", () => {
     const second = { name: "Swim", duration: 3, currentFrame: 2, isPlaying: false, speedRatio: 1, loopAnimation: true, weight: 1 };
     data.scene.animationGroups.push(first as never, second as never);
     const context = { scene: data.scene, engine: {} };
-    const adapter = createOfficialLiteSceneAdapter();
+    const adapter = createDefaultLiteSceneAdapter();
     const tree = await adapter.getSceneTree(context);
     const animations = tree[0].children?.find((item) => item.label === "Animation Groups")?.children;
     const idle = animations?.find((item) => item.label === "Idle");
@@ -283,7 +350,7 @@ describe("official adapter", () => {
     const group = { name: "Swim", duration: 3, frameRate: 60, currentFrame: 0, isPlaying: true, speedRatio: 1, loopAnimation: true, weight: 1 };
     data.scene.animationGroups.push(group as never);
     const context = { scene: data.scene, engine: {} };
-    const adapter = createOfficialLiteSceneAdapter();
+    const adapter = createDefaultLiteSceneAdapter();
     const tree = await adapter.getSceneTree(context);
     const animation = tree[0].children?.find((item) => item.label === "Animation Groups")?.children?.[0];
 
@@ -307,7 +374,7 @@ describe("official adapter", () => {
       rotation: { ...data.mesh.rotation },
       scaling: { ...data.mesh.scaling }
     }));
-    const tree = await createOfficialLiteSceneAdapter().getSceneTree({ scene: data.scene, engine: {} });
+    const tree = await createDefaultLiteSceneAdapter().getSceneTree({ scene: data.scene, engine: {} });
     expect(tree[0].children?.find((item) => item.label === "Nodes")?.children?.filter((item) => item.kind === "mesh")).toHaveLength(1_000);
   });
 });

@@ -1,5 +1,5 @@
 import { h, render } from "preact";
-import { createOfficialLiteSceneAdapter } from "../adapter/official/createOfficialLiteSceneAdapter";
+import { createDefaultLiteSceneAdapter } from "../adapter/default/createDefaultLiteSceneAdapter";
 import { createDisposable, DisposableStore } from "../core/disposable";
 import { createExplorerSignals } from "../signals/createExplorerSignals";
 import { CommandService } from "../services/commandService";
@@ -42,7 +42,7 @@ export function showLiteExplorer(context: LiteExplorerContext, options: LiteExpl
 
   const signals = createExplorerSignals();
   signals.context.value = { ...context, canvas };
-  signals.adapter.value = options.adapter ?? createOfficialLiteSceneAdapter();
+  signals.adapter.value = options.adapter ?? createDefaultLiteSceneAdapter();
   signals.theme.value = theme;
   signals.layout.value = layout;
   try {

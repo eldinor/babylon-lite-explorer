@@ -36,6 +36,7 @@ const box = createBox(engine, 1.5);
 box.name = "Blue box";
 box.position.x = 1.25;
 box.material = createPbrMaterial({
+  name: "boxMaterial",
   baseColorFactor: [0.05, 0.25, 0.95, 1],
   metallicFactor: 0.1,
   roughnessFactor: 0.35,

@@ -36,6 +36,8 @@ const none: LiteEntityCapabilities = {
   serializableSnapshot: true
 };
 
+const sceneCapabilities: LiteEntityCapabilities = { ...none, editable: true };
+
 function isPublicScene(value: unknown): value is SceneContext {
   if (!value || typeof value !== "object") return false;
   const scene = value as Partial<SceneContext>;
@@ -112,6 +114,10 @@ function asTuple3(value: { x: number; y: number; z: number }): readonly [number,
   return [value.x, value.y, value.z];
 }
 
+function isNumberTuple(value: unknown, length: 3 | 4): value is number[] {
+  return Array.isArray(value) && value.length === length && value.every((part) => typeof part === "number" && Number.isFinite(part));
+}
+
 function isVec3(value: unknown): value is { x: number; y: number; z: number } {
   if (!value || typeof value !== "object") return false;
   const vector = value as Record<string, unknown>;
@@ -157,9 +163,24 @@ function isPublicPbrMaterial(material: Material): material is PublicPbrMaterial 
   return "baseColorFactor" in material || "metallicFactor" in material || "roughnessFactor" in material;
 }
 
+function getPublicMaterialType(material: Material, visited = new Set<object>()): string {
+  if (visited.has(material)) return "Material View";
+  visited.add(material);
+  const value = material as Material & Record<string, unknown>;
+  if (value.source && typeof value.source === "object") {
+    const sourceType = getPublicMaterialType(value.source as Material, visited);
+    return `${sourceType} View`;
+  }
+  if (value.inputs && typeof value.inputs === "object") return "Node";
+  if (typeof value.vertexSource === "string" && typeof value.fragmentSource === "string") return "Shader";
+  if (isPublicPbrMaterial(material)) return "PBR";
+  if (Array.isArray(value.diffuseColor) && Array.isArray(value.specularColor) && typeof value.specularPower === "number") return "Standard";
+  return "Custom / Other";
+}
+
 const clamp01 = (value: number) => Math.min(1, Math.max(0, value));
 
-export function createOfficialLiteSceneAdapter(): LiteSceneAdapter {
+export function createDefaultLiteSceneAdapter(): LiteSceneAdapter {
   const objectIds = new WeakMap<object, string>();
   const entityTypes = new WeakMap<object, LiteEntityKind>();
   const animationClocks = new WeakMap<AnimationGroup, { time: number; publicTime: number; sampledAt: number; wasPlaying: boolean }>();
@@ -236,7 +257,7 @@ export function createOfficialLiteSceneAdapter(): LiteSceneAdapter {
       label: "Scene",
       kind: "scene",
       source: scene,
-      capabilities: none,
+      capabilities: sceneCapabilities,
       children: []
     };
 
@@ -425,6 +446,7 @@ export function createOfficialLiteSceneAdapter(): LiteSceneAdapter {
       const material = source as Material;
       const values: PropertyDescriptor[] = [
         ...base,
+        { kind: "readonly", path: "$materialType", label: "Type", value: getPublicMaterialType(material), section: "Material" },
         { kind: "text", path: "name", label: "Name", value: material.name ?? "", section: "Material" }
       ];
       if (isPublicPbrMaterial(material)) {
@@ -467,10 +489,32 @@ export function createOfficialLiteSceneAdapter(): LiteSceneAdapter {
     }
     if (knownKind === "scene") {
       const scene = source as SceneContext;
-      return [...base,
+      const values: PropertyDescriptor[] = [...base,
         { kind: "readonly", path: "meshCount", label: "Meshes", value: String(scene.meshes.length), section: "Scene" },
         { kind: "readonly", path: "lightCount", label: "Lights", value: String(scene.lights.length), section: "Scene" }
       ];
+      const clearColor = scene.clearColor;
+      if ([clearColor.r, clearColor.g, clearColor.b, clearColor.a].every((part) => typeof part === "number" && Number.isFinite(part))) {
+        values.push({ kind: "color4", path: "clearColor", label: "Clear color", value: [clearColor.r, clearColor.g, clearColor.b, clearColor.a], section: "Scene" });
+      }
+      const imageProcessing = scene.imageProcessing;
+      if (typeof imageProcessing.exposure === "number") values.push({ kind: "number", path: "imageProcessing.exposure", label: "Exposure", value: imageProcessing.exposure, min: 0, step: 0.01, section: "Image Processing" });
+      if (typeof imageProcessing.contrast === "number") values.push({ kind: "number", path: "imageProcessing.contrast", label: "Contrast", value: imageProcessing.contrast, min: 0, step: 0.01, section: "Image Processing" });
+      if (typeof imageProcessing.toneMappingEnabled === "boolean") values.push({ kind: "boolean", path: "imageProcessing.toneMappingEnabled", label: "Tone mapping", value: imageProcessing.toneMappingEnabled, section: "Image Processing" });
+      values.push({
+        kind: "select",
+        path: "imageProcessing.toneMappingType",
+        label: "Tone mapping type",
+        value: imageProcessing.toneMappingType ?? "standard",
+        options: [
+          { value: "standard", label: "Standard" },
+          { value: "aces", label: "ACES" }
+        ],
+        section: "Image Processing"
+      });
+      if (isNumberTuple(scene.environmentPrimaryColor, 3)) values.push({ kind: "color3", path: "environmentPrimaryColor", label: "Environment primary color", value: [...scene.environmentPrimaryColor], section: "Environment" });
+      if (typeof scene.envRotationY === "number") values.push({ kind: "number", path: "envRotationY", label: "Environment Y rotation", value: scene.envRotationY, step: 0.01, section: "Environment" });
+      return values;
     }
     return base;
   };
@@ -480,6 +524,27 @@ export function createOfficialLiteSceneAdapter(): LiteSceneAdapter {
     if (!source || typeof source !== "object") return fail("unsupported", "This entity has no editable public source.");
     const kind = entityTypes.get(source);
     try {
+      if (kind === "scene") {
+        const scene = source as SceneContext;
+        if (path === "clearColor" && isNumberTuple(value, 4)) {
+          scene.clearColor = { r: clamp01(value[0]), g: clamp01(value[1]), b: clamp01(value[2]), a: clamp01(value[3]) };
+        } else if (path === "imageProcessing.exposure" && typeof value === "number" && Number.isFinite(value)) {
+          scene.imageProcessing.exposure = Math.max(0, value);
+        } else if (path === "imageProcessing.contrast" && typeof value === "number" && Number.isFinite(value)) {
+          scene.imageProcessing.contrast = Math.max(0, value);
+        } else if (path === "imageProcessing.toneMappingEnabled" && typeof value === "boolean") {
+          scene.imageProcessing.toneMappingEnabled = value;
+        } else if (path === "imageProcessing.toneMappingType" && (value === "standard" || value === "aces")) {
+          scene.imageProcessing.toneMappingType = value;
+        } else if (path === "environmentPrimaryColor" && isNumberTuple(value, 3)) {
+          scene.environmentPrimaryColor = [clamp01(value[0]), clamp01(value[1]), clamp01(value[2])];
+        } else if (path === "envRotationY" && typeof value === "number" && Number.isFinite(value)) {
+          scene.envRotationY = value;
+        } else {
+          return fail("invalid", `Invalid value for ${path}.`);
+        }
+        return ok();
+      }
       if (kind === "mesh" || kind === "transform") {
         const node = source as SceneNode;
         if (path === "name" && typeof value === "string") node.name = value;
@@ -561,7 +626,7 @@ export function createOfficialLiteSceneAdapter(): LiteSceneAdapter {
         markMaterialUboDirty(material);
         return ok();
       }
-      return fail("unsupported", "This property is read-only in the official adapter.");
+      return fail("unsupported", "This property is read-only in the default adapter.");
     } catch (error) {
       return fail("failed", error instanceof Error ? error.message : "The public API write failed.");
     }

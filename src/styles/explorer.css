@@ -23,6 +23,7 @@
 .ble-overlay[data-layout="single"] { right: 0; width: min(420px, 100%); height: 100vh; }
 .ble-overlay[data-layout="split"] { inset: 0; width: 100%; height: 100vh; border: 0; background: transparent; box-shadow: none; pointer-events: none; }
 .ble-inline { position: relative; width: 100%; height: 100%; min-height: 320px; border: 1px solid var(--ble-border); }
+.ble-inline > .ble-shell, .ble-inline > .ble-split-shell { position: absolute; inset: 0; }
 .ble-shell { display: grid; grid-template-rows: 38px minmax(0, 1fr) auto 28px; width: 100%; height: 100%; overflow: hidden; background: var(--ble-bg); }
 .ble-split-shell { position: relative; width: 100%; height: 100%; pointer-events: none; }
 .ble-split-dock { position: absolute; top: 0; bottom: 0; display: grid; width: min(420px, 50vw); overflow: hidden; border-color: var(--ble-border); border-style: solid; background: var(--ble-bg); box-shadow: 0 12px 32px rgb(0 0 0 / 35%); pointer-events: auto; }
@@ -64,7 +65,7 @@
 .ble-explorer { display: grid; grid-template-rows: auto minmax(0, 1fr); height: 100%; min-height: 0; }
 .ble-properties { min-height: 100%; }
 .ble-search { display: block; padding: 6px; border-bottom: 1px solid var(--ble-border); }
-.ble-search input, .ble-property-control input[type="text"], .ble-property-control input[type="number"] { width: 100%; height: 24px; padding: 2px 6px; border: 1px solid var(--ble-border); border-radius: 2px; background: var(--ble-bg); }
+.ble-search input, .ble-property-control input[type="text"], .ble-property-control input[type="number"], .ble-property-control select { width: 100%; height: 24px; padding: 2px 6px; border: 1px solid var(--ble-border); border-radius: 2px; background: var(--ble-bg); color: var(--ble-text); }
 .ble-tree, .ble-tree ul { margin: 0; padding: 0; list-style: none; }
 .ble-tree-scroll { min-height: 0; overflow: auto; }
 .ble-tree-virtual { position: relative; min-width: 100%; }

@@ -32,7 +32,20 @@ export function fakeScene() {
     groundColor: [0, 0, 0]
   };
   return {
-    scene: { camera: null, meshes: [mesh], lights: [light], animationGroups: [], clearColor: {}, imageProcessing: {}, fog: null, clipPlane: null, shadowGenerators: [], fixedDeltaMs: 0 },
+    scene: {
+      camera: null,
+      meshes: [mesh],
+      lights: [light],
+      animationGroups: [],
+      clearColor: { r: 0.1, g: 0.2, b: 0.3, a: 1 },
+      imageProcessing: { exposure: 1, contrast: 1, toneMappingEnabled: false, toneMappingType: "standard" as const },
+      environmentPrimaryColor: [0.1, 0.1, 0.2] as [number, number, number],
+      envRotationY: 0,
+      fog: null,
+      clipPlane: null,
+      shadowGenerators: [],
+      fixedDeltaMs: 0
+    },
     mesh,
     light,
     material

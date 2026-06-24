@@ -19,6 +19,9 @@ export function PropertyEditor({ descriptor }: { descriptor: PropertyDescriptor 
     return <span class="ble-readonly" title={String(descriptor.value)}>{displayed}</span>;
   }
   if (descriptor.kind === "boolean") return <input type="checkbox" checked={descriptor.value} onChange={(event) => void refresh.setProperty(descriptor, event.currentTarget.checked)} />;
+  if (descriptor.kind === "select") return <select value={descriptor.value} onChange={(event) => void refresh.setProperty(descriptor, event.currentTarget.value)}>
+    {descriptor.options.map((option) => <option value={option.value} key={option.value}>{option.label}</option>)}
+  </select>;
   if (descriptor.kind === "vector3" || descriptor.kind === "color3" || descriptor.kind === "color4") return <TupleEditor descriptor={descriptor} />;
   if (descriptor.kind === "number") return <ScalarEditor descriptor={descriptor} />;
   return <TextEditor descriptor={descriptor} />;

@@ -143,6 +143,39 @@ it("shows capability-backed actions for the selected entity", async () => {
   handle.dispose();
 });
 
+it("shows public scene settings when Scene is selected", async () => {
+  const data = fakeScene();
+  const handle = showLiteExplorer({ scene: data.scene, engine: {} });
+  await handle.ready;
+
+  const scene = [...document.querySelectorAll<HTMLButtonElement>(".ble-tree-label")]
+    .find((button) => button.textContent?.trim() === "Scene");
+  scene?.click();
+
+  await waitFor(() => {
+    const labels = [...document.querySelectorAll<HTMLLabelElement>(".ble-property-row > label")]
+      .map((label) => label.textContent);
+    expect(labels).toEqual(expect.arrayContaining([
+      "Clear color",
+      "Exposure",
+      "Contrast",
+      "Tone mapping",
+      "Tone mapping type",
+      "Environment primary color",
+      "Environment Y rotation"
+    ]));
+  });
+  const toneMappingType = document.querySelector<HTMLSelectElement>(".ble-property-control select");
+  expect([...toneMappingType!.options].map((option) => [option.value, option.textContent])).toEqual([
+    ["standard", "Standard"],
+    ["aces", "ACES"]
+  ]);
+  toneMappingType!.value = "aces";
+  toneMappingType!.dispatchEvent(new Event("change", { bubbles: true }));
+  await waitFor(() => expect(data.scene.imageProcessing.toneMappingType).toBe("aces"));
+  handle.dispose();
+});
+
 it("applies property input without waiting for blur", async () => {
   const data = fakeScene();
   const handle = showLiteExplorer({ scene: data.scene, engine: {} });

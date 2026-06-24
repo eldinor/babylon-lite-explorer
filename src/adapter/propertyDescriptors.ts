@@ -8,6 +8,7 @@ export type PropertyBase = {
 export type PropertyDescriptor =
   | (PropertyBase & { kind: "readonly"; value: string })
   | (PropertyBase & { kind: "text"; value: string })
+  | (PropertyBase & { kind: "select"; value: string; options: readonly { value: string; label: string }[] })
   | (PropertyBase & { kind: "number"; value: number; min?: number; max?: number; step?: number })
   | (PropertyBase & { kind: "boolean"; value: boolean })
   | (PropertyBase & { kind: "vector3"; value: readonly [number, number, number] })
