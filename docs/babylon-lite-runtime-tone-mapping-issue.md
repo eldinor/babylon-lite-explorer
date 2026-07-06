@@ -1,8 +1,10 @@
 # Support changing tone mapping after scene registration
 
+Verified against `@babylonjs/lite` 1.6.0.
+
 ## Description
 
-`SceneContext.imageProcessing` publicly exposes `toneMappingEnabled` and `toneMappingType`, but PBR material shaders read these values while the scene is built during `registerScene()`.
+`SceneContext.imageProcessing` publicly exposes `toneMappingEnabled: boolean` and the optional `toneMappingType?: "standard" | "aces"`, but PBR material shaders read these values while the scene is built during `registerScene()`.
 
 Changing either value after registration updates the public scene object without updating the rendered result:
 
@@ -21,7 +23,18 @@ This makes the fields appear runtime-editable even though their effective values
 
 ## Why `rebuildMaterial()` is insufficient
 
-Calling `rebuildMaterial()` for every scene material does not apply the new tone-mapping type. Material rebuilding reuses the existing group builder, which has already captured the original tone-mapping shader configuration.
+Calling `rebuildMaterial()` for every scene material does not apply the new tone-mapping configuration. This remains true when passing `{ rebuildFrameGraph: true }`: material rebuilding reuses the existing group builder, which has already captured whether tone mapping is enabled and which shader implementation to use.
+
+As of Lite 1.6.0, the relevant public API is still material-scoped:
+
+```ts
+rebuildMaterial(scene, material, {
+  rebuildViews: true,
+  rebuildFrameGraph: true,
+});
+```
+
+There is no public scene-level API that rebuilds the PBR group builder after either tone-mapping field changes.
 
 External tools cannot force a complete public rebuild without recreating the scene or accessing private renderer state.
 

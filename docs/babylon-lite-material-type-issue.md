@@ -1,8 +1,10 @@
 # Expose a public material-family discriminator on `Material`
 
+Verified against `@babylonjs/lite` 1.8.0.
+
 ## Description
 
-Babylon Lite materials are plain objects, but the public `Material` interface does not expose their concrete family (`PBR`, `Standard`, `Shader`, or `Node`).
+Babylon Lite materials are plain objects, but the public `Material` interface exposes only `name` and `metadata`; it does not expose their concrete family (`PBR`, `Standard`, `Shader`, or `Node`).
 
 This becomes ambiguous when a material is created without explicit properties:
 
@@ -10,7 +12,9 @@ This becomes ambiguous when a material is created without explicit properties:
 const material = createPbrMaterial();
 ```
 
-The returned object contains no public PBR-specific fields. External tools cannot distinguish it from an empty custom material without inspecting private implementation fields such as `_buildGroup`.
+The returned object contains no public PBR-specific fields. External tools cannot distinguish it from another object that only satisfies the base `Material` interface without inspecting private implementation fields.
+
+In Lite 1.8.0, the internal group builders carry a `_materialFamily` value (`"pbr"`, `"standard"`, `"shader"`, or `"node"`). However, that value is reachable only through the private `_buildGroup` implementation path and neither field is part of the public `Material` declaration. Treating it as public would therefore couple tools to renderer internals.
 
 A configured material can be identified structurally:
 
@@ -35,6 +39,7 @@ Add a stable, read-only discriminator:
 ```ts
 interface Material {
   name?: string;
+  metadata?: LiteMetadata;
   readonly materialType: "pbr" | "standard" | "shader" | "node" | "custom";
 }
 ```

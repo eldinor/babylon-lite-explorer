@@ -57,7 +57,7 @@
     "test:watch": "vitest"
   },
   "peerDependencies": {
-    "@babylonjs/lite": "^1.4.0",
+    "@babylonjs/lite": "^1.8.0",
     "@preact/signals": "^2.0.0",
     "preact": "^10.0.0"
   },
@@ -67,7 +67,7 @@
     }
   },
   "devDependencies": {
-    "@babylonjs/lite": "^1.4.0",
+    "@babylonjs/lite": "^1.8.0",
     "@preact/preset-vite": "^2.10.2",
     "@preact/signals": "^2.0.1",
     "@testing-library/preact": "^3.2.4",
