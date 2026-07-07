@@ -1,6 +1,6 @@
 {
   "name": "babylon-lite-explorer",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "A small, public-API-only explorer for Babylon Lite scenes",
   "homepage": "https://explorer.babylonpress.org/",
   "license": "MIT",
