@@ -120,5 +120,6 @@ Vite builds the ESM library and CSS. Preact, Signals, and Babylon Lite are exter
 
 ## Further documentation
 
+- [Changelog](CHANGELOG.md)
 - [Babylon Lite 1.8.0 public API inventory](docs/babylon-lite-api-inventory.md)
 - [Babylon Lite 1.4.0 migration notes](docs/babylon-lite-1.4.0-migration.md)

@@ -9,6 +9,7 @@ import {
   createSceneContext,
   createSphere,
   loadEnvironment,
+  onBeforeRender,
   registerScene,
   startEngine,
 } from "@babylonjs/lite";
@@ -45,6 +46,10 @@ box.material = createPbrMaterial({
   roughnessFactor: 0.35,
 });
 addToScene(scene, box);
+
+onBeforeRender(scene, (deltaMs) => {
+  camera.alpha += (deltaMs / 1000) * 0.157;
+});
 
 await registerScene(scene);
 await startEngine(engine);

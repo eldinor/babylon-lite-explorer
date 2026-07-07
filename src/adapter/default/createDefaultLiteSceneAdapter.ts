@@ -239,7 +239,7 @@ export function createDefaultLiteSceneAdapter(): LiteSceneAdapter {
       source: node,
       children: children.length ? children : undefined,
       capabilities: { editable: true, focusable: false, visibilityToggle: kind === "mesh", serializableSnapshot: true },
-      meta: kind === "mesh" && (node as Mesh).morphTargets ? { liveProperties: true } : undefined
+      meta: { liveProperties: true }
     };
   };
 
@@ -248,7 +248,8 @@ export function createDefaultLiteSceneAdapter(): LiteSceneAdapter {
     label: material.name || "Unnamed material",
     kind: "material",
     source: material,
-    capabilities: { ...none, editable: isPublicPbrMaterial(material) }
+    capabilities: { ...none, editable: isPublicPbrMaterial(material) },
+    meta: { liveProperties: true }
   });
 
   const getSceneTree = (context: LiteExplorerContext): LiteEntity[] => {
@@ -261,7 +262,8 @@ export function createDefaultLiteSceneAdapter(): LiteSceneAdapter {
       kind: "scene",
       source: scene,
       capabilities: sceneCapabilities,
-      children: []
+      children: [],
+      meta: { liveProperties: true }
     };
 
     const meshSources = new Set<object>(scene.meshes);
@@ -288,7 +290,8 @@ export function createDefaultLiteSceneAdapter(): LiteSceneAdapter {
         kind: "camera",
         source: scene.camera,
         children: cameraChildren.length ? cameraChildren : undefined,
-        capabilities: { ...none, editable: true }
+        capabilities: { ...none, editable: true },
+        meta: { liveProperties: true }
       });
     }
 
@@ -302,7 +305,8 @@ export function createDefaultLiteSceneAdapter(): LiteSceneAdapter {
           kind: "light" as const,
           source: light,
           children: lightChildren.length ? lightChildren : undefined,
-          capabilities: { ...none, editable: true }
+          capabilities: { ...none, editable: true },
+          meta: { liveProperties: true }
         };
       }));
     }
@@ -332,7 +336,7 @@ export function createDefaultLiteSceneAdapter(): LiteSceneAdapter {
         kind: "texture" as const,
         source: texture,
         capabilities: none,
-        meta: { usages }
+        meta: { usages, liveProperties: true }
       }))));
     }
 

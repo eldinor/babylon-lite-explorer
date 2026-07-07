@@ -4,6 +4,41 @@ import { findEntityById } from "../src/signals/treeUtils";
 import { fakeScene } from "./helpers";
 
 describe("default adapter", () => {
+  it("marks mutable scene entities for live property refresh", async () => {
+    const data = fakeScene();
+    const tree = await createDefaultLiteSceneAdapter().getSceneTree({ scene: data.scene, engine: {} });
+    const scene = tree[0];
+    const light = scene.children?.find((item) => item.label === "Nodes")?.children?.find((item) => item.kind === "light");
+    const material = scene.children?.find((item) => item.label === "Materials")?.children?.[0];
+
+    expect(scene.meta?.liveProperties).toBe(true);
+    expect(light?.meta?.liveProperties).toBe(true);
+    expect(material?.meta?.liveProperties).toBe(true);
+  });
+
+  it("marks scene meshes for live property refresh", async () => {
+    const data = fakeScene();
+    const tree = await createDefaultLiteSceneAdapter().getSceneTree({ scene: data.scene, engine: {} });
+    const mesh = tree[0].children?.find((item) => item.label === "Nodes")?.children?.find((item) => item.kind === "mesh");
+
+    expect(mesh?.meta?.liveProperties).toBe(true);
+  });
+
+  it("marks the active camera for live property refresh", async () => {
+    const data = fakeScene();
+    data.scene.camera = {
+      children: [],
+      fov: 0.8,
+      nearPlane: 0.1,
+      farPlane: 100,
+      viewport: { x: 0, y: 0, width: 1, height: 1 }
+    } as never;
+    const tree = await createDefaultLiteSceneAdapter().getSceneTree({ scene: data.scene, engine: {} });
+    const camera = tree[0].children?.find((item) => item.label === "Nodes")?.children?.find((item) => item.kind === "camera");
+
+    expect(camera?.meta?.liveProperties).toBe(true);
+  });
+
   it("classifies supported material families from public fields", async () => {
     const data = fakeScene();
     const materials = [
