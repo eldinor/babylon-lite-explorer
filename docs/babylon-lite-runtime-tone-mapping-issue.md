@@ -1,6 +1,6 @@
 # Support changing tone mapping after scene registration
 
-Verified against `@babylonjs/lite` 1.6.0.
+Verified against `@babylonjs/lite` 1.8.0.
 
 ## Description
 
@@ -25,7 +25,7 @@ This makes the fields appear runtime-editable even though their effective values
 
 Calling `rebuildMaterial()` for every scene material does not apply the new tone-mapping configuration. This remains true when passing `{ rebuildFrameGraph: true }`: material rebuilding reuses the existing group builder, which has already captured whether tone mapping is enabled and which shader implementation to use.
 
-As of Lite 1.6.0, the relevant public API is still material-scoped:
+As of Lite 1.8.0, the relevant public API is still material-scoped:
 
 ```ts
 rebuildMaterial(scene, material, {

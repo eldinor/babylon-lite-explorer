@@ -4,6 +4,7 @@ import {
   markMaterialUboDirty,
   pickAsync,
   playAnimation,
+  setFog,
   setSubtreeVisible,
   stopAnimation,
   type AnimationGroup,
@@ -11,6 +12,7 @@ import {
   type Camera,
   type EngineContext,
   type FreeCamera,
+  type FogConfig,
   type GeospatialCamera,
   type GpuPicker,
   type LightBase,
@@ -529,7 +531,9 @@ export function createDefaultLiteSceneAdapter(): LiteSceneAdapter {
       const scene = source as SceneContext;
       const values: PropertyDescriptor[] = [...base,
         { kind: "readonly", path: "meshCount", label: "Meshes", value: String(scene.meshes.length), section: "Scene" },
-        { kind: "readonly", path: "lightCount", label: "Lights", value: String(scene.lights.length), section: "Scene" }
+        { kind: "readonly", path: "lightCount", label: "Lights", value: String(scene.lights.length), section: "Scene" },
+        { kind: "readonly", path: "shadowGeneratorCount", label: "Shadow generators", value: String(scene.shadowGenerators.length), section: "Scene" },
+        { kind: "number", path: "fixedDeltaMs", label: "Fixed delta (ms)", value: scene.fixedDeltaMs, min: 0, step: 0.01, section: "Scene" }
       ];
       const clearColor = scene.clearColor;
       if ([clearColor.r, clearColor.g, clearColor.b, clearColor.a].every((part) => typeof part === "number" && Number.isFinite(part))) {
@@ -553,6 +557,27 @@ export function createDefaultLiteSceneAdapter(): LiteSceneAdapter {
       });
       if (isNumberTuple(scene.environmentPrimaryColor, 3)) values.push({ kind: "color3", path: "environmentPrimaryColor", label: "Environment primary color", value: [...scene.environmentPrimaryColor], section: "Environment" });
       if (typeof scene.envRotationY === "number") values.push({ kind: "number", path: "envRotationY", label: "Environment Y rotation", value: scene.envRotationY, step: 0.01, section: "Environment" });
+      if (scene.fog) {
+        values.push(
+          { kind: "select", path: "fog.mode", label: "Mode", value: String(scene.fog.mode), options: [
+            { value: "0", label: "Disabled" }, { value: "1", label: "Exponential" },
+            { value: "2", label: "Exponential squared" }, { value: "3", label: "Linear" }
+          ], section: "Fog" },
+          { kind: "number", path: "fog.density", label: "Density", value: scene.fog.density, min: 0, step: 0.001, section: "Fog" },
+          { kind: "number", path: "fog.start", label: "Start", value: scene.fog.start, step: 0.1, section: "Fog" },
+          { kind: "number", path: "fog.end", label: "End", value: scene.fog.end, step: 0.1, section: "Fog" },
+          { kind: "color3", path: "fog.color", label: "Color", value: [...scene.fog.color], section: "Fog" }
+        );
+      } else {
+        values.push({ kind: "readonly", path: "fog", label: "Fog", value: "Disabled", section: "Fog" });
+      }
+      values.push({
+        kind: "readonly",
+        path: "clipPlane",
+        label: "Clip plane",
+        value: scene.clipPlane ? `[${scene.clipPlane.map((part) => part.toFixed(3)).join(", ")}]` : "Disabled",
+        section: "Clipping"
+      });
       return values;
     }
     return base;
@@ -572,6 +597,17 @@ export function createDefaultLiteSceneAdapter(): LiteSceneAdapter {
           scene.clearColor.g = clamp01(value[1]);
           scene.clearColor.b = clamp01(value[2]);
           scene.clearColor.a = clamp01(value[3]);
+        } else if (path === "fixedDeltaMs" && typeof value === "number" && Number.isFinite(value)) {
+          scene.fixedDeltaMs = Math.max(0, value);
+        } else if (path.startsWith("fog.") && scene.fog) {
+          const fog: FogConfig = { ...scene.fog, color: [...scene.fog.color] };
+          if (path === "fog.mode" && typeof value === "string" && ["0", "1", "2", "3"].includes(value)) fog.mode = Number(value) as FogConfig["mode"];
+          else if (path === "fog.density" && typeof value === "number" && Number.isFinite(value)) fog.density = Math.max(0, value);
+          else if (path === "fog.start" && typeof value === "number" && Number.isFinite(value)) fog.start = value;
+          else if (path === "fog.end" && typeof value === "number" && Number.isFinite(value)) fog.end = value;
+          else if (path === "fog.color" && isNumberTuple(value, 3)) fog.color = [clamp01(value[0]), clamp01(value[1]), clamp01(value[2])];
+          else return fail("invalid", `Invalid value for ${path}.`);
+          setFog(scene, fog);
         } else if (path === "imageProcessing.exposure" && typeof value === "number" && Number.isFinite(value)) {
           scene.imageProcessing.exposure = Math.max(0, value);
         } else if (path === "imageProcessing.contrast" && typeof value === "number" && Number.isFinite(value)) {

@@ -17,7 +17,7 @@ Editable controls are shown only for verified public writes. Changes are applied
 
 ### Scene
 
-Scene properties include clear color, image-processing exposure and contrast, tone mapping, environment primary color, and environment Y rotation.
+Scene properties include clear color, fixed simulation delta, shadow-generator count, fog, clip plane, image-processing exposure and contrast, tone mapping, environment primary color, and environment Y rotation. Existing fog settings are editable; clip planes and shadow generators are currently diagnostic readouts.
 
 Tone-mapping enabled state and type are read-only because Babylon Lite compiles them into material shaders during scene registration. Set them before calling `registerScene()`. Exposure and contrast remain editable at runtime.
 

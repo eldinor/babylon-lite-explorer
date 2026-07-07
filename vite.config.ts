@@ -21,8 +21,8 @@ const importExtractedCss = (): Plugin => ({
   }
 });
 
-export default defineConfig({
-  publicDir: false,
+export default defineConfig(({ command }) => ({
+  publicDir: command === "serve" ? "public" : false,
   plugins: [preact(), importExtractedCss()],
   define: {
     __BABYLON_LITE_VERSION__: JSON.stringify(babylonLitePackage.version),
@@ -43,4 +43,4 @@ export default defineConfig({
     environment: "jsdom",
     setupFiles: ["./tests/setup.ts"]
   }
-});
+}));

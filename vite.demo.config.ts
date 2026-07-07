@@ -24,6 +24,7 @@ export default defineConfig(({ command }) => ({
       input: {
         index: resolve(projectRoot, "examples/index.html"),
         basic: resolve(projectRoot, "examples/basic/index.html"),
+        sceneDiagnostics: resolve(projectRoot, "examples/scene-diagnostics/index.html"),
         nodeMaterial: resolve(projectRoot, "examples/node-material/index.html"),
         hundredMeshes: resolve(projectRoot, "examples/hundred-meshes/index.html"),
         boombox: resolve(projectRoot, "examples/boombox/index.html"),

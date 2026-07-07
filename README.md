@@ -82,11 +82,11 @@ const environment = await loadEnvironment(scene, url, options);
 
 The current Explorer cannot add that retained object alongside its automatically discovered entities because a custom adapter replaces the default adapter rather than extending it. Future adapter composition is intended to support this case. Environment intensity is a per-PBR-material field, not a scene-level environment setting.
 
-Babylon Lite 1.4.0 projection fields have a runtime cache-invalidation limitation. Assigning `camera.fov`, `camera.nearPlane`, or `camera.farPlane` updates the public value, but `getProjectionMatrix()` caches by `worldMatrixVersion` and aspect ratio rather than those projection values. The rendered projection can therefore remain unchanged until the camera moves or the aspect ratio changes. Babylon Lite exposes no public projection-cache invalidation function, so the default adapter does not modify private cache fields as a workaround.
+Babylon Lite 1.8.0 projection fields have a runtime cache-invalidation limitation. Assigning `camera.fov`, `camera.nearPlane`, or `camera.farPlane` updates the public value, but `getProjectionMatrix()` caches by `worldMatrixVersion` and aspect ratio rather than those projection values. The rendered projection can therefore remain unchanged until the camera moves or the aspect ratio changes. Babylon Lite exposes no public projection-cache invalidation function, so the default adapter does not modify private cache fields as a workaround.
 
 Babylon Lite 1.4.0 preserves glTF node names on public transform nodes, but generated renderable meshes are named `gltf_mesh_0`, `gltf_mesh_1`, and so on. The original glTF `mesh.name` is not retained on the public mesh object, so Explorer cannot recover it through public APIs. A named parent transform may still provide the model's original node-level label.
 
-Texture previews and original texture URLs are unavailable through the default adapter. Babylon Lite 1.4.0 exposes GPU handles, dimensions, UV transforms, and `invertY` on `Texture2D`, but it does not retain public source-image/URL metadata or provide a public pixel-readback surface for these textures. These build-time texture fields remain read-only in Explorer.
+Texture previews and original texture URLs are unavailable through the default adapter. Babylon Lite 1.8.0 exposes GPU handles, dimensions, UV transforms, and `invertY` on `Texture2D`, but it does not retain public source-image/URL metadata or provide a public pixel-readback surface for these textures. These build-time texture fields remain read-only in Explorer.
 
 ## Future: additional application-owned entities
 
@@ -120,5 +120,5 @@ Vite builds the ESM library and CSS. Preact, Signals, and Babylon Lite are exter
 
 ## Further documentation
 
-- [Babylon Lite 1.4.0 public API inventory](docs/babylon-lite-api-inventory.md)
+- [Babylon Lite 1.8.0 public API inventory](docs/babylon-lite-api-inventory.md)
 - [Babylon Lite 1.4.0 migration notes](docs/babylon-lite-1.4.0-migration.md)

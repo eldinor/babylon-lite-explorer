@@ -43,8 +43,11 @@ describe("default adapter", () => {
     });
   });
 
-  it("exposes and edits public scene image-processing and environment values", async () => {
+  it("exposes and edits public scene, fog, image-processing, and environment values", async () => {
     const data = fakeScene();
+    (data.scene as unknown as { fog: unknown }).fog = { mode: 3, density: 0.1, start: 2, end: 20, color: [0.2, 0.3, 0.4] };
+    (data.scene as unknown as { clipPlane: unknown }).clipPlane = [0, 1, 0, -2];
+    data.scene.shadowGenerators.push({} as never);
     const context = { scene: data.scene, engine: {} };
     const adapter = createDefaultLiteSceneAdapter();
     const scene = (await adapter.getSceneTree(context))[0];
@@ -52,6 +55,14 @@ describe("default adapter", () => {
 
     expect(properties.map((property) => property.path)).toEqual(expect.arrayContaining([
       "clearColor",
+      "shadowGeneratorCount",
+      "fixedDeltaMs",
+      "fog.mode",
+      "fog.density",
+      "fog.start",
+      "fog.end",
+      "fog.color",
+      "clipPlane",
       "imageProcessing.exposure",
       "imageProcessing.contrast",
       "imageProcessing.toneMappingEnabled",
@@ -59,6 +70,7 @@ describe("default adapter", () => {
       "environmentPrimaryColor",
       "envRotationY"
     ]));
+    expect(properties.find((property) => property.path === "clipPlane")?.value).toBe("[0.000, 1.000, 0.000, -2.000]");
 
     expect((await adapter.setProperty?.(scene, "imageProcessing.exposure", 1.5, context))?.ok).toBe(true);
     expect((await adapter.setProperty?.(scene, "imageProcessing.toneMappingType", "aces", context))?.ok).toBe(false);
@@ -66,11 +78,17 @@ describe("default adapter", () => {
     expect((await adapter.setProperty?.(scene, "clearColor", [0.2, 0.3, 0.4, 1], context))?.ok).toBe(true);
     expect((await adapter.setProperty?.(scene, "environmentPrimaryColor", [0.4, 0.5, 0.6], context))?.ok).toBe(true);
     expect((await adapter.setProperty?.(scene, "envRotationY", Math.PI, context))?.ok).toBe(true);
+    expect((await adapter.setProperty?.(scene, "fixedDeltaMs", 16.667, context))?.ok).toBe(true);
+    expect((await adapter.setProperty?.(scene, "fog.mode", "2", context))?.ok).toBe(true);
+    expect((await adapter.setProperty?.(scene, "fog.density", 0.025, context))?.ok).toBe(true);
+    expect((await adapter.setProperty?.(scene, "fog.color", [0.6, 0.7, 0.8], context))?.ok).toBe(true);
     expect(data.scene.imageProcessing).toMatchObject({ exposure: 1.5, toneMappingType: "standard" });
     expect(data.scene.clearColor).toBe(originalClearColor);
     expect(data.scene.clearColor).toEqual({ r: 0.2, g: 0.3, b: 0.4, a: 1 });
     expect(data.scene.environmentPrimaryColor).toEqual([0.4, 0.5, 0.6]);
     expect(data.scene.envRotationY).toBe(Math.PI);
+    expect(data.scene.fixedDeltaMs).toBe(16.667);
+    expect(data.scene.fog).toEqual({ mode: 2, density: 0.025, start: 2, end: 20, color: [0.6, 0.7, 0.8] });
   });
 
   it("enumerates only the public scene collections", async () => {
