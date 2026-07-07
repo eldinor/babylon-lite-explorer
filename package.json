@@ -1,6 +1,6 @@
 {
   "name": "babylon-lite-explorer",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "A small, public-API-only explorer for Babylon Lite scenes",
   "homepage": "https://explorer.babylonpress.org/",
   "license": "MIT",
@@ -23,10 +23,15 @@
   "main": "./dist/index.js",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "jsdelivr": "./dist/browser.js",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./browser": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/browser.js"
     },
     "./styles.css": "./dist/lite-explorer.css"
   },
@@ -34,6 +39,8 @@
     "dist/index.js",
     "dist/index.d.ts",
     "dist/lite-explorer.css",
+    "dist/browser.js",
+    "dist/browser.css",
     "dist/adapter/default/createDefaultLiteSceneAdapter.d.ts",
     "dist/adapter/registered/createRegisteredSceneAdapter.d.ts",
     "dist/adapter/LiteSceneAdapter.d.ts",
@@ -49,7 +56,7 @@
     "dev": "vite",
     "demo": "vite --config vite.demo.config.ts --configLoader runner --host localhost --port 5173 --open /examples/",
     "build": "npm run build:npm && npm run build:demo",
-    "build:npm": "vite build --configLoader runner && tsc -p tsconfig.build.json",
+    "build:npm": "vite build --configLoader runner && vite build --config vite.browser.config.ts --configLoader runner && tsc -p tsconfig.build.json",
     "build:demo": "vite build --config vite.demo.config.ts --configLoader runner",
     "verify:package": "npm run build:npm && node scripts/verify-package.mjs",
     "typecheck": "tsc --noEmit",

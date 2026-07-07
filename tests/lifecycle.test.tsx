@@ -3,6 +3,7 @@ import { waitFor } from "@testing-library/preact";
 import { showLiteExplorer } from "../src/api/showLiteExplorer";
 import type { LiteSceneAdapter } from "../src/adapter/LiteSceneAdapter";
 import { fakeScene } from "./helpers";
+import packageJson from "../package.json";
 
 it("mounts independent instances and disposes idempotently", async () => {
   vi.useFakeTimers();
@@ -14,7 +15,7 @@ it("mounts independent instances and disposes idempotently", async () => {
   expect(document.querySelectorAll(".ble-root")).toHaveLength(2);
   expect(document.querySelector(".ble-root")?.getAttribute("data-layout")).toBe("single");
   expect(document.querySelector(".ble-root")?.querySelectorAll(".ble-single-stack > .ble-pane")).toHaveLength(2);
-  expect(document.querySelector(".ble-toolbar strong")?.textContent).toBe("Babylon Lite 1.8.0 Explorer 0.1.0");
+  expect(document.querySelector(".ble-toolbar strong")?.textContent).toBe(`Babylon Lite 1.8.0 Explorer ${packageJson.version}`);
   expect([...document.querySelector(".ble-root")!.querySelectorAll<HTMLButtonElement>('.ble-tabs button[role="tab"]')].map((item) => item.textContent)).toEqual(["Scene Explorer", "Properties", "Tools"]);
   first.hide(); first.show(); first.toggle(); first.toggle();
   first.dispose(); first.dispose();

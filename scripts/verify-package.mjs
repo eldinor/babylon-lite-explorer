@@ -47,6 +47,14 @@ try {
   if (!existsSync(installedEntry) || !readFileSync(installedEntry, "utf8").startsWith('import "./lite-explorer.css";')) {
     throw new Error("Packed JavaScript entry does not import the extracted stylesheet.");
   }
+  const browserEntry = join(consumer, "node_modules", "babylon-lite-explorer", "dist", "browser.js");
+  const browserCss = join(consumer, "node_modules", "babylon-lite-explorer", "dist", "browser.css");
+  if (!existsSync(browserEntry) || !existsSync(browserCss)) throw new Error("Packed browser/CDN entry is incomplete.");
+  const browserSource = readFileSync(browserEntry, "utf8");
+  if (!browserSource.startsWith('import "./browser.css";')) throw new Error("Browser entry does not import its stylesheet.");
+  if (/from\s*["'](?:preact|@preact\/signals)/.test(browserSource)) {
+    throw new Error("Browser entry unexpectedly externalizes Preact or Signals.");
+  }
   console.log(`Verified ${packed[0].filename}: consumer emitted ${js} and ${css}.`);
 } finally {
   rmSync(workspace, { recursive: true, force: true });
