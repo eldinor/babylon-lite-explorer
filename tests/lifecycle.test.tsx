@@ -112,6 +112,10 @@ it("links the footer logo to BabylonPress", async () => {
   await handle.ready;
 
   const link = document.querySelector<HTMLAnchorElement>(".ble-footer-logo");
+  expect(link?.closest(".ble-links-footer")).not.toBeNull();
+  expect(link?.closest(".ble-pane-left, .ble-pane-single-left")).not.toBeNull();
+  expect(document.querySelector(".ble-status .ble-footer-logo")).toBeNull();
+  expect(document.querySelector(".ble-properties-footer")?.childElementCount).toBe(0);
   expect(link?.href).toBe("https://babylonpress.org/");
   expect(link?.target).toBe("_blank");
   expect(link?.querySelector("img")?.alt).toBe("BabylonPress");
@@ -128,6 +132,33 @@ it("links the footer logo to BabylonPress", async () => {
   await custom.ready;
   expect(document.querySelector<HTMLAnchorElement>(".ble-footer-help")?.href).toBe("https://example.com/guide");
   custom.dispose();
+});
+
+it("opens Animation Groups from the Properties footer", async () => {
+  vi.useFakeTimers();
+  const capabilities = { editable: false, focusable: false, visibilityToggle: false, serializableSnapshot: false };
+  const animations = { id: "section:animations", label: "Animation Groups", kind: "unknown" as const, source: {}, capabilities, children: [
+    { id: "animation:walk", label: "Walk", kind: "animationGroup" as const, source: {}, capabilities }
+  ] };
+  const scene = { id: "scene:root", label: "Scene", kind: "scene" as const, source: {}, capabilities, children: [animations] };
+  const adapter = {
+    getSceneTree: () => [scene],
+    getProperties: () => [],
+    getStats: () => ({ animationGroupCount: 1 })
+  };
+  const handle = showLiteExplorer({ scene: {}, engine: {} }, { adapter });
+  await handle.ready;
+  await vi.advanceTimersByTimeAsync(500);
+
+  const button = [...document.querySelectorAll<HTMLButtonElement>(".ble-properties-footer button")]
+    .find((item) => item.textContent === "Animation Groups 1");
+  button?.click();
+  await Promise.resolve();
+
+  expect(button).toBeDefined();
+  expect(document.querySelector(".ble-tree-row.is-selected .ble-tree-label")?.textContent).toBe("Animation Groups");
+  handle.dispose();
+  vi.useRealTimers();
 });
 
 it("can disable keyboard shortcuts", async () => {

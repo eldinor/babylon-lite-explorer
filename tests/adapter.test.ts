@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import * as lite from "@babylonjs/lite";
 import { createDefaultLiteSceneAdapter } from "../src/adapter/default/createDefaultLiteSceneAdapter";
 import { findEntityById } from "../src/signals/treeUtils";
 import { fakeScene } from "./helpers";
@@ -14,6 +15,14 @@ describe("default adapter", () => {
     expect(scene.meta?.liveProperties).toBe(true);
     expect(light?.meta?.liveProperties).toBe(true);
     expect(material?.meta?.liveProperties).toBe(true);
+  });
+
+  it("reports the public animation group count", async () => {
+    const data = fakeScene();
+    data.scene.animationGroups.push({} as never, {} as never);
+    const stats = await createDefaultLiteSceneAdapter().getStats?.({ scene: data.scene, engine: {} });
+
+    expect(stats?.animationGroupCount).toBe(2);
   });
 
   it("marks scene meshes for live property refresh", async () => {
@@ -466,6 +475,24 @@ describe("default adapter", () => {
     expect((await adapter.getProperties(animation!, context)).find((item) => item.path === "currentTime")?.value).toBe(0.5);
     expect((await adapter.stopAnimationGroup?.(animation!, context))?.ok).toBe(true);
     expect(second).toMatchObject({ isPlaying: false, currentTime: 0 });
+  });
+
+  it("uses the application Lite runtime for split-module mutations", async () => {
+    const data = fakeScene();
+    const group = { name: "Host animation", duration: 1, currentTime: 0, targetedAnimations: [], isPlaying: false, speedRatio: 1, loopAnimation: true, weight: 1 };
+    data.scene.animationGroups.push(group as never);
+    const playAnimation = vi.fn();
+    const stopAnimation = vi.fn();
+    const context = { scene: data.scene, engine: {}, lite: { ...lite, playAnimation, stopAnimation } };
+    const adapter = createDefaultLiteSceneAdapter();
+    const tree = await adapter.getSceneTree(context);
+    const animation = tree[0].children?.find((item) => item.label === "Animation Groups")?.children?.[0];
+
+    expect((await adapter.playAnimationGroup?.(animation!, context))?.ok).toBe(true);
+    expect(stopAnimation).toHaveBeenCalledWith(group);
+    expect(playAnimation).toHaveBeenCalledWith(group);
+    expect((await adapter.stopAnimationGroup?.(animation!, context))?.ok).toBe(true);
+    expect(stopAnimation).toHaveBeenCalledTimes(2);
   });
 
   it("reads live playback from Babylon Lite currentTime", async () => {

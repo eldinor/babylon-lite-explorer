@@ -39,7 +39,9 @@ export class StatsService {
     this.frameCount = 0;
     try {
       const stats = await adapter.getStats(context);
-      this.signals.stats.value = measuredFrameMs === undefined ? stats : { ...stats, frameMs: measuredFrameMs };
+      this.signals.stats.value = measuredFrameMs === undefined
+        ? stats
+        : { ...stats, frameMs: measuredFrameMs, fps: 1000 / measuredFrameMs };
     } catch { /* stats are optional and must not destabilize the explorer */ }
     finally { this.sampling = false; }
   }

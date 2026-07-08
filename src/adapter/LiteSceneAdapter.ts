@@ -41,6 +41,7 @@ export type LiteStats = {
   drawCallCount?: number;
   meshCount?: number;
   lightCount?: number;
+  animationGroupCount?: number;
   materialCount?: number;
   textureCount?: number;
   surfaceCount?: number;

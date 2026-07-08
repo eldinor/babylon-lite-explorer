@@ -62,7 +62,13 @@ export function ToolsPanel() {
     if (!context) return;
     setBusy("upload");
     try {
-      await loadGlbIntoScene(file, context.engine as EngineContext, context.scene as SceneContext);
+      await loadGlbIntoScene(
+        file,
+        context.engine as EngineContext,
+        context.scene as SceneContext,
+        context.lite?.loadGltf ?? loadGltf,
+        context.lite?.addToScene ?? addToScene
+      );
       await refresh.refreshTree();
       notifications.push(`Loaded ${file.name}`, "info");
     } catch (error) {

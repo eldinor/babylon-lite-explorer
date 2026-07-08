@@ -10,6 +10,7 @@ import {
   registerScene,
   startEngine,
 } from "@babylonjs/lite";
+import * as lite from "@babylonjs/lite";
 // This example intentionally exercises the generated browser/CDN artifact.
 // The demo config resolves Babylon Lite imports originating in that artifact
 // to a separate CDN module, while this scene uses the local package instance.
@@ -41,7 +42,7 @@ await registerScene(scene);
 await startEngine(engine);
 
 const explorer = showLiteExplorer(
-  { engine, scene, canvas },
+  { engine, scene, canvas, lite },
   { features: { canvasPicking: true }, userGuideUrl: demoUrl("user-guide/") },
 );
 await explorer.ready;

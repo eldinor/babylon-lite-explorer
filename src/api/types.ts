@@ -1,5 +1,18 @@
 import type { LiteSceneAdapter } from "../adapter/LiteSceneAdapter";
 
+export type LiteExplorerRuntime = Pick<typeof import("@babylonjs/lite"),
+  | "addToScene"
+  | "createGpuPicker"
+  | "disposePicker"
+  | "loadGltf"
+  | "markMaterialUboDirty"
+  | "pickAsync"
+  | "playAnimation"
+  | "setFog"
+  | "setSubtreeVisible"
+  | "stopAnimation"
+>;
+
 export type LiteExplorerTheme = "dark" | "light";
 export type LiteExplorerMode = "overlay" | "inline";
 export type LiteExplorerLayout = "single" | "split";
@@ -15,6 +28,11 @@ export type LiteExplorerContext = {
   engine: unknown;
   scene: unknown;
   canvas?: HTMLCanvasElement;
+  /**
+   * The application's Babylon Lite module namespace. Pass this when Explorer and
+   * the scene can resolve separate module instances, such as CDN/playground use.
+   */
+  lite?: LiteExplorerRuntime;
 };
 
 export type LiteExplorerOptions = {

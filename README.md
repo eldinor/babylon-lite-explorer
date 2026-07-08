@@ -15,10 +15,11 @@ The default adapter uses the `@babylonjs/lite` installation from your applicatio
 [Read the detailed User Guide](docs/user-guide.md).
 
 ```ts
+import * as lite from "@babylonjs/lite";
 import { showLiteExplorer } from "babylon-lite-explorer";
 
 const explorer = showLiteExplorer(
-  { engine, scene, canvas },
+  { engine, scene, canvas, lite },
   {
     mode: "overlay",
     layout: "single",
@@ -56,7 +57,9 @@ Canvas picking is also optional. Set `features.canvasPicking: true` to add a Pic
 
 Notifications dismiss automatically after three seconds. Configure `notificationDurationMs`, or set it to `0` for manual dismissal. Set `notificationsEnabled: false` to disable notifications completely. These options are ready for a future preferences UI.
 
-The footer's **Frame interval** is the average interval between browser animation frames over 500 ms, not CPU or GPU render duration. Babylon Lite GPU time appears separately when its GPU timing is enabled and available; Explorer does not enable it automatically.
+Pass the application's `lite` module namespace when using Explorer from a CDN, playground, or any setup that may load two Babylon Lite module instances. This ensures uploads, picking, animation, visibility, fog, and material edits run through the same Lite runtime that owns the scene. It is optional when your bundler guarantees one deduplicated Lite instance.
+
+The footer's **FPS** and **Frame interval** are calculated from browser animation frames over 500 ms; they are not CPU or GPU render duration. Babylon Lite GPU time appears separately when its GPU timing is enabled and available; Explorer does not enable it automatically.
 
 ## Public API coverage
 

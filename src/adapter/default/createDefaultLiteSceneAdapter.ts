@@ -211,7 +211,7 @@ export function createDefaultLiteSceneAdapter(): LiteSceneAdapter {
   const objectIds = new WeakMap<object, string>();
   const entityTypes = new WeakMap<object, LiteEntityKind>();
   let nextId = 1;
-  const pickers = new Set<GpuPicker>();
+  const pickers = new Map<GpuPicker, (picker: GpuPicker) => void>();
   const pickerByScene = new WeakMap<object, GpuPicker>();
 
   const getAnimationTime = (group: AnimationGroup): number => group.currentTime;
@@ -611,7 +611,7 @@ export function createDefaultLiteSceneAdapter(): LiteSceneAdapter {
           else if (path === "fog.end" && typeof value === "number" && Number.isFinite(value)) fog.end = value;
           else if (path === "fog.color" && isNumberTuple(value, 3)) fog.color = [clamp01(value[0]), clamp01(value[1]), clamp01(value[2])];
           else return fail("invalid", `Invalid value for ${path}.`);
-          setFog(scene, fog);
+          (context.lite?.setFog ?? setFog)(scene, fog);
         } else if (path === "imageProcessing.exposure" && typeof value === "number" && Number.isFinite(value)) {
           scene.imageProcessing.exposure = Math.max(0, value);
         } else if (path === "imageProcessing.contrast" && typeof value === "number" && Number.isFinite(value)) {
@@ -628,7 +628,7 @@ export function createDefaultLiteSceneAdapter(): LiteSceneAdapter {
       if (kind === "mesh" || kind === "transform") {
         const node = source as SceneNode;
         if (path === "name" && typeof value === "string") node.name = value;
-        else if (path === "visible" && typeof value === "boolean") setSubtreeVisible(node, value);
+        else if (path === "visible" && typeof value === "boolean") (context.lite?.setSubtreeVisible ?? setSubtreeVisible)(node, value);
         else if ((path === "position" || path === "rotation" || path === "scaling") && Array.isArray(value) && value.length === 3 && value.every(Number.isFinite)) {
           const tuple = value as [number, number, number];
           if (path === "scaling" && tuple.some((part) => part === 0)) return fail("invalid", "Scaling components cannot be exactly zero.");
@@ -722,7 +722,7 @@ export function createDefaultLiteSceneAdapter(): LiteSceneAdapter {
         } else {
           return fail("unsupported", "This material has no verified editable public family.");
         }
-        markMaterialUboDirty(material);
+        (context.lite?.markMaterialUboDirty ?? markMaterialUboDirty)(material);
         return ok();
       }
       return fail("unsupported", "This property is read-only in the default adapter.");
@@ -741,6 +741,7 @@ export function createDefaultLiteSceneAdapter(): LiteSceneAdapter {
     if (isPublicScene(context.scene)) {
       stats.meshCount = context.scene.meshes.length;
       stats.lightCount = context.scene.lights.length;
+      stats.animationGroupCount = context.scene.animationGroups.length;
       stats.materialCount = new Set(context.scene.meshes.map((mesh) => mesh.material)).size;
     }
     return stats;
@@ -753,9 +754,9 @@ export function createDefaultLiteSceneAdapter(): LiteSceneAdapter {
     const selected = source as AnimationGroup;
     if (!context.scene.animationGroups.includes(selected)) return fail("unsupported", "This animation group does not belong to the current scene.");
     for (const group of context.scene.animationGroups) {
-      stopAnimation(group);
+      (context.lite?.stopAnimation ?? stopAnimation)(group);
     }
-    playAnimation(selected);
+    (context.lite?.playAnimation ?? playAnimation)(selected);
     return ok();
   };
 
@@ -765,7 +766,7 @@ export function createDefaultLiteSceneAdapter(): LiteSceneAdapter {
     if (!source || typeof source !== "object" || entityTypes.get(source) !== "animationGroup") return fail("unsupported", "This entity is not an animation group.");
     const selected = source as AnimationGroup;
     if (!context.scene.animationGroups.includes(selected)) return fail("unsupported", "This animation group does not belong to the current scene.");
-    stopAnimation(selected);
+    (context.lite?.stopAnimation ?? stopAnimation)(selected);
     return ok();
   };
 
@@ -774,11 +775,11 @@ export function createDefaultLiteSceneAdapter(): LiteSceneAdapter {
     try {
       let picker = pickerByScene.get(context.scene);
       if (!picker) {
-        picker = createGpuPicker(context.scene);
+        picker = (context.lite?.createGpuPicker ?? createGpuPicker)(context.scene);
         pickerByScene.set(context.scene, picker);
-        pickers.add(picker);
+        pickers.set(picker, context.lite?.disposePicker ?? disposePicker);
       }
-      const result = await pickAsync(picker, x, y);
+      const result = await (context.lite?.pickAsync ?? pickAsync)(picker, x, y);
       if (!result.hit || !result.pickedMesh) return ok(null);
       return ok(objectIds.get(result.pickedMesh) ?? null);
     } catch (error) {
@@ -805,7 +806,7 @@ export function createDefaultLiteSceneAdapter(): LiteSceneAdapter {
     stopAnimationGroup,
     getEntitySnapshot,
     dispose() {
-      for (const picker of pickers) disposePicker(picker);
+      for (const [picker, dispose] of pickers) dispose(picker);
       pickers.clear();
     }
   };

@@ -54,6 +54,18 @@ export function SceneExplorer() {
 
   const visibleStart = Math.max(0, Math.floor(scrollTop / ROW_HEIGHT) - OVERSCAN);
   const visibleEnd = Math.min(rows.length, Math.ceil((scrollTop + viewportHeight) / ROW_HEIGHT) + OVERSCAN);
+  useEffect(() => {
+    const selectedId = signals.selectedEntityId.value;
+    const element = scroller.current;
+    if (!selectedId || !element) return;
+    const index = rows.findIndex((row) => row.entity.id === selectedId);
+    if (index < 0) return;
+    const top = index * ROW_HEIGHT;
+    if (top < element.scrollTop || top + ROW_HEIGHT > element.scrollTop + viewportHeight) {
+      element.scrollTop = Math.max(0, top - Math.floor(viewportHeight / 2));
+      setScrollTop(element.scrollTop);
+    }
+  }, [rows, signals.selectedEntityId.value, viewportHeight]);
   const toggle = (id: string) => {
     const next = new Set(signals.expandedIds.value);
     if (next.has(id)) next.delete(id); else next.add(id);

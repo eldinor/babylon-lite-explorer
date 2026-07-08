@@ -4,6 +4,9 @@ All notable changes to Babylon Lite Explorer are documented here.
 
 ## Unreleased
 
+- Added smoothed FPS to the Explorer status bar alongside frame interval and render statistics.
+- Added optional host Babylon Lite runtime injection for reliable CDN/playground uploads, picking, animation, visibility, fog, and material mutations across split module instances.
+
 ### Added
 
 - Added a split-module dist-bundle example that reproduces CDN and Lite Playground module boundaries.

@@ -34,6 +34,7 @@ describe("services", () => {
     await vi.advanceTimersByTimeAsync(500);
     expect(signals.stats.value.drawCallCount).toBe(4);
     expect(signals.stats.value.frameMs).toBe(17);
+    expect(signals.stats.value.fps).toBeCloseTo(58.82, 2);
     stats.dispose();
     expect(cancel).toHaveBeenCalledWith(1);
     vi.unstubAllGlobals();
