@@ -43,6 +43,7 @@
         <a href="#scene-explorer">Scene Explorer</a>
         <a href="#properties">Properties</a>
         <a href="#tools">Tools</a>
+        <a href="#statistics">Status bar</a>
         <a href="#layouts">Layouts and themes</a>
         <a href="#shortcuts">Keyboard shortcuts</a>
         <a href="#limitations">Current limitations</a>
@@ -61,11 +62,14 @@
             <li>Enable Pick to select a mesh by clicking the canvas. Camera drags are ignored.</li>
             <li>Selection actions appear between the panes and status bar when supported.</li>
           </ul>
+          <p>The Scene Explorer footer links to the User Guide, BabylonPress, and the project repository.</p>
         </section>
 
         <section id="properties">
           <h2>Properties</h2>
           <p>Editable controls are shown only for verified public writes. Changes are applied to the scene and then read back through the adapter.</p>
+          <p>Properties for the selected scene, camera, mesh, transform, light, material, texture, or animation group refresh when the application changes that object outside Explorer.</p>
+          <p>When animation groups exist, the lowest Properties footer displays their count. Select <strong>Animation Groups N</strong> to open Scene Explorer, clear its filter, expand the relevant branch, select <strong>Animation Groups</strong>, and scroll it into view.</p>
           <h3>Scene</h3>
           <p>Clear color, image-processing exposure and contrast, tone mapping, environment primary color, and environment Y rotation. Tone-mapping enabled state and type are read-only because Babylon Lite compiles them into material shaders during scene registration. Set them before calling <code>registerScene()</code>; exposure and contrast remain editable at runtime.</p>
           <h3>Materials</h3>
@@ -86,7 +90,7 @@
 
         <section id="statistics">
           <h2>Status bar statistics</h2>
-          <p><strong>Frame interval</strong> is the average time between browser <code>requestAnimationFrame</code> callbacks, sampled over 500 ms. It reflects display refresh and VSync as well as application load; it is not CPU or GPU render duration. For example, <code>6.9 ms</code> is approximately 145 FPS.</p>
+          <p><strong>FPS</strong> and <strong>Frame interval</strong> are calculated from the average time between browser <code>requestAnimationFrame</code> callbacks, sampled over 500 ms. They reflect display refresh and VSync as well as application load; neither is CPU or GPU render duration. For example, <code>6.9 ms</code> is approximately 145 FPS.</p>
           <p><strong>GPU</strong> appears separately only when Babylon Lite GPU timing is enabled and reports a positive measurement. Explorer does not enable GPU timing automatically. Draw, mesh, and light values come from the current engine and scene.</p>
         </section>
 

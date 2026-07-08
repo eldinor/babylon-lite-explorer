@@ -2,10 +2,12 @@
 
 All notable changes to Babylon Lite Explorer are documented here.
 
-## Unreleased
+## 0.3.0 - 2026-07-08
 
 - Added smoothed FPS to the Explorer status bar alongside frame interval and render statistics.
 - Added optional host Babylon Lite runtime injection for reliable CDN/playground uploads, picking, animation, visibility, fog, and material mutations across split module instances.
+- Added dedicated Scene Explorer and Properties footers, moving the User Guide, BabylonPress, and GitHub links into the Scene Explorer footer.
+- Added an Animation Groups count to the Properties footer; clicking it opens, expands, selects, and scrolls to the Animation Groups section in Scene Explorer.
 
 ### Added
 

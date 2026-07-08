@@ -11,9 +11,15 @@ The tree lists the public scene, camera, lights, meshes and transform hierarchy,
 - Enable Pick to select a mesh by clicking the canvas. Camera drags are ignored.
 - Supported selection actions appear between the panes and status bar.
 
+The Scene Explorer footer links to the User Guide, BabylonPress, and the project repository.
+
 ## Properties
 
 Editable controls are shown only for verified public writes. Changes are applied to the scene and then read back through the adapter.
+
+Properties for the selected scene, camera, mesh, transform, light, material, texture, or animation group refresh when application code changes that object outside Explorer.
+
+When animation groups exist, the lowest Properties footer displays their count. Select **Animation Groups N** to open Scene Explorer, clear its filter, expand the relevant branch, select **Animation Groups**, and scroll it into view.
 
 ### Scene
 
@@ -47,7 +53,7 @@ The copy button beside a property copies that value. The selection **Copy** acti
 
 ## Status bar statistics
 
-**Frame interval** is the average time between browser `requestAnimationFrame` callbacks, sampled over 500 ms. It reflects display refresh and VSync as well as application load; it is not CPU or GPU render duration. For example, `6.9 ms` is approximately 145 FPS.
+**FPS** and **Frame interval** are calculated from the average time between browser `requestAnimationFrame` callbacks, sampled over 500 ms. They reflect display refresh and VSync as well as application load; neither is CPU or GPU render duration. For example, `6.9 ms` is approximately 145 FPS.
 
 **GPU** is shown separately only when Babylon Lite GPU timing is enabled and reports a positive measurement. The Explorer does not enable GPU timing automatically. Draw, mesh, and light values come from the current Babylon Lite engine and scene.
 
