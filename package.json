@@ -1,6 +1,6 @@
 {
   "name": "babylon-lite-explorer",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "A small, public-API-only explorer for Babylon Lite scenes",
   "homepage": "https://explorer.babylonpress.org/",
   "license": "MIT",
@@ -58,6 +58,7 @@
     "build": "npm run build:npm && npm run build:demo",
     "build:npm": "vite build --configLoader runner && vite build --config vite.browser.config.ts --configLoader runner && tsc -p tsconfig.build.json",
     "build:demo": "vite build --config vite.demo.config.ts --configLoader runner",
+    "prepack": "npm run build:npm",
     "verify:package": "npm run build:npm && node scripts/verify-package.mjs",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",

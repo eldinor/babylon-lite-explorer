@@ -2,6 +2,13 @@
 
 All notable changes to Babylon Lite Explorer are documented here.
 
+## 0.3.1 - 2026-07-08
+
+### Fixed
+
+- Documented the jsDelivr `/browser/+esm` entry, which preserves the bundled Preact and Signals runtime required for asynchronous Explorer updates.
+- Added an automatic npm `prepack` build so published JavaScript, CSS, and embedded version metadata always match `package.json`.
+
 ## 0.3.0 - 2026-07-08
 
 - Added smoothed FPS to the Explorer status bar alongside frame interval and render statistics.

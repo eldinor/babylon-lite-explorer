@@ -24,7 +24,9 @@ mkdirSync(packages, { recursive: true });
 mkdirSync(consumer, { recursive: true });
 
 try {
-  const packed = JSON.parse(run(npm, ["pack", "--json", "--pack-destination", packages], root));
+  // verify:package builds explicitly before this script. Avoid running prepack a
+  // second time because lifecycle output is mixed into npm pack --json stdout.
+  const packed = JSON.parse(run(npm, ["pack", "--ignore-scripts", "--json", "--pack-destination", packages], root));
   const tarball = join(packages, packed[0].filename);
   writeFileSync(join(consumer, "package.json"), JSON.stringify({
     private: true,
@@ -54,6 +56,10 @@ try {
   if (!browserSource.startsWith('import "./browser.css";')) throw new Error("Browser entry does not import its stylesheet.");
   if (/from\s*["'](?:preact|@preact\/signals)/.test(browserSource)) {
     throw new Error("Browser entry unexpectedly externalizes Preact or Signals.");
+  }
+  const packageVersion = JSON.parse(readFileSync(join(root, "package.json"), "utf8")).version;
+  if (!browserSource.includes(`Explorer ${packageVersion}`)) {
+    throw new Error(`Browser entry does not contain package version ${packageVersion}.`);
   }
   console.log(`Verified ${packed[0].filename}: consumer emitted ${js} and ${css}.`);
 } finally {

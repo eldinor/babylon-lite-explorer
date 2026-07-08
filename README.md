@@ -59,6 +59,16 @@ Notifications dismiss automatically after three seconds. Configure `notification
 
 Pass the application's `lite` module namespace when using Explorer from a CDN, playground, or any setup that may load two Babylon Lite module instances. This ensures uploads, picking, animation, visibility, fog, and material edits run through the same Lite runtime that owns the scene. It is optional when your bundler guarantees one deduplicated Lite instance.
 
+For jsDelivr and Lite Playground, use the browser export. The root `+esm` URL may externalize Preact and Signals separately and prevent asynchronous UI updates:
+
+```ts
+import * as lite from "@babylonjs/lite";
+import { showLiteExplorer } from "https://cdn.jsdelivr.net/npm/babylon-lite-explorer@0.3.1/browser/+esm";
+
+const explorer = showLiteExplorer({ engine, scene, canvas, lite });
+await explorer.ready;
+```
+
 The footer's **FPS** and **Frame interval** are calculated from browser animation frames over 500 ms; they are not CPU or GPU render duration. Babylon Lite GPU time appears separately when its GPU timing is enabled and available; Explorer does not enable it automatically.
 
 ## Public API coverage
