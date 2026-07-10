@@ -17,6 +17,7 @@ import {
   setShadowTaskCasterMeshes,
   startEngine,
 } from "@babylonjs/lite";
+import * as lite from "@babylonjs/lite";
 import { showLiteExplorer } from "../../../src";
 import { demoUrl } from "../../demoUrl";
 
@@ -40,7 +41,7 @@ setFog(scene, {
   end: 22,
   color: [0.16, 0.22, 0.32],
 });
-// This public state appears in Explorer, but Lite 1.8's built-in PBR shaders do
+// This public state appears in Explorer, but Lite 1.9's built-in PBR shaders do
 // not consume scene.clipPlane. See docs/babylon-lite-pbr-clip-plane-issue.md.
 setClipPlane(scene, [0.5, 0.866, 0, 0]);
 
@@ -107,6 +108,6 @@ addToScene(scene, shadowGenerator);
 await registerSceneWithShadowSupport(scene);
 await startEngine(engine);
 showLiteExplorer(
-  { engine, scene, canvas },
+  { engine, scene, canvas, lite },
   { features: { canvasPicking: true }, userGuideUrl: demoUrl("user-guide/") },
 );

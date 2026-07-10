@@ -10,6 +10,7 @@ import {
   registerScene,
   startEngine,
 } from "@babylonjs/lite";
+import * as lite from "@babylonjs/lite";
 import { showLiteExplorer } from "../../../src";
 import { demoUrl } from "../../demoUrl";
 
@@ -43,6 +44,6 @@ try {
 await registerScene(scene);
 await startEngine(engine);
 showLiteExplorer(
-  { engine, scene, canvas },
+  { engine, scene, canvas, lite },
   { features: { canvasPicking: true }, userGuideUrl: demoUrl("user-guide/") },
 );

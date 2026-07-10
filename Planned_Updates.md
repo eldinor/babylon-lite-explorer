@@ -74,7 +74,7 @@ This roadmap covers only `babylon-lite-explorer`. Changes to Babylon Lite itself
 These are not implementation tasks in this repository:
 
 - PBR and Standard clip-plane rendering support.
-- Runtime Standard/ACES tone-mapping pipeline rebuilding.
+- Public cache-safe PBR tone-mapping algorithm updates after scene registration.
 - Public material-family discriminator.
 - Public environment enumeration and texture source/readback metadata.
 - Public frame-graph task enumeration.

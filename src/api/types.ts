@@ -9,6 +9,7 @@ export type LiteExplorerRuntime = Pick<typeof import("@babylonjs/lite"),
   | "pickAsync"
   | "playAnimation"
   | "setFog"
+  | "setSceneImageProcessing"
   | "setSubtreeVisible"
   | "stopAnimation"
 >;

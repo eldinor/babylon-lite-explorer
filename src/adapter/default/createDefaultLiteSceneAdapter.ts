@@ -5,6 +5,7 @@ import {
   pickAsync,
   playAnimation,
   setFog,
+  setSceneImageProcessing,
   setSubtreeVisible,
   stopAnimation,
   type AnimationGroup,
@@ -22,7 +23,8 @@ import {
   type SceneContext,
   type SceneNode,
   type StandardMaterialProps,
-  type Texture2D
+  type Texture2D,
+  type ToneMapping
 } from "@babylonjs/lite";
 import type { LiteExplorerContext } from "../../api/types";
 import type { PropertyDescriptor } from "../propertyDescriptors";
@@ -206,6 +208,18 @@ function getPublicMaterialType(material: Material, visited = new Set<object>()):
 }
 
 const clamp01 = (value: number) => Math.min(1, Math.max(0, value));
+
+function getToneMappingId(toneMapping: ToneMapping | undefined): string {
+  return toneMapping?.id ?? "standard";
+}
+
+function getToneMappingLabel(toneMapping: ToneMapping | undefined): string {
+  const id = getToneMappingId(toneMapping);
+  if (id === "standard") return "Standard";
+  if (id === "aces") return "ACES";
+  if (id === "neutral") return "Khronos PBR Neutral";
+  return id;
+}
 
 export function createDefaultLiteSceneAdapter(): LiteSceneAdapter {
   const objectIds = new WeakMap<object, string>();
@@ -546,17 +560,12 @@ export function createDefaultLiteSceneAdapter(): LiteSceneAdapter {
       const imageProcessing = scene.imageProcessing;
       if (typeof imageProcessing.exposure === "number") values.push({ kind: "number", path: "imageProcessing.exposure", label: "Exposure", value: imageProcessing.exposure, min: 0, step: 0.01, section: "Image Processing" });
       if (typeof imageProcessing.contrast === "number") values.push({ kind: "number", path: "imageProcessing.contrast", label: "Contrast", value: imageProcessing.contrast, min: 0, step: 0.01, section: "Image Processing" });
-      if (typeof imageProcessing.toneMappingEnabled === "boolean") values.push({ kind: "boolean", path: "imageProcessing.toneMappingEnabled", label: "Tone mapping", value: imageProcessing.toneMappingEnabled, readonly: true, section: "Image Processing" });
+      if (typeof imageProcessing.toneMappingEnabled === "boolean") values.push({ kind: "boolean", path: "imageProcessing.toneMappingEnabled", label: "Tone mapping", value: imageProcessing.toneMappingEnabled, section: "Image Processing" });
       values.push({
-        kind: "select",
-        path: "imageProcessing.toneMappingType",
+        kind: "readonly",
+        path: "imageProcessing.toneMapping",
         label: "Tone mapping type",
-        value: imageProcessing.toneMappingType ?? "standard",
-        readonly: true,
-        options: [
-          { value: "standard", label: "Standard" },
-          { value: "aces", label: "ACES" }
-        ],
+        value: getToneMappingLabel(imageProcessing.toneMapping),
         section: "Image Processing"
       });
       if (isNumberTuple(scene.environmentPrimaryColor, 3)) values.push({ kind: "color3", path: "environmentPrimaryColor", label: "Environment primary color", value: [...scene.environmentPrimaryColor], section: "Environment" });
@@ -613,9 +622,11 @@ export function createDefaultLiteSceneAdapter(): LiteSceneAdapter {
           else return fail("invalid", `Invalid value for ${path}.`);
           (context.lite?.setFog ?? setFog)(scene, fog);
         } else if (path === "imageProcessing.exposure" && typeof value === "number" && Number.isFinite(value)) {
-          scene.imageProcessing.exposure = Math.max(0, value);
+          await (context.lite?.setSceneImageProcessing ?? setSceneImageProcessing)(scene, { exposure: Math.max(0, value) });
         } else if (path === "imageProcessing.contrast" && typeof value === "number" && Number.isFinite(value)) {
-          scene.imageProcessing.contrast = Math.max(0, value);
+          await (context.lite?.setSceneImageProcessing ?? setSceneImageProcessing)(scene, { contrast: Math.max(0, value) });
+        } else if (path === "imageProcessing.toneMappingEnabled" && typeof value === "boolean") {
+          await (context.lite?.setSceneImageProcessing ?? setSceneImageProcessing)(scene, { toneMappingEnabled: value });
         } else if (path === "environmentPrimaryColor" && isNumberTuple(value, 3)) {
           scene.environmentPrimaryColor = [clamp01(value[0]), clamp01(value[1]), clamp01(value[2])];
         } else if (path === "envRotationY" && typeof value === "number" && Number.isFinite(value)) {

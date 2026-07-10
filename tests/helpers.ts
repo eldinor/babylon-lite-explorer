@@ -38,7 +38,7 @@ export function fakeScene() {
       lights: [light],
       animationGroups: [],
       clearColor: { r: 0.1, g: 0.2, b: 0.3, a: 1 },
-      imageProcessing: { exposure: 1, contrast: 1, toneMappingEnabled: false, toneMappingType: "standard" as const },
+      imageProcessing: { exposure: 1, contrast: 1, toneMappingEnabled: false },
       environmentPrimaryColor: [0.1, 0.1, 0.2] as [number, number, number],
       envRotationY: 0,
       fog: null,

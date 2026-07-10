@@ -9,6 +9,7 @@ import {
   registerScene,
   startEngine,
 } from "@babylonjs/lite";
+import * as lite from "@babylonjs/lite";
 import { showLiteExplorer } from "../../../src";
 import { demoUrl } from "../../demoUrl";
 
@@ -27,4 +28,4 @@ attachControl(camera, canvas, scene);
 
 await registerScene(scene);
 await startEngine(engine);
-showLiteExplorer({ engine, scene, canvas }, { features: { canvasPicking: true }, userGuideUrl: demoUrl("user-guide/") });
+showLiteExplorer({ engine, scene, canvas, lite }, { features: { canvasPicking: true }, userGuideUrl: demoUrl("user-guide/") });

@@ -1,6 +1,6 @@
 # Apply public scene clip planes to built-in materials
 
-Verified against `@babylonjs/lite` 1.8.0.
+Verified against `@babylonjs/lite` 1.9.0.
 
 ## Description
 
@@ -12,7 +12,7 @@ setClipPlane(scene, [0.5, 0.866, 0, -1.2]);
 
 However, meshes using built-in PBR materials are not clipped. The same gap exists in the built-in Standard and Shader material paths.
 
-In the published 1.8.0 package, the scene uniform declaration and UBO writer include `clipPlane`, but no PBR, Standard, or Shader material shader references it. The only material implementation that consumes the value is Node Material's `ClipPlanesBlock`.
+In the published 1.9.0 package, the scene uniform declaration and UBO writer include `clipPlane`, but the built-in PBR, Standard, and Shader material paths still do not expose a public built-in-material clipping workflow. The material feature declarations include `usesClipPlanes`, and Node Material's `ClipPlanesBlock` consumes the scene uniform.
 
 ## Expected result
 

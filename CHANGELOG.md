@@ -2,6 +2,14 @@
 
 All notable changes to Babylon Lite Explorer are documented here.
 
+## Unreleased
+
+### Changed
+
+- Upgraded the Babylon Lite peer and development dependency to 1.9.0.
+- Made scene image-processing exposure, contrast, and tone-mapping enabled state editable through Babylon Lite 1.9.0 `setSceneImageProcessing()`.
+- Kept tone-mapping algorithm read-only after auditing Babylon Lite 1.9.0's PBR shader caches; changing only the algorithm can reuse cached tone-mapping WGSL.
+
 ## 0.3.1 - 2026-07-08
 
 ### Fixed

@@ -71,7 +71,7 @@
           <p>Properties for the selected scene, camera, mesh, transform, light, material, texture, or animation group refresh when the application changes that object outside Explorer.</p>
           <p>When animation groups exist, the lowest Properties footer displays their count. Select <strong>Animation Groups N</strong> to open Scene Explorer, clear its filter, expand the relevant branch, select <strong>Animation Groups</strong>, and scroll it into view.</p>
           <h3>Scene</h3>
-          <p>Clear color, image-processing exposure and contrast, tone mapping, environment primary color, and environment Y rotation. Tone-mapping enabled state and type are read-only because Babylon Lite compiles them into material shaders during scene registration. Set them before calling <code>registerScene()</code>; exposure and contrast remain editable at runtime.</p>
+          <p>Clear color, image-processing exposure and contrast, tone mapping, environment primary color, and environment Y rotation. Babylon Lite 1.9.0 exposes <code>setSceneImageProcessing()</code>, so exposure, contrast, and tone-mapping enabled state are editable through the public runtime update path. The current tone-mapping algorithm is displayed read-only because the installed 1.9.0 package can reuse cached PBR shader state when only the algorithm changes.</p>
           <h3>Materials</h3>
           <p>PBR factors and environment intensity; Standard colors, alpha, specular power, and texture levels. The displayed family is inferred from public fields.</p>
           <h3>Mesh deformation</h3>

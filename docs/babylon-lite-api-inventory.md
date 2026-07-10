@@ -1,15 +1,15 @@
-# Babylon Lite 1.8.0 public API inventory
+# Babylon Lite 1.9.0 public API inventory
 
-Audited on 2026-07-06 against the installed `@babylonjs/lite@1.8.0` declarations and package implementation, plus the default Explorer adapter. Babylon Lite exposes one public package entry point: `@babylonjs/lite`.
+Audited on 2026-07-10 against the installed `@babylonjs/lite@1.9.0` declarations and package implementation, plus the default Explorer adapter. Babylon Lite exposes one public package entry point: `@babylonjs/lite`.
 
 This inventory describes what the default adapter currently uses. A public Babylon Lite feature is not automatically Explorer-supported until it is listed here.
 
 ## Implemented coverage
 
-| Explorer feature | Babylon Lite 1.8.0 public surface | Explorer behavior |
+| Explorer feature | Babylon Lite 1.9.0 public surface | Explorer behavior |
 | --- | --- | --- |
 | Scene tree | `SceneContext.camera`, `meshes`, `lights`, `animationGroups`, `shadowGenerators` | Enumerates camera, meshes, lights, and animation groups, and reconstructs reachable transform ancestors. Shadow generators are not yet shown. |
-| Scene settings | `clearColor`, `imageProcessing`, `environmentPrimaryColor`, `envRotationY`, `fog`, `clipPlane`, `shadowGenerators`, `fixedDeltaMs`, `setFog()` | Edits clear color, fixed delta, existing fog, exposure, contrast, environment primary color, and environment rotation. Clip plane and shadow count are read-only. Tone-mapping enabled state and type are read-only. |
+| Scene settings | `clearColor`, `imageProcessing`, `setSceneImageProcessing()`, `StandardToneMapping`, `AcesToneMapping`, `NeutralToneMapping`, `environmentPrimaryColor`, `envRotationY`, `fog`, `clipPlane`, `shadowGenerators`, `fixedDeltaMs`, `setFog()` | Edits clear color, fixed delta, existing fog, exposure, contrast, tone-mapping enabled state, environment primary color, and environment rotation. Displays the current tone-mapping algorithm read-only. Clip plane and shadow count are read-only. |
 | Transform nodes | `SceneNode.name`, `children`, `position`, `rotation`, `scaling`, `visible` | Reads and edits name and transforms. Visibility is applied to the subtree with `setSubtreeVisible()`. Zero scaling components are rejected. |
 | Mesh deformation | `Mesh.skeleton`, `Mesh.morphTargets` | Shows skinned state, bone count, morph-target state/count, and all current public weights. Morph weights refresh while selected. |
 | Base cameras | `Camera.fov`, `nearPlane`, `farPlane`, `viewport`; `getProjectionMatrix()` | Reads and edits finite projection and viewport values, subject to the cache limitation below. |
@@ -48,7 +48,7 @@ The default adapter follows these documented material references:
 
 Cube reflection textures and environment textures are not treated as `Texture2D` entries.
 
-## Public 1.8.0 surfaces not currently shown
+## Public 1.9.0 surfaces not currently shown
 
 - `metadata?: LiteMetadata` on scene nodes, materials, and animation groups, including `metadata.gltf.extras`.
 - `AnimationGroup.targetedAnimations` and `mask`, including public mask membership helpers.
@@ -61,7 +61,7 @@ These are omissions from the default Explorer adapter, not claims that Babylon L
 
 ## Recommended Explorer additions
 
-These are supported by public 1.8.0 APIs and fit the existing adapter without private-state access:
+These are supported by public 1.9.0 APIs and fit the existing adapter without private-state access:
 
 1. Display metadata as a read-only structured value for scene nodes, materials, and animation groups.
 2. Show animation targets and mask mode/membership beneath each animation group.
@@ -78,11 +78,13 @@ Frame-graph and render-task objects are public, but `FrameGraph` exposes operati
 
 ### Tone mapping after registration
 
-`imageProcessing.toneMappingEnabled` and `toneMappingType` are public, but PBR material groups consume them while shaders are built during `registerScene()`. `rebuildMaterial()` reuses the already-created group builder and does not switch that scene-wide shader configuration. Explorer therefore displays both fields read-only. See [the runtime tone-mapping API issue](babylon-lite-runtime-tone-mapping-issue.md).
+Partially resolved in Lite 1.9.0. `imageProcessing.toneMappingEnabled` can be updated through `setSceneImageProcessing()` and visibly changes PBR rendering because it toggles the `PBR_HAS_TONEMAP` feature bit.
+
+`toneMapping?: ToneMapping` is also public, but the installed package's PBR composer and binding caches are keyed by feature flags, not the selected tone-mapping `id`. Changing only Standard, ACES, or Khronos PBR Neutral can therefore reuse cached WGSL from the previous algorithm. Explorer displays the current algorithm read-only until a cache-safe public runtime update path is available. See [the tone-mapping algorithm cache issue](babylon-lite-tone-mapping-type-cache-issue.md).
 
 ### Clip planes on built-in materials
 
-`setClipPlane()` publicly stores the plane and registers its scene-UBO writer, but Lite 1.8's built-in PBR, Standard, and Shader material paths contain no clip-plane shader logic. Only Node Material's `ClipPlanesBlock` consumes the scene uniform. Explorer therefore displays the configured plane as diagnostic state without implying that built-in materials render it. See [the PBR clip-plane API issue](babylon-lite-pbr-clip-plane-issue.md).
+`setClipPlane()` publicly stores the plane and registers its scene-UBO writer. In the installed Lite 1.9.0 package, the public declarations still expose clip-plane use as a material feature bit, and the package implementation still writes the scene uniform separately from the built-in material paths. Explorer therefore displays the configured plane as diagnostic state without implying that built-in materials render it. See [the PBR clip-plane API issue](babylon-lite-pbr-clip-plane-issue.md).
 
 ### Camera projection cache
 
