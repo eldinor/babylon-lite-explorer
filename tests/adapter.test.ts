@@ -343,6 +343,24 @@ describe("default adapter", () => {
     expect(child.visible).toBe(false);
   });
 
+  it("removes scene entities through the Lite removal API", async () => {
+    const data = fakeScene();
+    const adapter = createDefaultLiteSceneAdapter();
+    const tree = await adapter.getSceneTree({ scene: data.scene, engine: {} });
+    const entity = tree[0].children?.find((item) => item.label === "Nodes")?.children?.find((item) => item.kind === "mesh");
+    const removeFromScene = vi.fn();
+
+    expect(entity?.capabilities.removable).toBe(true);
+    const result = await adapter.removeEntity?.(entity!, {
+      scene: data.scene,
+      engine: {},
+      lite: { removeFromScene } as unknown as import("../src/api/types").LiteExplorerRuntime
+    });
+
+    expect(result).toEqual({ ok: true, value: undefined });
+    expect(removeFromScene).toHaveBeenCalledWith(data.scene, data.mesh);
+  });
+
   it("edits verified public PBR factors and clamps channels", async () => {
     const data = fakeScene();
     Object.assign(data.material, { baseColorFactor: [1, 0, 0, 1], metallicFactor: 0.2, roughnessFactor: 0.4, alpha: 1 });

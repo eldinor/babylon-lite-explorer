@@ -6,6 +6,7 @@ import {
   NeutralToneMapping,
   pickAsync,
   playAnimation,
+  removeFromScene,
   setFog,
   setSceneImageProcessing,
   setSubtreeVisible,
@@ -49,11 +50,18 @@ const none: LiteEntityCapabilities = {
 };
 
 const sceneCapabilities: LiteEntityCapabilities = { ...none, editable: true };
+const removableMeshCapabilities: LiteEntityCapabilities = { ...none, editable: true, visibilityToggle: true, removable: true };
+
+type RemovableLiteEntity = Mesh | SceneNode | LightBase | Camera;
 
 function isPublicScene(value: unknown): value is SceneContext {
   if (!value || typeof value !== "object") return false;
   const scene = value as Partial<SceneContext>;
   return Array.isArray(scene.meshes) && Array.isArray(scene.lights) && Array.isArray(scene.animationGroups) && "camera" in scene;
+}
+
+function countSceneCameras(scene: SceneContext): number {
+  return scene.camera ? 1 : 0;
 }
 
 function isPublicEngine(value: unknown): value is EngineContext {
@@ -283,7 +291,7 @@ export function createDefaultLiteSceneAdapter(): LiteSceneAdapter {
       kind,
       source: node,
       children: children.length ? children : undefined,
-      capabilities: { editable: true, focusable: false, visibilityToggle: kind === "mesh", serializableSnapshot: true },
+      capabilities: kind === "mesh" ? removableMeshCapabilities : { ...none, editable: true },
       meta: { liveProperties: true }
     };
   };
@@ -784,6 +792,24 @@ export function createDefaultLiteSceneAdapter(): LiteSceneAdapter {
     }
   };
 
+  const removeEntity: NonNullable<LiteSceneAdapter["removeEntity"]> = async (entity, context) => {
+    if (!isPublicScene(context.scene)) return fail("unsupported", "Entity removal requires a public Babylon Lite SceneContext.");
+    if (!entity.source || typeof entity.source !== "object") return fail("unsupported", "This entity has no removable public source.");
+    if (entity.kind !== "mesh" && entity.kind !== "transform" && entity.kind !== "light" && entity.kind !== "camera") {
+      return fail("unsupported", "This entity cannot be removed from the scene.");
+    }
+    if (entity.kind === "camera" && context.scene.camera === entity.source && countSceneCameras(context.scene) <= 1) {
+      return fail("invalid", "Cannot remove the only camera.");
+    }
+    try {
+      const remove = (context.lite?.removeFromScene ?? removeFromScene) as (scene: SceneContext, source: RemovableLiteEntity) => void;
+      remove(context.scene, entity.source as RemovableLiteEntity);
+      return ok();
+    } catch (error) {
+      return fail("failed", error instanceof Error ? error.message : "Entity removal failed.");
+    }
+  };
+
   const getStats = (context: LiteExplorerContext): LiteStats => {
     const stats: LiteStats = {};
     if (isPublicEngine(context.engine)) {
@@ -855,6 +881,7 @@ export function createDefaultLiteSceneAdapter(): LiteSceneAdapter {
     getStats,
     pickEntityId,
     setEntityVisible: async (entity, visible, context) => setProperty(entity, "visible", visible, context),
+    removeEntity,
     playAnimationGroup,
     stopAnimationGroup,
     getEntitySnapshot,

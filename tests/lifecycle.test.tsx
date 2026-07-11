@@ -161,6 +161,26 @@ it("opens Animation Groups from the Properties footer", async () => {
   vi.useRealTimers();
 });
 
+it("appends generic adapters after the default adapter", async () => {
+  const data = fakeScene();
+  const capabilities = { editable: false, focusable: false, visibilityToggle: false, serializableSnapshot: false };
+  const extraEntity = { id: "extra:root", label: "Instancer", kind: "unknown" as const, source: {}, capabilities };
+  const extraAdapter: LiteSceneAdapter = {
+    getSceneTree: () => [extraEntity],
+    getProperties: () => [{ kind: "readonly", path: "kind", label: "Adapter", value: "Instancer", section: "General" }]
+  };
+  const handle = showLiteExplorer({ scene: data.scene, engine: {} }, { adapters: [extraAdapter] });
+  await handle.ready;
+
+  expect([...document.querySelectorAll<HTMLButtonElement>(".ble-tree-label")].map((button) => button.textContent)).toEqual(expect.arrayContaining(["Scene", "Instancer"]));
+  [...document.querySelectorAll<HTMLButtonElement>(".ble-tree-label")].find((button) => button.textContent === "Instancer")?.click();
+  await waitFor(() => {
+    expect([...document.querySelectorAll<HTMLLabelElement>(".ble-property-row > label")].map((label) => label.textContent)).toContain("Adapter");
+  });
+
+  handle.dispose();
+});
+
 it("can disable keyboard shortcuts", async () => {
   const data = fakeScene();
   const handle = showLiteExplorer(
@@ -197,9 +217,62 @@ it("shows capability-backed actions for the selected entity", async () => {
   sphere?.click();
   await waitFor(() => {
     const labels = [...document.querySelectorAll<HTMLButtonElement>(".ble-selection-actions button")].map((button) => button.textContent);
-    expect(labels).toEqual(["Copy", "Visible"]);
+    expect(labels).toEqual(["Copy", "Visible", "Delete"]);
   });
   handle.dispose();
+});
+
+it("deletes a selected removable entity without confirmation by default", async () => {
+  const data = fakeScene();
+  const confirm = vi.spyOn(window, "confirm");
+  const removeFromScene = vi.fn((scene: typeof data.scene, entity: unknown) => {
+    scene.meshes = scene.meshes.filter((mesh) => mesh !== entity);
+  });
+  const handle = showLiteExplorer(
+    { scene: data.scene, engine: {}, lite: { removeFromScene } as unknown as import("../src/api/types").LiteExplorerRuntime }
+  );
+  await handle.ready;
+  const sphere = [...document.querySelectorAll<HTMLButtonElement>(".ble-tree-label")].find((button) => button.textContent?.includes("Sphere"));
+  sphere?.click();
+
+  await waitFor(() => expect(document.querySelector(".ble-selection-status strong")?.textContent).toBe("Sphere"));
+  [...document.querySelectorAll<HTMLButtonElement>(".ble-selection-actions button")]
+    .find((button) => button.textContent === "Delete")
+    ?.click();
+
+  await waitFor(() => expect(removeFromScene).toHaveBeenCalledWith(data.scene, data.mesh));
+  expect(confirm).not.toHaveBeenCalled();
+  await waitFor(() => {
+    expect(document.querySelector(".ble-selection-status strong")).toBeNull();
+    expect([...document.querySelectorAll<HTMLButtonElement>(".ble-tree-label")].some((button) => button.textContent?.includes("Sphere"))).toBe(false);
+  });
+
+  handle.dispose();
+  confirm.mockRestore();
+});
+
+it("can ask before deleting a removable entity", async () => {
+  const data = fakeScene();
+  const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
+  const removeFromScene = vi.fn();
+  const handle = showLiteExplorer(
+    { scene: data.scene, engine: {}, lite: { removeFromScene } as unknown as import("../src/api/types").LiteExplorerRuntime },
+    { confirmEntityRemoval: true }
+  );
+  await handle.ready;
+  const sphere = [...document.querySelectorAll<HTMLButtonElement>(".ble-tree-label")].find((button) => button.textContent?.includes("Sphere"));
+  sphere?.click();
+
+  await waitFor(() => expect(document.querySelector(".ble-selection-status strong")?.textContent).toBe("Sphere"));
+  [...document.querySelectorAll<HTMLButtonElement>(".ble-selection-actions button")]
+    .find((button) => button.textContent === "Delete")
+    ?.click();
+
+  expect(confirm).toHaveBeenCalledWith('Delete "Sphere" from the scene?');
+  expect(removeFromScene).not.toHaveBeenCalled();
+
+  handle.dispose();
+  confirm.mockRestore();
 });
 
 it("shows public scene settings when Scene is selected", async () => {

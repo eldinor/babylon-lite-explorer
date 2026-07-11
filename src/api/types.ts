@@ -10,6 +10,7 @@ export type LiteExplorerRuntime = Pick<typeof import("@babylonjs/lite"),
   | "NeutralToneMapping"
   | "pickAsync"
   | "playAnimation"
+  | "removeFromScene"
   | "setFog"
   | "setSceneImageProcessing"
   | "setSubtreeVisible"
@@ -48,11 +49,15 @@ export type LiteExplorerOptions = {
   theme?: LiteExplorerTheme;
   initiallyOpen?: boolean;
   adapter?: LiteSceneAdapter;
+  /** Additional adapters appended after the default adapter, or after `adapter` when provided. */
+  adapters?: readonly LiteSceneAdapter[];
   features?: LiteExplorerFeatures;
   /** Notification auto-dismiss delay in milliseconds. Defaults to 3000; use 0 for manual dismissal. */
   notificationDurationMs?: number;
   /** Disable all explorer notifications. Defaults to true. */
   notificationsEnabled?: boolean;
+  /** Ask before removing entities. Defaults to false. */
+  confirmEntityRemoval?: boolean;
   /** Enable global explorer keyboard shortcuts. Defaults to true. */
   keyboardShortcutsEnabled?: boolean;
   /** User Guide URL opened by the footer help icon. */

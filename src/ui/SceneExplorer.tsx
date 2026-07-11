@@ -31,7 +31,7 @@ function flattenVisibleTree(tree: readonly LiteEntity[], expanded: ReadonlySet<s
 }
 
 export function SceneExplorer() {
-  const { signals, refresh } = useExplorerRuntime();
+  const { signals, refresh, commands, notifications } = useExplorerRuntime();
   const scroller = useRef<HTMLDivElement>(null);
   const [scrollTop, setScrollTop] = useState(0);
   const [viewportHeight, setViewportHeight] = useState(400);
@@ -80,6 +80,13 @@ export function SceneExplorer() {
     else if (top + ROW_HEIGHT > element.scrollTop + viewportHeight) element.scrollTop = top - viewportHeight + ROW_HEIGHT;
     requestAnimationFrame(() => element.querySelector<HTMLButtonElement>(`[data-tree-index="${bounded}"]`)?.focus());
   };
+  const removeEntity = async (entity: LiteEntity) => {
+    const context = signals.context.value;
+    const command = commands.get("remove-entity");
+    if (!context || !command) return;
+    try { await command.run(entity, context); }
+    catch (error) { notifications.push(error instanceof Error ? error.message : "Delete failed."); }
+  };
 
   return <div class="ble-explorer">
     <label class="ble-search"><span class="ble-sr-only">Search scene</span><input value={signals.search.value} onInput={(event) => { signals.search.value = event.currentTarget.value; setScrollTop(0); if (scroller.current) scroller.current.scrollTop = 0; }} placeholder="Search scene…" /></label>
@@ -120,6 +127,13 @@ export function SceneExplorer() {
                 }
               }}
             ><span class={`ble-kind ble-kind-${entity.kind}${playing ? " is-playing" : ""}`} aria-hidden="true" />{entity.label}</button>
+            {entity.capabilities.removable && <button
+              class="ble-tree-delete"
+              type="button"
+              title={`Delete ${entity.label}`}
+              aria-label={`Delete ${entity.label}`}
+              onClick={() => void removeEntity(entity)}
+            >x</button>}
           </div>;
         })}
       </div>

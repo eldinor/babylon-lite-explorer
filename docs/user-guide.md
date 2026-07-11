@@ -10,6 +10,7 @@ The tree lists the public scene, camera, lights, meshes and transform hierarchy,
 - Use the arrow keys to move through and expand the tree.
 - Enable Pick to select a mesh by clicking the canvas. Camera drags are ignored.
 - Supported selection actions appear between the panes and status bar.
+- Meshes can be deleted from the selected-entity bar or the red row action. Set `confirmEntityRemoval: true` to ask before deletion; the default is `false`. Transform node, light, and camera deletion is not shown until Babylon Lite exposes an official public removal API for those entity types.
 
 The Scene Explorer footer links to the User Guide, BabylonPress, and the project repository.
 

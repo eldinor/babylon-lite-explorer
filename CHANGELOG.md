@@ -7,6 +7,7 @@ All notable changes to Babylon Lite Explorer are documented here.
 ### Added
 
 - Added public `metadata` inspection for scene, node, camera, light, material, texture, and animation group entities in the Properties panel.
+- Added a mesh Delete action in the selected-entity bar and as a red Scene Explorer row action. Delete confirmation is available through `confirmEntityRemoval` and is off by default. Transform node, light, and camera removal intentionally wait for an official Babylon Lite public removal API beyond mesh removal.
 
 ### Changed
 

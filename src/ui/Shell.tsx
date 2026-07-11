@@ -145,6 +145,7 @@ function SelectionBar() {
   const actionLabels: Record<string, string> = {
     "copy-entity-snapshot": "Copy",
     "toggle-visible": "Visible",
+    "remove-entity": "Delete",
     "focus-selected": "Focus",
     "play-animation": "PLAY",
     "stop-animation": "STOP"
@@ -157,7 +158,7 @@ function SelectionBar() {
     catch (error) { notifications.push(error instanceof Error ? error.message : `Command failed: ${command.label}`); }
   };
   return selected
-    ? <div class="ble-selection-status"><span>Selected</span><strong>{selected.label}</strong><div class="ble-selection-actions">{actions.map((action) => <button type="button" key={action.id} onClick={() => void run(action.id)}>{actionLabels[action.id]}</button>)}</div></div>
+    ? <div class="ble-selection-status"><span>Selected</span><strong>{selected.label}</strong><div class="ble-selection-actions">{actions.map((action) => <button type="button" key={action.id} data-command-id={action.id} onClick={() => void run(action.id)}>{actionLabels[action.id]}</button>)}</div></div>
     : <div class="ble-selection-status is-empty" aria-hidden="true" />;
 }
 

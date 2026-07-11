@@ -1,4 +1,5 @@
 import { h, render } from "preact";
+import { composeLiteSceneAdapters } from "../adapter/composeLiteSceneAdapters";
 import { createDefaultLiteSceneAdapter } from "../adapter/default/createDefaultLiteSceneAdapter";
 import { createDisposable, DisposableStore } from "../core/disposable";
 import { createExplorerSignals } from "../signals/createExplorerSignals";
@@ -43,7 +44,10 @@ export function showLiteExplorer(context: LiteExplorerContext, options: LiteExpl
 
   const signals = createExplorerSignals();
   signals.context.value = { ...context, canvas };
-  signals.adapter.value = options.adapter ?? createDefaultLiteSceneAdapter();
+  const baseAdapter = options.adapter ?? createDefaultLiteSceneAdapter();
+  const extraAdapters = options.adapters ?? [];
+  const adapter = extraAdapters.length ? composeLiteSceneAdapters([baseAdapter, ...extraAdapters]) : baseAdapter;
+  signals.adapter.value = adapter;
   signals.theme.value = theme;
   signals.layout.value = layout;
   try {
@@ -94,6 +98,26 @@ export function showLiteExplorer(context: LiteExplorerContext, options: LiteExpl
       const visible = signals.properties.value.find((item) => item.path === "visible");
       const result = await adapter.setEntityVisible(entity, !(visible?.kind === "boolean" && visible.value), currentContext);
       if (!result.ok) notifications.push(result.message); else await refresh.refreshTree();
+    }
+  }));
+  disposables.add(commands.register({
+    id: "remove-entity",
+    label: "Delete",
+    when: (entity) => !!entity?.capabilities.removable,
+    run: async (entity, currentContext) => {
+      const adapter = signals.adapter.value;
+      if (!entity || !adapter?.removeEntity) return;
+      const isActiveCamera = entity.kind === "camera" && currentContext.scene && typeof currentContext.scene === "object"
+        && "camera" in currentContext.scene && currentContext.scene.camera === entity.source;
+      const message = isActiveCamera
+        ? `Delete active camera "${entity.label}"?`
+        : `Delete "${entity.label}" from the scene?`;
+      if (options.confirmEntityRemoval === true && !window.confirm(message)) return;
+      const result = await adapter.removeEntity(entity, currentContext);
+      if (!result.ok) { notifications.push(result.message); return; }
+      if (signals.selectedEntityId.value === entity.id) await refresh.select(null);
+      await refresh.refreshTree();
+      notifications.push(`Deleted ${entity.label}`, "info");
     }
   }));
   disposables.add(commands.register({
@@ -190,7 +214,8 @@ export function showLiteExplorer(context: LiteExplorerContext, options: LiteExpl
       notifications.dispose();
       disposables.dispose();
       commands.dispose();
-      if (!options.adapter) signals.adapter.value?.dispose?.();
+      if (extraAdapters.length) signals.adapter.value?.dispose?.();
+      if (!options.adapter) baseAdapter.dispose?.();
       render(null, host);
       host.remove();
       if (restoredPosition !== undefined) container.style.position = restoredPosition;

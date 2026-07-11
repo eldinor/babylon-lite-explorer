@@ -78,6 +78,8 @@
 .ble-tree-toggle, .ble-tree-label { border: 0 !important; background: transparent !important; }
 .ble-tree-toggle { flex: 0 0 20px; min-height: 20px !important; padding: 0; color: var(--ble-muted); }
 .ble-tree-label { display: flex; align-items: center; flex: 1; min-width: 0; padding: 0 5px 0 0; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ble-tree-delete { flex: 0 0 20px; width: 20px; min-height: 20px !important; margin-right: 3px; padding: 0; border-color: transparent !important; background: transparent !important; color: var(--ble-danger) !important; font-weight: 700; opacity: .7; }
+.ble-tree-delete:hover, .ble-tree-delete:focus-visible { border-color: var(--ble-danger) !important; background: color-mix(in srgb, var(--ble-danger) 14%, transparent) !important; opacity: 1; }
 .ble-kind { width: 7px; height: 7px; margin-right: 7px; border-radius: 50%; background: var(--ble-muted); }
 .ble-kind-mesh { background: #d29922; } .ble-kind-camera { background: #a371f7; } .ble-kind-light { background: #f2cc60; } .ble-kind-material { background: #3fb950; }
 .ble-kind.is-playing { background: #3fb950; box-shadow: 0 0 5px #3fb950; animation: ble-playing-pulse 1.8s ease-in-out infinite; }
@@ -120,6 +122,8 @@
 .ble-selection-status.is-empty { min-height: 0; padding: 0; border: 0; }
 .ble-selection-actions { display: flex; gap: 3px; margin-left: auto; }
 .ble-selection-actions button { min-height: 20px; padding: 1px 6px; }
+.ble-selection-actions button[data-command-id="remove-entity"] { border-color: color-mix(in srgb, var(--ble-danger) 70%, var(--ble-border)); color: var(--ble-danger); }
+.ble-selection-actions button[data-command-id="remove-entity"]:hover, .ble-selection-actions button[data-command-id="remove-entity"]:focus-visible { border-color: var(--ble-danger); background: color-mix(in srgb, var(--ble-danger) 14%, var(--ble-panel-2)); }
 .ble-notifications { position: absolute; right: 8px; bottom: 34px; display: grid; gap: 5px; width: min(360px, calc(100% - 16px)); pointer-events: none; }
 .ble-notification { display: flex; justify-content: space-between; align-items: start; gap: 8px; padding: 7px 8px; border: 1px solid var(--ble-border); border-left: 3px solid var(--ble-danger); border-radius: 3px; background: var(--ble-panel-2); box-shadow: 0 4px 14px rgb(0 0 0 / 25%); pointer-events: auto; }
 .ble-notification button { min-height: 18px; border: 0; background: transparent; }

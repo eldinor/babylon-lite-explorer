@@ -20,6 +20,10 @@ import { demoUrl } from "../../demoUrl";
 const canvas = document.querySelector<HTMLCanvasElement>("#renderCanvas")!;
 const engine = await createEngine(canvas);
 const scene = createSceneContext(engine);
+(scene as unknown as { metadata: unknown }).metadata = {
+  example: "Basic",
+  purpose: "metadata demo",
+};
 const camera = createArcRotateCamera(-Math.PI / 2, Math.PI / 2.5, 4, { x: 0, y: 0, z: 0 });
 scene.camera = camera;
 attachControl(camera, canvas, scene);
@@ -33,12 +37,20 @@ await loadEnvironment(scene, "https://assets.babylonjs.com/core/environments/env
 
 const sphere = createSphere(engine, { segments: 16, diameter: 2 });
 sphere.name = "Sphere";
+sphere.metadata = {
+  category: "primitive",
+  tags: ["round", "editable"],
+};
 sphere.position.x = -1.25;
 sphere.material = createPbrMaterial();
 addToScene(scene, sphere);
 
 const box = createBox(engine, 1.5);
 box.name = "Blue box";
+box.metadata = {
+  category: "primitive",
+  colorRole: "accent",
+};
 box.position.x = 1.25;
 box.material = createPbrMaterial({
   name: "boxMaterial",
