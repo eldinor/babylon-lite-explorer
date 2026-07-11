@@ -1,6 +1,6 @@
 {
   "name": "babylon-lite-explorer",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "A small, public-API-only explorer for Babylon Lite scenes",
   "homepage": "https://explorer.babylonpress.org/",
   "license": "MIT",
@@ -65,7 +65,7 @@
     "test:watch": "vitest"
   },
   "peerDependencies": {
-    "@babylonjs/lite": "^1.9.0",
+    "@babylonjs/lite": "^1.10.0",
     "@preact/signals": "^2.0.0",
     "preact": "^10.0.0"
   },
@@ -75,7 +75,7 @@
     }
   },
   "devDependencies": {
-    "@babylonjs/lite": "^1.9.0",
+    "@babylonjs/lite": "^1.10.0",
     "@preact/preset-vite": "^2.10.2",
     "@preact/signals": "^2.0.1",
     "@testing-library/preact": "^3.2.4",

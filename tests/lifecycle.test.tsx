@@ -15,7 +15,7 @@ it("mounts independent instances and disposes idempotently", async () => {
   expect(document.querySelectorAll(".ble-root")).toHaveLength(2);
   expect(document.querySelector(".ble-root")?.getAttribute("data-layout")).toBe("single");
   expect(document.querySelector(".ble-root")?.querySelectorAll(".ble-single-stack > .ble-pane")).toHaveLength(2);
-  expect(document.querySelector(".ble-toolbar strong")?.textContent).toBe(`Babylon Lite 1.9.0 Explorer ${packageJson.version}`);
+  expect(document.querySelector(".ble-toolbar strong")?.textContent).toBe(`Babylon Lite 1.10.0 Explorer ${packageJson.version}`);
   expect([...document.querySelector(".ble-root")!.querySelectorAll<HTMLButtonElement>('.ble-tabs button[role="tab"]')].map((item) => item.textContent)).toEqual(["Scene Explorer", "Properties", "Tools"]);
   first.hide(); first.show(); first.toggle(); first.toggle();
   first.dispose(); first.dispose();
@@ -225,8 +225,7 @@ it("shows public scene settings when Scene is selected", async () => {
     ]));
   });
   expect(document.querySelector<HTMLInputElement>('.ble-property-control input[type="checkbox"]')?.checked).toBe(false);
-  expect(document.querySelector<HTMLSelectElement>(".ble-property-control select")).toBeNull();
-  expect([...document.querySelectorAll<HTMLElement>(".ble-readonly")].some((item) => item.textContent === "Standard")).toBe(true);
+  expect(document.querySelector<HTMLSelectElement>(".ble-property-control select")?.value).toBe("standard");
   handle.dispose();
 });
 

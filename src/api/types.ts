@@ -1,16 +1,19 @@
 import type { LiteSceneAdapter } from "../adapter/LiteSceneAdapter";
 
 export type LiteExplorerRuntime = Pick<typeof import("@babylonjs/lite"),
+  | "AcesToneMapping"
   | "addToScene"
   | "createGpuPicker"
   | "disposePicker"
   | "loadGltf"
   | "markMaterialUboDirty"
+  | "NeutralToneMapping"
   | "pickAsync"
   | "playAnimation"
   | "setFog"
   | "setSceneImageProcessing"
   | "setSubtreeVisible"
+  | "StandardToneMapping"
   | "stopAnimation"
 >;
 

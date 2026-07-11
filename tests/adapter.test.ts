@@ -91,6 +91,7 @@ describe("default adapter", () => {
     const data = fakeScene();
     (data.scene as unknown as { fog: unknown }).fog = { mode: 3, density: 0.1, start: 2, end: 20, color: [0.2, 0.3, 0.4] };
     (data.scene as unknown as { clipPlane: unknown }).clipPlane = [0, 1, 0, -2];
+    (data.scene as unknown as { metadata: unknown }).metadata = { author: "Ada", nested: { tag: "demo" } };
     data.scene.shadowGenerators.push({} as never);
     const setSceneImageProcessing = vi.fn(async (scene: lite.SceneContext, update: Partial<lite.ImageProcessingConfig>) => {
       Object.assign((scene as unknown as typeof data.scene).imageProcessing, update);
@@ -121,7 +122,7 @@ describe("default adapter", () => {
 
     expect((await adapter.setProperty?.(scene, "imageProcessing.exposure", 1.5, context))?.ok).toBe(true);
     expect((await adapter.setProperty?.(scene, "imageProcessing.toneMappingEnabled", true, context))?.ok).toBe(true);
-    expect((await adapter.setProperty?.(scene, "imageProcessing.toneMapping", "aces", context))?.ok).toBe(false);
+    expect((await adapter.setProperty?.(scene, "imageProcessing.toneMapping", "aces", context))?.ok).toBe(true);
     const originalClearColor = data.scene.clearColor;
     expect((await adapter.setProperty?.(scene, "clearColor", [0.2, 0.3, 0.4, 1], context))?.ok).toBe(true);
     expect((await adapter.setProperty?.(scene, "environmentPrimaryColor", [0.4, 0.5, 0.6], context))?.ok).toBe(true);
@@ -130,9 +131,12 @@ describe("default adapter", () => {
     expect((await adapter.setProperty?.(scene, "fog.mode", "2", context))?.ok).toBe(true);
     expect((await adapter.setProperty?.(scene, "fog.density", 0.025, context))?.ok).toBe(true);
     expect((await adapter.setProperty?.(scene, "fog.color", [0.6, 0.7, 0.8], context))?.ok).toBe(true);
-    expect(data.scene.imageProcessing).toMatchObject({ exposure: 1.5, toneMappingEnabled: true });
+    expect(data.scene.imageProcessing).toMatchObject({ exposure: 1.5, toneMappingEnabled: true, toneMapping: lite.AcesToneMapping });
     expect(setSceneImageProcessing).toHaveBeenCalledWith(data.scene, { exposure: 1.5 });
     expect(setSceneImageProcessing).toHaveBeenCalledWith(data.scene, { toneMappingEnabled: true });
+    expect(setSceneImageProcessing).toHaveBeenCalledWith(data.scene, { toneMappingEnabled: true, toneMapping: lite.AcesToneMapping });
+    expect(properties.find((property) => property.path === "metadata.author")?.value).toBe("Ada");
+    expect(properties.find((property) => property.path === "metadata.nested")?.value).toBe("{\"tag\":\"demo\"}");
     expect(data.scene.clearColor).toBe(originalClearColor);
     expect(data.scene.clearColor).toEqual({ r: 0.2, g: 0.3, b: 0.4, a: 1 });
     expect(data.scene.environmentPrimaryColor).toEqual([0.4, 0.5, 0.6]);
@@ -254,6 +258,7 @@ describe("default adapter", () => {
 
   it("returns descriptors and applies safe public transform edits", async () => {
     const data = fakeScene();
+    (data.mesh as unknown as { metadata: unknown }).metadata = { category: "hero", flags: ["selectable"] };
     const context = { scene: data.scene, engine: {} };
     const adapter = createDefaultLiteSceneAdapter();
     const tree = await adapter.getSceneTree(context);
@@ -261,6 +266,8 @@ describe("default adapter", () => {
     const entity = findEntityById(tree, meshId)!;
     const properties = await adapter.getProperties(entity, context);
     expect(properties.some((item) => item.path === "position")).toBe(true);
+    expect(properties.find((item) => item.path === "metadata.category")).toMatchObject({ value: "hero", section: "Metadata" });
+    expect(properties.find((item) => item.path === "metadata.flags")).toMatchObject({ value: "[\"selectable\"]", section: "Metadata" });
     expect(await adapter.setProperty?.(entity, "position", [3, 4, 5], context)).toEqual({ ok: true, value: undefined });
     expect(data.mesh.position).toMatchObject({ x: 3, y: 4, z: 5 });
     expect(await adapter.getEntitySnapshot?.(entity, context)).toEqual({
@@ -272,7 +279,9 @@ describe("default adapter", () => {
         rotation: [0, 0, 0],
         scaling: [1, 1, 1],
         skinned: "No",
-        hasMorphTargets: "No"
+        hasMorphTargets: "No",
+        "metadata.category": "hero",
+        "metadata.flags": "[\"selectable\"]"
       }
     });
     const rejected = await adapter.setProperty?.(entity, "scaling", [1, 0, 1], context);

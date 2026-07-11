@@ -1,12 +1,15 @@
 import {
+  AcesToneMapping,
   createGpuPicker,
   disposePicker,
   markMaterialUboDirty,
+  NeutralToneMapping,
   pickAsync,
   playAnimation,
   setFog,
   setSceneImageProcessing,
   setSubtreeVisible,
+  StandardToneMapping,
   stopAnimation,
   type AnimationGroup,
   type ArcRotateCamera,
@@ -213,12 +216,40 @@ function getToneMappingId(toneMapping: ToneMapping | undefined): string {
   return toneMapping?.id ?? "standard";
 }
 
-function getToneMappingLabel(toneMapping: ToneMapping | undefined): string {
-  const id = getToneMappingId(toneMapping);
-  if (id === "standard") return "Standard";
-  if (id === "aces") return "ACES";
-  if (id === "neutral") return "Khronos PBR Neutral";
-  return id;
+const toneMappingOptions = [
+  { value: "standard", label: "Standard" },
+  { value: "aces", label: "ACES" },
+  { value: "neutral", label: "Khronos PBR Neutral" }
+] as const;
+
+function getToneMappingById(id: string, runtime?: LiteExplorerContext["lite"]): ToneMapping | null {
+  if (id === "standard") return runtime?.StandardToneMapping ?? StandardToneMapping;
+  if (id === "aces") return runtime?.AcesToneMapping ?? AcesToneMapping;
+  if (id === "neutral") return runtime?.NeutralToneMapping ?? NeutralToneMapping;
+  return null;
+}
+
+function formatMetadataValue(value: unknown): string {
+  if (value == null) return String(value);
+  if (typeof value === "string") return value;
+  if (typeof value === "number" || typeof value === "boolean" || typeof value === "bigint") return String(value);
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return Object.prototype.toString.call(value);
+  }
+}
+
+function metadataProperties(source: object): PropertyDescriptor[] {
+  const metadata = (source as { metadata?: unknown }).metadata;
+  if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) return [];
+  return Object.entries(metadata as Record<string, unknown>).map(([key, value]) => ({
+    kind: "readonly",
+    path: `metadata.${key}`,
+    label: key,
+    value: formatMetadataValue(value),
+    section: "Metadata"
+  }));
 }
 
 export function createDefaultLiteSceneAdapter(): LiteSceneAdapter {
@@ -469,12 +500,13 @@ export function createDefaultLiteSceneAdapter(): LiteSceneAdapter {
       { kind: "readonly", path: "$id", label: "Explorer ID", value: entity.id, section: "General" }
     ];
     if (!source || typeof source !== "object") return base;
+    const metadata = metadataProperties(source);
     const knownKind = entityTypes.get(source);
-    if (knownKind === "mesh") return [...base, ...nodeProperties(source as Mesh), ...meshDeformationProperties(source as Mesh)];
-    if (knownKind === "transform") return [...base, ...nodeProperties(source as SceneNode)];
+    if (knownKind === "mesh") return [...base, ...nodeProperties(source as Mesh), ...meshDeformationProperties(source as Mesh), ...metadata];
+    if (knownKind === "transform") return [...base, ...nodeProperties(source as SceneNode), ...metadata];
     if (knownKind === "camera") {
       const camera = source as Camera;
-      return [...base, ...cameraProperties(camera)];
+      return [...base, ...cameraProperties(camera), ...metadata];
     }
     if (knownKind === "light") {
       const light = source as LightBase & { intensity?: number; direction?: SceneNode["position"]; position?: SceneNode["position"] };
@@ -482,6 +514,7 @@ export function createDefaultLiteSceneAdapter(): LiteSceneAdapter {
       if (typeof light.intensity === "number") values.push({ kind: "number", path: "intensity", label: "Intensity", value: light.intensity, min: 0, step: 0.05, section: "Light" });
       if (light.position) values.push({ kind: "vector3", path: "position", label: "Position", value: asTuple3(light.position), section: "Light" });
       if (light.direction) values.push({ kind: "vector3", path: "direction", label: "Direction", value: asTuple3(light.direction), section: "Light" });
+      values.push(...metadata);
       return values;
     }
     if (knownKind === "material") {
@@ -514,6 +547,7 @@ export function createDefaultLiteSceneAdapter(): LiteSceneAdapter {
           values.push({ kind: "number", path, label, value: material[path], min: 0, step: 0.01, section: "Texture Levels" });
         }
       }
+      values.push(...metadata);
       return values;
     }
     if (knownKind === "texture") {
@@ -528,7 +562,8 @@ export function createDefaultLiteSceneAdapter(): LiteSceneAdapter {
         { kind: "number", path: "uOffset", label: "U offset", value: texture.uOffset ?? 0, readonly: true, section: "UV Transform" },
         { kind: "number", path: "vOffset", label: "V offset", value: texture.vOffset ?? 0, readonly: true, section: "UV Transform" },
         { kind: "number", path: "uAng", label: "UV rotation", value: texture.uAng ?? 0, readonly: true, section: "UV Transform" },
-        { kind: "boolean", path: "invertY", label: "Invert Y", value: texture.invertY ?? false, readonly: true, section: "UV Transform" }
+        { kind: "boolean", path: "invertY", label: "Invert Y", value: texture.invertY ?? false, readonly: true, section: "UV Transform" },
+        ...metadata
       ];
     }
     if (knownKind === "animationGroup") {
@@ -542,7 +577,8 @@ export function createDefaultLiteSceneAdapter(): LiteSceneAdapter {
         { kind: "number", path: "currentFrame", label: "Current frame", value: Math.round(currentTime * frameRate), readonly: true, section: "Playback" },
         { kind: "boolean", path: "isPlaying", label: "Playing", value: group.isPlaying, readonly: true, section: "Playback" },
         { kind: "number", path: "speedRatio", label: "Speed ratio", value: group.speedRatio, readonly: true, section: "Playback" },
-        { kind: "boolean", path: "loopAnimation", label: "Loop", value: group.loopAnimation, readonly: true, section: "Playback" }
+        { kind: "boolean", path: "loopAnimation", label: "Loop", value: group.loopAnimation, readonly: true, section: "Playback" },
+        ...metadata
       ];
     }
     if (knownKind === "scene") {
@@ -562,10 +598,11 @@ export function createDefaultLiteSceneAdapter(): LiteSceneAdapter {
       if (typeof imageProcessing.contrast === "number") values.push({ kind: "number", path: "imageProcessing.contrast", label: "Contrast", value: imageProcessing.contrast, min: 0, step: 0.01, section: "Image Processing" });
       if (typeof imageProcessing.toneMappingEnabled === "boolean") values.push({ kind: "boolean", path: "imageProcessing.toneMappingEnabled", label: "Tone mapping", value: imageProcessing.toneMappingEnabled, section: "Image Processing" });
       values.push({
-        kind: "readonly",
+        kind: "select",
         path: "imageProcessing.toneMapping",
         label: "Tone mapping type",
-        value: getToneMappingLabel(imageProcessing.toneMapping),
+        value: getToneMappingId(imageProcessing.toneMapping),
+        options: toneMappingOptions,
         section: "Image Processing"
       });
       if (isNumberTuple(scene.environmentPrimaryColor, 3)) values.push({ kind: "color3", path: "environmentPrimaryColor", label: "Environment primary color", value: [...scene.environmentPrimaryColor], section: "Environment" });
@@ -591,6 +628,7 @@ export function createDefaultLiteSceneAdapter(): LiteSceneAdapter {
         value: scene.clipPlane ? `[${scene.clipPlane.map((part) => part.toFixed(3)).join(", ")}]` : "Disabled",
         section: "Clipping"
       });
+      values.push(...metadata);
       return values;
     }
     return base;
@@ -627,6 +665,10 @@ export function createDefaultLiteSceneAdapter(): LiteSceneAdapter {
           await (context.lite?.setSceneImageProcessing ?? setSceneImageProcessing)(scene, { contrast: Math.max(0, value) });
         } else if (path === "imageProcessing.toneMappingEnabled" && typeof value === "boolean") {
           await (context.lite?.setSceneImageProcessing ?? setSceneImageProcessing)(scene, { toneMappingEnabled: value });
+        } else if (path === "imageProcessing.toneMapping" && typeof value === "string") {
+          const toneMapping = getToneMappingById(value, context.lite);
+          if (!toneMapping) return fail("invalid", `Invalid value for ${path}.`);
+          await (context.lite?.setSceneImageProcessing ?? setSceneImageProcessing)(scene, { toneMappingEnabled: true, toneMapping });
         } else if (path === "environmentPrimaryColor" && isNumberTuple(value, 3)) {
           scene.environmentPrimaryColor = [clamp01(value[0]), clamp01(value[1]), clamp01(value[2])];
         } else if (path === "envRotationY" && typeof value === "number" && Number.isFinite(value)) {

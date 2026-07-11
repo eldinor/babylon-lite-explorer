@@ -23,9 +23,9 @@ When animation groups exist, the lowest Properties footer displays their count. 
 
 ### Scene
 
-Scene properties include clear color, fixed simulation delta, shadow-generator count, fog, clip plane, image-processing exposure and contrast, tone mapping, environment primary color, and environment Y rotation. Existing fog settings are editable; clip planes and shadow generators are currently diagnostic readouts.
+Scene properties include clear color, fixed simulation delta, shadow-generator count, fog, clip plane, image-processing exposure and contrast, tone mapping, metadata, environment primary color, and environment Y rotation. Existing fog settings are editable; clip planes and shadow generators are currently diagnostic readouts.
 
-Babylon Lite 1.9.0 exposes `setSceneImageProcessing()`, so exposure, contrast, and tone-mapping enabled state are editable through the public runtime update path. The current tone-mapping algorithm is displayed read-only because the installed 1.9.0 package can reuse cached PBR shader state when only the algorithm changes.
+Babylon Lite 1.10.0 exposes `setSceneImageProcessing()` updates for exposure, contrast, tone-mapping enabled state, and the Standard/ACES/Khronos PBR Neutral tone-mapping algorithm. Algorithm changes are visible when the selected algorithm is compiled into a fresh tone-mapped PBR pipeline; switching only the algorithm after a tone-mapped pipeline has already been cached can still reuse the previous shader in the current Lite package.
 
 ### Materials
 
@@ -91,6 +91,6 @@ Environment intensity is a per-PBR-material property rather than a scene-level s
 - Environment textures cannot be discovered from the public scene.
 - Original texture URLs and preview pixels are not retained through the current public texture API.
 - Empty PBR materials cannot be reliably distinguished from custom empty materials.
-- Tone-mapping algorithm changes are displayed but not edited until Babylon Lite exposes a cache-safe runtime update path.
+- Tone-mapping algorithm changes use Babylon Lite 1.10.0 `setSceneImageProcessing()`, but algorithm-only changes can reuse cached PBR WGSL after a tone-mapped pipeline already exists.
 - Export Scene is a diagnostic JSON snapshot, not a scene serialization format.
 - A custom adapter currently replaces the default adapter instead of extending it.

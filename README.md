@@ -77,11 +77,11 @@ The default adapter currently exposes the public scene camera, meshes, mesh hier
 
 Mesh properties include a **Deformation** section showing whether the mesh is skinned, its public bone count, whether morph targets are present, the morph-target count, and current morph weights. Morph weights refresh while that mesh is selected. Skeletal animation usually changes bone matrices and deforms vertices without changing the mesh's own position, rotation, or scaling.
 
-Selecting **Scene** exposes its public clear color, fixed simulation delta, image-processing exposure, contrast, tone-mapping state and algorithm, environment primary color, and environment Y rotation. Babylon Lite 1.9.0 exposes `setSceneImageProcessing()`, so exposure, contrast, and tone-mapping enabled state are editable through the public runtime update path. The current tone-mapping algorithm is displayed read-only: in the installed 1.9.0 package, changing only Standard/ACES/Khronos PBR Neutral appears to reuse cached PBR shader state, so Explorer does not advertise it as a reliable visual edit.
+Selecting **Scene** exposes its public clear color, fixed simulation delta, image-processing exposure, contrast, tone-mapping state and algorithm, environment primary color, and environment Y rotation. Babylon Lite 1.10.0 exposes `setSceneImageProcessing()` updates for image-processing values, so exposure, contrast, tone-mapping enabled state, and the Standard/ACES/Khronos PBR Neutral tone-mapping algorithm can be routed through the public runtime update path.
 
 ### Environment textures
 
-The Basic example loads `environmentSpecular.env`; the Boombox and Animated GLB examples do not load environment textures.
+The Basic and Boombox examples load `environmentSpecular.env`; the Animated GLB example does not load environment textures. Boombox leaves tone mapping initially disabled after loading the environment so selecting ACES or Khronos PBR Neutral compiles the chosen algorithm into a fresh tone-mapped PBR pipeline.
 
 `loadEnvironment()` returns a public `EnvironmentTextures` object and stores the environment internally for rendering. However, `SceneContext` exposes no public `environmentTextures` field, `hasEnvironment` flag, or general `scene.textures` collection. The Explorer therefore cannot reliably determine from the scene alone whether an environment texture is present. Reading private state such as `_envTextures` would make the Explorer dependent on implementation details, so the default adapter intentionally does not do it.
 
@@ -93,13 +93,13 @@ const environment = await loadEnvironment(scene, url, options);
 
 The current Explorer cannot add that retained object alongside its automatically discovered entities because a custom adapter replaces the default adapter rather than extending it. Future adapter composition is intended to support this case. Environment intensity is a per-PBR-material field, not a scene-level environment setting.
 
-Babylon Lite 1.9.0 projection fields still have a runtime cache-invalidation limitation. Assigning `camera.fov`, `camera.nearPlane`, or `camera.farPlane` updates the public value, but `getProjectionMatrix()` is documented as cached by `worldMatrixVersion` and aspect ratio rather than those projection values. The rendered projection can therefore remain unchanged until the camera moves or the aspect ratio changes. Babylon Lite exposes no public projection-cache invalidation function, so the default adapter does not modify private cache fields as a workaround.
+Babylon Lite 1.10.0 projection fields still have a runtime cache-invalidation limitation. Assigning `camera.fov`, `camera.nearPlane`, or `camera.farPlane` updates the public value, but `getProjectionMatrix()` is documented as cached by `worldMatrixVersion` and aspect ratio rather than those projection values. The rendered projection can therefore remain unchanged until the camera moves or the aspect ratio changes. Babylon Lite exposes no public projection-cache invalidation function, so the default adapter does not modify private cache fields as a workaround.
 
-Babylon Lite 1.9.0 tone-mapping enabled/disabled changes are visible because they alter the PBR `PBR_HAS_TONEMAP` feature bit. Tone-mapping algorithm changes use the same feature bit, while the installed package's PBR composer and binding caches are keyed by feature flags rather than the algorithm `id`; the previous tone-mapping WGSL can therefore be reused. Explorer keeps the algorithm read-only until a public cache-safe update path is available.
+Babylon Lite 1.10.0 tone-mapping enabled/disabled and algorithm changes are routed through `setSceneImageProcessing()`. In the current package, `setSceneImageProcessing()` detects algorithm changes and calls `rebuildScenePbrPipelines()`, but the lower-level PBR bindings cache is keyed by feature flags and does not include `toneMapping.id`. Switching only Standard, ACES, or Khronos PBR Neutral after a tone-mapped pipeline has already been cached can therefore reuse the previous WGSL. The Boombox example leaves tone mapping initially disabled after loading its environment so choosing an algorithm compiles the selected tone map into a fresh PBR pipeline.
 
 Babylon Lite 1.4.0 preserves glTF node names on public transform nodes, but generated renderable meshes are named `gltf_mesh_0`, `gltf_mesh_1`, and so on. The original glTF `mesh.name` is not retained on the public mesh object, so Explorer cannot recover it through public APIs. A named parent transform may still provide the model's original node-level label.
 
-Texture previews and original texture URLs are unavailable through the default adapter. Babylon Lite 1.9.0 exposes GPU handles, dimensions, UV transforms, and `invertY` on `Texture2D`, but it does not retain public source-image/URL metadata or provide a public pixel-readback surface for these textures. These build-time texture fields remain read-only in Explorer.
+Texture previews and original texture URLs are unavailable through the default adapter. Babylon Lite 1.10.0 exposes GPU handles, dimensions, UV transforms, and `invertY` on `Texture2D`, but it does not retain public source-image/URL metadata or provide a public pixel-readback surface for these textures. These build-time texture fields remain read-only in Explorer.
 
 ## Future: additional application-owned entities
 
@@ -134,5 +134,5 @@ Vite builds the ESM library and CSS. Preact, Signals, and Babylon Lite are exter
 ## Further documentation
 
 - [Changelog](CHANGELOG.md)
-- [Babylon Lite 1.9.0 public API inventory](docs/babylon-lite-api-inventory.md)
+- [Babylon Lite 1.10.0 public API inventory](docs/babylon-lite-api-inventory.md)
 - [Babylon Lite 1.4.0 migration notes](docs/babylon-lite-1.4.0-migration.md)

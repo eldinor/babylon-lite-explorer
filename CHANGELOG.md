@@ -2,6 +2,18 @@
 
 All notable changes to Babylon Lite Explorer are documented here.
 
+## 0.4.1 - 2026-07-11
+
+### Added
+
+- Added public `metadata` inspection for scene, node, camera, light, material, texture, and animation group entities in the Properties panel.
+
+### Changed
+
+- Upgraded the Babylon Lite peer and development dependency to 1.10.0.
+- Added tone-mapping algorithm controls through Babylon Lite 1.10.0 `setSceneImageProcessing()` for the built-in Standard, ACES, and Khronos PBR Neutral tone mappings, with the current public-cache limitation documented.
+- Loaded the Boombox example with environment lighting while leaving tone mapping initially disabled so selecting a tone-mapping algorithm compiles visibly from a fresh PBR pipeline.
+
 ## 0.4.0 - 2026-07-10
 
 ### Changed

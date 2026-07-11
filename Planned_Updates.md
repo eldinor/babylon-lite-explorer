@@ -67,7 +67,7 @@ This roadmap covers only `babylon-lite-explorer`. Changes to Babylon Lite itself
 
 - Allow registered application entities to extend the default adapter instead of replacing it.
 - Preserve stable identity and capability boundaries across composed adapters.
-- Use composition for application-retained environments, frame-graph tasks, and other non-enumerable public objects.
+- Use composition for application-retained environments, particle sets, frame-graph tasks, and other non-enumerable public objects.
 
 ## External API follow-up
 
@@ -77,6 +77,7 @@ These are not implementation tasks in this repository:
 - Public cache-safe PBR tone-mapping algorithm updates after scene registration.
 - Public material-family discriminator.
 - Public environment enumeration and texture source/readback metadata.
+- Public particle-system enumeration for scene-registered particle sets.
 - Public frame-graph task enumeration.
 
 When a new Babylon Lite release provides one of these capabilities:
