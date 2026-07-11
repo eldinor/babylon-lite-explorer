@@ -16,6 +16,7 @@ export function createExplorerSignals() {
   const sceneVersion = signal(0);
   const selectedEntityId = signal<string | null>(null);
   const tree = signal<LiteEntity[]>([]);
+  const extensionEntities = signal<LiteEntity[]>([]);
   const properties = signal<PropertyDescriptor[]>([]);
   const stats = signal<LiteStats>({});
   const search = signal("");
@@ -29,12 +30,12 @@ export function createExplorerSignals() {
   const toolbarItems = signal<ToolbarItemDefinition[]>([]);
   const selectedPanes = signal<Record<"left" | "right" | "single", string | null>>({ left: null, right: null, single: null });
   const singlePanePercent = signal(44);
-  const selectedEntity = computed(() => selectedEntityId.value ? findEntityById(tree.value, selectedEntityId.value) : null);
+  const selectedEntity = computed(() => selectedEntityId.value ? findEntityById(tree.value, selectedEntityId.value) ?? findEntityById(extensionEntities.value, selectedEntityId.value) : null);
   const filteredTree = computed(() => filterTree(tree.value, search.value));
 
   return {
     isOpen, theme, layout, context, adapter, sceneVersion, selectedEntityId, selectedEntity,
-    tree, filteredTree, properties, stats, search, expandedIds, notifications,
+    tree, extensionEntities, filteredTree, properties, stats, search, expandedIds, notifications,
     isRefreshingTree, isRefreshingProperties, pickingAvailable, pickingActive,
     panes, toolbarItems, selectedPanes,
     singlePanePercent

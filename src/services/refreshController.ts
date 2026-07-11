@@ -18,11 +18,13 @@ export class RefreshController {
     this.signals.isRefreshingTree.value = true;
     try {
       const tree = await adapter.getSceneTree(context);
+      const extensionEntities = await adapter.getExtensionEntities?.(context) ?? [];
       if (this.disposed || request !== this.generation) return;
       this.signals.tree.value = tree;
+      this.signals.extensionEntities.value = extensionEntities;
       this.signals.sceneVersion.value++;
       const selected = this.signals.selectedEntityId.value;
-      if (selected && !findEntityById(tree, selected)) this.signals.selectedEntityId.value = null;
+      if (selected && !findEntityById(tree, selected) && !findEntityById(extensionEntities, selected)) this.signals.selectedEntityId.value = null;
       await this.refreshProperties(request);
     } catch (error) {
       if (!this.disposed && request === this.generation) this.notifications.push(error instanceof Error ? error.message : "Scene refresh failed.");

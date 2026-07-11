@@ -1,6 +1,7 @@
 import { expect, it, vi } from "vitest";
 import { waitFor } from "@testing-library/preact";
 import { showLiteExplorer } from "../src/api/showLiteExplorer";
+import { createInstancerExplorerAdapter } from "../src/adapter/instancer/createInstancerExplorerAdapter";
 import type { LiteSceneAdapter } from "../src/adapter/LiteSceneAdapter";
 import { fakeScene } from "./helpers";
 import packageJson from "../package.json";
@@ -178,6 +179,100 @@ it("appends generic adapters after the default adapter", async () => {
     expect([...document.querySelectorAll<HTMLLabelElement>(".ble-property-row > label")].map((label) => label.textContent)).toContain("Adapter");
   });
 
+  handle.dispose();
+});
+
+it("registers custom panes and command-backed row actions", async () => {
+  const entity = {
+    id: "custom",
+    label: "Custom mesh",
+    kind: "mesh" as const,
+    source: {},
+    capabilities: { editable: false, focusable: false, visibilityToggle: false, serializableSnapshot: false }
+  };
+  const adapter: LiteSceneAdapter = { getSceneTree: () => [entity], getProperties: () => [] };
+  const handle = showLiteExplorer({ scene: {}, engine: {} }, {
+    adapter,
+    panes: [{ key: "custom-pane", title: "Custom", content: () => <div class="custom-pane-content">Custom panel</div> }],
+    commands: [{
+      id: "open-custom",
+      label: "Open custom",
+      when: (row) => row?.id === "custom",
+      rowAction: { label: "Open custom", icon: "I" },
+      run: (_row, _context, api) => api.openPanel("custom-pane")
+    }]
+  });
+  await handle.ready;
+
+  expect([...document.querySelectorAll<HTMLButtonElement>('.ble-tabs button[role="tab"]')].map((button) => button.textContent)).toContain("Custom");
+  document.querySelector<HTMLButtonElement>('[aria-label="Open custom Custom mesh"]')?.click();
+
+  await waitFor(() => {
+    const customTab = [...document.querySelectorAll<HTMLButtonElement>('.ble-tabs button[role="tab"]')]
+      .find((button) => button.textContent === "Custom");
+    expect(customTab?.getAttribute("aria-selected")).toBe("true");
+    expect(document.querySelector(".custom-pane-content")?.textContent).toBe("Custom panel");
+  });
+  handle.dispose();
+});
+
+it("opens the Instancer panel from a registered source mesh row action", async () => {
+  const data = fakeScene();
+  const instancerAdapter = createInstancerExplorerAdapter();
+  const saveSet = vi.fn();
+  const set = {
+    count: 2,
+    capacity: 4,
+    visibleCount: 2,
+    mesh: data.mesh,
+    entries: () => [
+      { id: 1, slot: 0, metadata: { label: "First stable instance" } },
+      { id: 2, slot: 1, metadata: { label: "Second stable instance" } }
+    ],
+    getMetadata: (id: number) => id === 1 ? { label: "First stable instance" } : { label: "Second stable instance" },
+    getVisible: () => true,
+    setVisible: vi.fn(),
+    getPosition: (id: number) => id === 1 ? [1, 2, 3] : [4, 5, 6],
+    getMatrix: (id: number) => Array.from({ length: 16 }, (_, index) => index + id)
+  };
+  instancerAdapter.register(set, { label: "Sphere instances", saveSet });
+  expect(instancerAdapter.exportSet(set)).toMatchObject({
+    label: "Sphere instances",
+    instances: [
+      { id: 1, slot: 0, label: "First stable instance", visible: true, position: [1, 2, 3] },
+      { id: 2, slot: 1, label: "Second stable instance", visible: true, position: [4, 5, 6] }
+    ]
+  });
+
+  const handle = showLiteExplorer({ scene: data.scene, engine: {} }, { adapters: [instancerAdapter] });
+  await handle.ready;
+
+  document.querySelector<HTMLButtonElement>('[aria-label="Show instances Sphere"]')?.click();
+
+  await waitFor(() => {
+    const instancerTab = [...document.querySelectorAll<HTMLButtonElement>('.ble-tabs button[role="tab"]')]
+      .find((button) => button.textContent === "Instancer");
+    expect(instancerTab?.getAttribute("aria-selected")).toBe("true");
+    expect(document.querySelector(".ble-instancer-panel")?.textContent).toContain("Sphere");
+    expect(document.querySelector(".ble-instancer-panel")?.textContent).toContain("Sphere instances");
+    expect(document.querySelector(".ble-instancer-panel")?.textContent).toContain("First stable instance");
+  });
+  [...document.querySelectorAll<HTMLButtonElement>(".ble-instancer-tree-label")]
+    .find((button) => button.textContent === "First stable instance")
+    ?.click();
+  await waitFor(() => {
+    expect(document.querySelector(".ble-selection-title")?.textContent).toBe("First stable instance");
+    const labels = [...document.querySelectorAll<HTMLLabelElement>(".ble-property-row > label")].map((label) => label.textContent);
+    expect(labels).toEqual(expect.arrayContaining(["Instance ID", "Current slot", "Visible", "Position", "Metadata"]));
+  });
+  [...document.querySelectorAll<HTMLButtonElement>(".ble-instancer-tree-label")]
+    .find((button) => button.textContent === "Sphere instances")
+    ?.click();
+  await waitFor(() => expect(document.querySelector(".ble-selection-title")?.textContent).toBe("Sphere instances"));
+  [...document.querySelectorAll<HTMLButtonElement>(".ble-selection-actions button")]
+    .find((button) => button.textContent === "Save Set")
+    ?.click();
+  await waitFor(() => expect(saveSet).toHaveBeenCalledWith(expect.objectContaining({ label: "Sphere instances" })));
   handle.dispose();
 });
 

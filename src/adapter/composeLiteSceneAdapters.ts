@@ -45,6 +45,20 @@ export function composeLiteSceneAdapters(adapters: readonly LiteSceneAdapter[]):
       return tree;
     },
 
+    async getExtensionEntities(context: LiteExplorerContext) {
+      const tree: LiteEntity[] = [];
+      for (const adapter of adapters) {
+        const roots = await adapter.getExtensionEntities?.(context) ?? [];
+        visitEntities(roots, (entity) => {
+          const existing = owners.get(entity.id);
+          if (existing && existing !== adapter) throw new Error(`Duplicate Explorer entity ID "${entity.id}" across composed adapters.`);
+          owners.set(entity.id, adapter);
+        });
+        tree.push(...roots);
+      }
+      return tree;
+    },
+
     async getProperties(entity, context) {
       const owner = ownerFor(entity, owners);
       return owner ? owner.getProperties(entity, context) : [];

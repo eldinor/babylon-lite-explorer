@@ -42,6 +42,22 @@ The **Deformation** section reports **Skinned: Yes/No**, **Bone count**, **Morph
 
 The copy button beside a property copies that value. The selection **Copy** action exports a safe public-property snapshot of the selected entity.
 
+## Instancer
+
+Applications can add an Instancer tab with `createInstancerExplorerAdapter()` and explicit `instancerAdapter.register(set)` calls. Scene Explorer stays focused on scene objects; registered source meshes get an `I` row action that opens the Instancer tab.
+
+The Instancer tab is a tree:
+
+- Source/original mesh rows are parents.
+- Registered sets appear under their source.
+- Stable instance rows appear under each set.
+
+Selecting a source, set, or instance updates the Properties panel. Instance visibility is editable when the set exposes `setVisible(id, value)`. Position is editable when the set exposes `getPosition(id)` and `setPosition(id, position)`.
+
+If a registered set includes `saveSet`, selecting that set shows **Save Set** in the selected-entity action bar. The callback receives an `InstancerSetSnapshot` with stable instance IDs, current slots, labels, visibility, optional positions, optional matrices, and metadata serialized through `serializeMetadata` when provided. Explorer does not decide how to persist it.
+
+Applications can also call `instancerAdapter.exportSet(set)` directly and use the same snapshot in Instancer code, for example by saving JSON or converting it into app-specific placement data.
+
 ## Tools
 
 ### Upload GLB

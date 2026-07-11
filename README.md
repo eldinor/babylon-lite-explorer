@@ -71,6 +71,36 @@ await explorer.ready;
 
 The footer's **FPS** and **Frame interval** are calculated from browser animation frames over 500 ms; they are not CPU or GPU render duration. Babylon Lite GPU time appears separately when its GPU timing is enabled and available; Explorer does not enable it automatically.
 
+## Instancer adapter
+
+`createInstancerExplorerAdapter()` lets applications register Instancer sets without adding every instance to the main Scene Explorer. Registered source meshes get an `I` row action. Clicking it opens the dedicated Instancer tab, where source meshes contain their registered sets and stable instance rows.
+
+```ts
+import { createInstancerExplorerAdapter, showLiteExplorer } from "babylon-lite-explorer";
+
+const instancerAdapter = createInstancerExplorerAdapter();
+
+instancerAdapter.register(redBoxes, {
+  label: "Red Boxes",
+  saveSet: async (snapshot) => {
+    await saveRedBoxes(snapshot);
+  },
+});
+
+showLiteExplorer(
+  { engine, scene, canvas, lite },
+  { adapters: [instancerAdapter] },
+);
+```
+
+Selecting a set with `saveSet` registered shows a **Save Set** action. Explorer passes an `InstancerSetSnapshot` with stable instance IDs, current slots, visibility, optional positions, optional matrices, and serialized metadata. Explorer does not choose the storage format. Applications can also export directly:
+
+```ts
+const snapshot = instancerAdapter.exportSet(redBoxes);
+```
+
+The snapshot is intended as a convenient bridge back to Instancer code: save it as JSON, convert it into app-specific TypeScript data, or send it to a backend and recreate instances by iterating the stable IDs and transforms.
+
 ## Public API coverage
 
 The default adapter currently exposes the public scene camera, meshes, mesh hierarchy, lights, derived materials, and animation groups. Material properties identify PBR, Standard, Node, Shader, material-view, and undetermined/custom families from their documented public fields. PBR materials expose environment intensity; Standard materials expose their public colors, alpha, specular power, and texture levels. The adapter edits documented scene-node transforms and visibility, base camera projection/viewport fields, recognized arc-rotate/free/geospatial camera fields, and documented light fields. Mesh deletion is routed through Babylon Lite's public `removeFromScene(scene, mesh)` API; optional confirmation is controlled by `confirmEntityRemoval`. Transform node, light, and camera removal are not exposed by the default adapter until Babylon Lite provides an official public removal method for those entity types. See [the audited API inventory](docs/babylon-lite-api-inventory.md).

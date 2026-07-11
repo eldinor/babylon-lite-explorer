@@ -1,4 +1,5 @@
 import type { LiteSceneAdapter } from "../adapter/LiteSceneAdapter";
+import type { LiteExplorerCommand, LiteExplorerPane } from "./extensions";
 
 export type LiteExplorerRuntime = Pick<typeof import("@babylonjs/lite"),
   | "AcesToneMapping"
@@ -51,6 +52,10 @@ export type LiteExplorerOptions = {
   adapter?: LiteSceneAdapter;
   /** Additional adapters appended after the default adapter, or after `adapter` when provided. */
   adapters?: readonly LiteSceneAdapter[];
+  /** Custom panes appended to the Explorer tab system. */
+  panes?: readonly LiteExplorerPane[];
+  /** Custom command-backed actions, including optional row actions. */
+  commands?: readonly LiteExplorerCommand[];
   features?: LiteExplorerFeatures;
   /** Notification auto-dismiss delay in milliseconds. Defaults to 3000; use 0 for manual dismissal. */
   notificationDurationMs?: number;

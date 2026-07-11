@@ -281,6 +281,14 @@ Instance detail/edit fields:
 - Position, editable when the set supports it
 - Metadata, read-only or serialized through `serializeMetadata`
 
+Set actions:
+
+- A selected set can expose **Save Set** through the same command/action system as Delete and the Scene Explorer `I` action.
+- `saveSet(snapshot)` receives a stable `InstancerSetSnapshot` built from registered set data.
+- `instancerAdapter.exportSet(set)` returns the same snapshot for code-driven export.
+- The snapshot keeps stable instance IDs separate from current runtime slots, and may include visibility, position, matrix, and serialized metadata.
+- Explorer should not choose the persistence format. Applications can save JSON, generate app-specific TypeScript data, or send the snapshot to a backend.
+
 Expected behavior:
 
 - Opening from a Scene Explorer mesh focuses the matching set.
@@ -295,6 +303,8 @@ Initial tests:
 - Current slot is diagnostic only.
 - Visibility edits call `setVisible(id, value)`.
 - Position edits call `setPosition(id, value)`.
+- Save Set calls the registered `saveSet` callback with the exported snapshot.
+- `exportSet(set)` works without a UI click and fails clearly for unregistered sets.
 
 ## Stage 5 - Optional Adapter Bridge
 
@@ -333,7 +343,82 @@ Requirements:
 - Reliable slot-to-ID lookup at pick time.
 - Graceful handling when the picked slot no longer maps to a live instance.
 
-## Stage 7 - Example Opt-In
+## Stage 7 - Explorer Instancer Example
+
+Add a dedicated Explorer example that exists specifically to test and demonstrate the Instancer adapter.
+
+Reason:
+
+- Lite-instancer examples prove Instancer itself works.
+- Explorer needs its own stable example to verify the adapter UI, row action, panel grouping, labels, and refresh behavior.
+- The example should be small enough to debug quickly and rich enough to show the full adapter path.
+
+Suggested example:
+
+```text
+examples/instancer-adapter
+```
+
+Initial scene:
+
+- Two original source meshes:
+  - `Red Box Source`
+  - `Blue Box Source`
+- One registered thin instance set for each source mesh:
+  - `Red Boxes`
+  - `Blue Boxes`
+- Each set creates a small number of instances with metadata labels derived from stable instance IDs.
+
+Expected Explorer behavior:
+
+- Scene Explorer shows the normal mesh row for `Box Source`.
+- The `Box Source` row shows the `I` row action.
+- Clicking `I` opens the Instancer panel.
+- The Instancer panel shows:
+
+```text
+Original Mesh: Red Box Source
+  Set: Red Boxes
+    Red Box 1
+    Red Box 2
+Original Mesh: Blue Box Source
+  Set: Blue Boxes
+    Blue Box 1
+    Blue Box 2
+```
+
+The example should use the final public shape:
+
+```ts
+const instancerAdapter = createInstancerExplorerAdapter();
+
+instancerAdapter.register(redBoxes, { label: "Red Boxes" });
+instancerAdapter.register(blueBoxes, { label: "Blue Boxes" });
+
+showLiteExplorer(context, {
+  adapters: [instancerAdapter]
+});
+```
+
+Optional later additions:
+
+- Add one hierarchy set example after the thin set flow is stable.
+- Add one VAT set example after VAT support is implemented.
+- Add picking only after the adapter panel and row action are reliable.
+
+Initial tests/manual checks:
+
+- Each source mesh has one `I` action when a set is registered to it.
+- The panel groups sets under their source meshes.
+- Metadata-derived labels are visible.
+- Visibility changes refresh the rendered scene and panel state.
+- Save Set logs or persists a snapshot that can be reused by the example code.
+
+Later grouping check:
+
+- Add a structural or hierarchy/VAT scenario where more than one registered set can safely share the same source/root, then verify the panel shows multiple sets under one source group.
+
+## Stage 8 - Example Opt-In
 
 Start with examples that already have meaningful instance labels or metadata:
 
@@ -346,13 +431,8 @@ Start with examples that already have meaningful instance labels or metadata:
 Each example should opt in locally:
 
 ```ts
-ctx.instancerExplorer.registerSet({
-  id: "tiles",
-  label: "Tiles",
-  set: tiles,
-  kind: "thin",
-  sourceMesh: mesh,
-  getLabel: (id, metadata) => metadata?.label ?? `Tile ${Number(id)}`
+ctx.instancerAdapter.register(tiles, {
+  label: "Tiles"
 });
 ```
 

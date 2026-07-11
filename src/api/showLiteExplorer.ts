@@ -14,6 +14,7 @@ import { PropertiesPanel } from "../ui/PropertiesPanel";
 import { SceneExplorer } from "../ui/SceneExplorer";
 import { ToolsPanel } from "../ui/ToolsPanel";
 import type { ExplorerRuntime } from "../ui/runtime";
+import type { LiteExplorerCommand, LiteExplorerExtensionApi, LiteExplorerExtensionRegistration, LiteExplorerPane } from "./extensions";
 import type { LiteExplorerContext, LiteExplorerHandle, LiteExplorerOptions } from "./types";
 
 export function showLiteExplorer(context: LiteExplorerContext, options: LiteExplorerOptions = {}): LiteExplorerHandle {
@@ -154,6 +155,27 @@ export function showLiteExplorer(context: LiteExplorerContext, options: LiteExpl
       if (!result.ok) notifications.push(result.message); else await refresh.refreshTree();
     }
   }));
+
+  const extensionApi: LiteExplorerExtensionApi = {
+    openPanel: (id) => shell.selectPane(id),
+    notify: (message, tone = "error") => notifications.push(message, tone),
+    refresh: () => refresh.refreshTree()
+  };
+  const registerPane = (pane: LiteExplorerPane) => disposables.add(shell.addSidePane({
+    ...pane,
+    side: pane.side ?? "right"
+  }));
+  const registerCommand = (command: LiteExplorerCommand) => disposables.add(commands.register({
+    ...command,
+    run: (entity, currentContext) => command.run(entity, currentContext, extensionApi)
+  }));
+  const registerExtensions = (registration: LiteExplorerExtensionRegistration | undefined) => {
+    for (const pane of registration?.panes ?? []) registerPane(pane);
+    for (const command of registration?.commands ?? []) registerCommand(command);
+  };
+  for (const pane of options.panes ?? []) registerPane(pane);
+  for (const command of options.commands ?? []) registerCommand(command);
+  for (const sourceAdapter of [baseAdapter, ...extraAdapters]) registerExtensions(sourceAdapter.getExplorerExtensions?.(extensionApi));
 
   let disposed = false;
   const runtime: ExplorerRuntime = {

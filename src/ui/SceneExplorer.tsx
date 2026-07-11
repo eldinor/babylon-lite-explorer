@@ -99,7 +99,9 @@ export function SceneExplorer() {
           const selected = signals.selectedEntityId.value === entity.id;
           const hasChildren = !!entity.children?.length;
           const playing = isPlayingAnimation(entity);
-          const rowActions = commands.list(entity).filter((command) => command.rowAction);
+          const rowActions = commands.list(entity)
+            .filter((command) => command.rowAction)
+            .sort((a, b) => Number(a.rowAction?.tone === "danger") - Number(b.rowAction?.tone === "danger"));
           return <div
             class={`ble-tree-row${selected ? " is-selected" : ""}`}
             role="treeitem"

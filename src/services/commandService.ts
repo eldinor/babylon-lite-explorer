@@ -2,16 +2,9 @@ import type { LiteExplorerContext } from "../api/types";
 import type { LiteEntity } from "../adapter/LiteSceneAdapter";
 import type { Disposable } from "../core/disposable";
 import { createDisposable } from "../core/disposable";
+import type { LiteExplorerCommand } from "../api/extensions";
 
-export type ExplorerCommand = {
-  id: string;
-  label: string;
-  when?: (entity: LiteEntity | null) => boolean;
-  rowAction?: {
-    label?: string;
-    icon: string;
-    tone?: "default" | "danger";
-  };
+export type ExplorerCommand = Omit<LiteExplorerCommand, "run"> & {
   run: (entity: LiteEntity | null, context: LiteExplorerContext) => void | Promise<void>;
 };
 

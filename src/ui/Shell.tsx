@@ -148,7 +148,8 @@ function SelectionBar() {
     "remove-entity": "Delete",
     "focus-selected": "Focus",
     "play-animation": "PLAY",
-    "stop-animation": "STOP"
+    "stop-animation": "STOP",
+    "save-instancer-set": "Save Set"
   };
   const actions = selected ? commands.list(selected).filter((command) => command.id in actionLabels) : [];
   const run = async (id: string) => {

@@ -1,4 +1,5 @@
 import type { LiteExplorerContext } from "../api/types";
+import type { LiteExplorerExtensionApi, LiteExplorerExtensionRegistration } from "../api/extensions";
 import type { PropertyDescriptor } from "./propertyDescriptors";
 
 export type LiteEntityKind =
@@ -57,6 +58,7 @@ export const fail = (code: "unsupported" | "invalid" | "failed", message: string
 
 export type LiteSceneAdapter = {
   getSceneTree(context: LiteExplorerContext): LiteEntity[] | Promise<LiteEntity[]>;
+  getExtensionEntities?(context: LiteExplorerContext): LiteEntity[] | Promise<LiteEntity[]>;
   getProperties(entity: LiteEntity, context: LiteExplorerContext): PropertyDescriptor[] | Promise<PropertyDescriptor[]>;
   setProperty?(entity: LiteEntity, path: string, value: unknown, context: LiteExplorerContext): AdapterResult | Promise<AdapterResult>;
   refresh?(context: LiteExplorerContext): AdapterResult | Promise<AdapterResult>;
@@ -68,5 +70,6 @@ export type LiteSceneAdapter = {
   stopAnimationGroup?(entity: LiteEntity, context: LiteExplorerContext): AdapterResult | Promise<AdapterResult>;
   getEntitySnapshot?(entity: LiteEntity, context: LiteExplorerContext): AdapterResult<unknown> | Promise<AdapterResult<unknown>>;
   pickEntityId?(x: number, y: number, context: LiteExplorerContext): AdapterResult<string | null> | Promise<AdapterResult<string | null>>;
+  getExplorerExtensions?(api: LiteExplorerExtensionApi): LiteExplorerExtensionRegistration;
   dispose?(): void;
 };

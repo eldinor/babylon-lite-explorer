@@ -2,8 +2,11 @@ import "./styles/explorer.css";
 
 export { showLiteExplorer } from "./api/showLiteExplorer";
 export type { LiteExplorerContext, LiteExplorerFeatures, LiteExplorerHandle, LiteExplorerLayout, LiteExplorerMode, LiteExplorerOptions, LiteExplorerRuntime, LiteExplorerTheme } from "./api/types";
+export type { LiteExplorerCommand, LiteExplorerExtensionApi, LiteExplorerExtensionRegistration, LiteExplorerPane } from "./api/extensions";
 export { composeLiteSceneAdapters } from "./adapter/composeLiteSceneAdapters";
 export { createDefaultLiteSceneAdapter } from "./adapter/default/createDefaultLiteSceneAdapter";
+export { createInstancerExplorerAdapter } from "./adapter/instancer/createInstancerExplorerAdapter";
+export type { InstancerEntryLike, InstancerExplorerAdapter, InstancerInstanceSnapshot, InstancerRegisterOptions, InstancerSetLike, InstancerSetSnapshot } from "./adapter/instancer/createInstancerExplorerAdapter";
 export { createRegisteredSceneAdapter } from "./adapter/registered/createRegisteredSceneAdapter";
 export type { LiteEntityRegistration } from "./adapter/registered/createRegisteredSceneAdapter";
 export { fail, ok } from "./adapter/LiteSceneAdapter";
