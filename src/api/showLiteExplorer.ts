@@ -104,6 +104,7 @@ export function showLiteExplorer(context: LiteExplorerContext, options: LiteExpl
     id: "remove-entity",
     label: "Delete",
     when: (entity) => !!entity?.capabilities.removable,
+    rowAction: { label: "Delete", icon: "x", tone: "danger" },
     run: async (entity, currentContext) => {
       const adapter = signals.adapter.value;
       if (!entity || !adapter?.removeEntity) return;

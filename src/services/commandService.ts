@@ -7,6 +7,11 @@ export type ExplorerCommand = {
   id: string;
   label: string;
   when?: (entity: LiteEntity | null) => boolean;
+  rowAction?: {
+    label?: string;
+    icon: string;
+    tone?: "default" | "danger";
+  };
   run: (entity: LiteEntity | null, context: LiteExplorerContext) => void | Promise<void>;
 };
 

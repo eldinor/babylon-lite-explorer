@@ -80,12 +80,12 @@ export function SceneExplorer() {
     else if (top + ROW_HEIGHT > element.scrollTop + viewportHeight) element.scrollTop = top - viewportHeight + ROW_HEIGHT;
     requestAnimationFrame(() => element.querySelector<HTMLButtonElement>(`[data-tree-index="${bounded}"]`)?.focus());
   };
-  const removeEntity = async (entity: LiteEntity) => {
+  const runRowAction = async (commandId: string, entity: LiteEntity) => {
     const context = signals.context.value;
-    const command = commands.get("remove-entity");
+    const command = commands.get(commandId);
     if (!context || !command) return;
     try { await command.run(entity, context); }
-    catch (error) { notifications.push(error instanceof Error ? error.message : "Delete failed."); }
+    catch (error) { notifications.push(error instanceof Error ? error.message : `Command failed: ${command.label}`); }
   };
 
   return <div class="ble-explorer">
@@ -99,6 +99,7 @@ export function SceneExplorer() {
           const selected = signals.selectedEntityId.value === entity.id;
           const hasChildren = !!entity.children?.length;
           const playing = isPlayingAnimation(entity);
+          const rowActions = commands.list(entity).filter((command) => command.rowAction);
           return <div
             class={`ble-tree-row${selected ? " is-selected" : ""}`}
             role="treeitem"
@@ -127,13 +128,14 @@ export function SceneExplorer() {
                 }
               }}
             ><span class={`ble-kind ble-kind-${entity.kind}${playing ? " is-playing" : ""}`} aria-hidden="true" />{entity.label}</button>
-            {entity.capabilities.removable && <button
-              class="ble-tree-delete"
+            {rowActions.map((action) => <button
+              class={`ble-tree-action${action.rowAction?.tone === "danger" ? " is-danger" : ""}`}
               type="button"
-              title={`Delete ${entity.label}`}
-              aria-label={`Delete ${entity.label}`}
-              onClick={() => void removeEntity(entity)}
-            >x</button>}
+              title={`${action.rowAction?.label ?? action.label} ${entity.label}`}
+              aria-label={`${action.rowAction?.label ?? action.label} ${entity.label}`}
+              key={action.id}
+              onClick={() => void runRowAction(action.id, entity)}
+            >{action.rowAction?.icon}</button>)}
           </div>;
         })}
       </div>

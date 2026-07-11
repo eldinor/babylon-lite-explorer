@@ -214,6 +214,9 @@ it("shows capability-backed actions for the selected entity", async () => {
   const handle = showLiteExplorer({ scene: data.scene, engine: {} });
   await handle.ready;
   const sphere = [...document.querySelectorAll<HTMLButtonElement>(".ble-tree-label")].find((button) => button.textContent?.includes("Sphere"));
+  const rowDelete = [...document.querySelectorAll<HTMLButtonElement>(".ble-tree-action.is-danger")]
+    .find((button) => button.getAttribute("aria-label") === "Delete Sphere");
+  expect(rowDelete?.textContent).toBe("x");
   sphere?.click();
   await waitFor(() => {
     const labels = [...document.querySelectorAll<HTMLButtonElement>(".ble-selection-actions button")].map((button) => button.textContent);

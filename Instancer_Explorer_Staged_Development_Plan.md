@@ -13,11 +13,20 @@ Use two extension surfaces:
 - **Entity actions**: small contextual actions shown on Scene Explorer rows.
 - **Extension panels**: custom tabs/panes hosted by Explorer.
 
+The existing mesh Delete work is the first precedent for this pattern:
+
+- `LiteSceneAdapter.removeEntity()` exposes the adapter-backed operation.
+- The `remove-entity` command owns confirmation/user-setting behavior and calls the adapter.
+- Scene Explorer renders the command as a compact row action through the generic command row-action descriptor.
+
+Future Instancer row entry points should follow the same command/action pattern instead of adding one-off UI in `SceneExplorer`.
+
 For Instancer:
 
 - Mesh rows that are connected to registered instance sets show an `I` / instances action.
 - Clicking the action opens the Instancer panel.
-- The Instancer panel focuses the set connected to that mesh.
+- The Instancer panel focuses the registered set connected to that mesh.
+- The Instancer panel groups content by original source mesh/root first, with the relevant registered sets underneath each source.
 - Instance rows and set details are shown inside the Instancer panel, not as a giant branch under Scene Explorer.
 
 ## Stage 1 - Generic Explorer Extension Hook
@@ -63,6 +72,12 @@ Initial tests:
 
 Add a hook for custom actions on Scene Explorer entity rows.
 
+Current baseline:
+
+- Scene Explorer can render command-backed row actions through `ExplorerCommand.rowAction`.
+- The built-in mesh Delete button uses this path.
+- This proves row actions should be command-backed so selected-bar actions, row actions, notifications, confirmation, refresh, and adapter calls can share one execution path.
+
 Suggested API:
 
 ```ts
@@ -101,7 +116,7 @@ Instancer usage:
 {
   id: "open-instancer",
   label: "Show instances",
-  icon: "instances",
+  rowAction: { label: "Show instances", icon: "I" },
   when: (entity) => instancerExplorer.hasSetForEntity(entity),
   run: (entity, api) => {
     instancerExplorer.focusEntity(entity);
@@ -115,6 +130,7 @@ Expected Scene Explorer behavior:
 - Mesh rows with registered instance sets show a compact instances icon.
 - Rows without registered instance sets are unchanged.
 - Clicking the icon does not select a different scene entity unless explicitly needed.
+- Built-in Delete and Instancer `I` row actions use the same rendering and command dispatch path.
 
 Initial tests:
 
@@ -135,19 +151,21 @@ Reason:
 Suggested API:
 
 ```ts
-const instancerExplorer = createInstancerExplorerRegistry();
+const instancerAdapter = createInstancerExplorerAdapter();
 
-instancerExplorer.registerSet({
+instancerAdapter.register(boomboxes);
+```
+
+Optional registration config should be reserved for naming and edge cases:
+
+```ts
+instancerAdapter.register(boomboxes, {
   id: "boomboxes",
-  label: "BoomBoxes",
-  sourceEntityId: "mesh:...",
-  set: boomboxes,
-  kind: "hierarchy",
-  getLabel: (id, metadata) => metadata?.label ?? `BoomBox ${Number(id)}`
+  label: "BoomBoxes"
 });
 ```
 
-Suggested type:
+Suggested internal record:
 
 ```ts
 interface InstancerExplorerSet<TMetadata = unknown> {
@@ -169,12 +187,21 @@ interface InstancerExplorerSet<TMetadata = unknown> {
 }
 ```
 
+Default inference:
+
+- Thin instance set source is `set.mesh`.
+- Hierarchy instance set source is `set.root`.
+- VAT instance set source is `set.mesh`.
+- Set labels can default from the source name or generated set ID.
+- Instance labels can default from metadata fields such as `name`, `label`, or `title`, then fall back to `Instance ${Number(id)}`.
+
 Registry responsibilities:
 
 - Store registered sets by stable set ID.
 - Validate duplicate set IDs.
 - Resolve whether a Scene Explorer entity has related instances.
 - Track the focused set for the Instancer panel.
+- Group registered sets by original source mesh/root for the Instancer panel.
 - Produce panel data from live `set.entries()`.
 
 Initial tests:
@@ -192,17 +219,41 @@ Suggested layout:
 
 ```text
 Instancer
-  Set: BoomBoxes
-  Kind: hierarchy
-  Count: 256
-  Visible: 240
-  Capacity: 512
+  Original Mesh: BoomBox
+    Set: Parked BoomBoxes
+      Kind: hierarchy
+      Count: 256
+      Visible: 240
+      Capacity: 512
 
-Instances
-  BoomBox 1
-  BoomBox 2
-  BoomBox 3
+      Instances
+        BoomBox 1
+        BoomBox 2
+        BoomBox 3
+
+    Set: Animated BoomBoxes
+      Kind: vat
+      Count: 24
+      Visible: 24
+      Capacity: 64
+
+  Original Mesh: Tree
+    Set: Forest
+      Kind: thin
+      Count: 1024
 ```
+
+Panel hierarchy:
+
+- Source/original mesh or root node.
+- Registered instance sets belonging to that source.
+- Stable instance rows inside each set.
+
+Clicking the Scene Explorer `I` row action should:
+
+- Open the Instancer panel.
+- Expand or scroll to the matching source group.
+- Focus the relevant registered set.
 
 Set summary fields:
 
@@ -233,6 +284,7 @@ Instance detail/edit fields:
 Expected behavior:
 
 - Opening from a Scene Explorer mesh focuses the matching set.
+- If the source has multiple registered sets, show all of them under the source and focus the set chosen by the row action.
 - If no set is focused, show a compact empty state.
 - If the focused set disappears, show a clear stale/removed state.
 
@@ -322,4 +374,3 @@ Do not require all examples to register sets immediately.
 - Should the Instancer panel use Explorer property descriptors or its own compact table/editor controls?
 - Should the registry live in examples first, or directly in `src/` as public package API?
 - How should a registered set link to a Scene Explorer entity: source mesh object identity, Explorer entity ID, or both?
-

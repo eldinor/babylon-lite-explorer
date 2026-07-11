@@ -78,8 +78,10 @@
 .ble-tree-toggle, .ble-tree-label { border: 0 !important; background: transparent !important; }
 .ble-tree-toggle { flex: 0 0 20px; min-height: 20px !important; padding: 0; color: var(--ble-muted); }
 .ble-tree-label { display: flex; align-items: center; flex: 1; min-width: 0; padding: 0 5px 0 0; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.ble-tree-delete { flex: 0 0 20px; width: 20px; min-height: 20px !important; margin-right: 3px; padding: 0; border-color: transparent !important; background: transparent !important; color: var(--ble-danger) !important; font-weight: 700; opacity: .7; }
-.ble-tree-delete:hover, .ble-tree-delete:focus-visible { border-color: var(--ble-danger) !important; background: color-mix(in srgb, var(--ble-danger) 14%, transparent) !important; opacity: 1; }
+.ble-tree-action { flex: 0 0 20px; width: 20px; min-height: 20px !important; margin-right: 3px; padding: 0; border-color: transparent !important; background: transparent !important; color: var(--ble-muted) !important; font-weight: 700; opacity: .78; }
+.ble-tree-action:hover, .ble-tree-action:focus-visible { border-color: var(--ble-accent) !important; background: color-mix(in srgb, var(--ble-accent) 14%, transparent) !important; color: var(--ble-text) !important; opacity: 1; }
+.ble-tree-action.is-danger { color: var(--ble-danger) !important; }
+.ble-tree-action.is-danger:hover, .ble-tree-action.is-danger:focus-visible { border-color: var(--ble-danger) !important; background: color-mix(in srgb, var(--ble-danger) 14%, transparent) !important; }
 .ble-kind { width: 7px; height: 7px; margin-right: 7px; border-radius: 50%; background: var(--ble-muted); }
 .ble-kind-mesh { background: #d29922; } .ble-kind-camera { background: #a371f7; } .ble-kind-light { background: #f2cc60; } .ble-kind-material { background: #3fb950; }
 .ble-kind.is-playing { background: #3fb950; box-shadow: 0 0 5px #3fb950; animation: ble-playing-pulse 1.8s ease-in-out infinite; }
