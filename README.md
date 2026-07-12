@@ -53,7 +53,7 @@ The header switches layout and theme. Keyboard shortcuts are `Ctrl+Shift+L` (lay
 
 Camera focus is optional and disabled by default. Set `features.focusSelected: true` to expose Focus only for entities whose adapter reports `focusable: true` and implements `focusEntity`.
 
-Canvas picking is also optional. Set `features.canvasPicking: true` to add a Pick toggle to the Scene Explorer header. Picking mode is inactive by default; while active, a short primary-pointer click selects a public scene mesh. Pointer drags are ignored so camera controls keep their normal behavior. Custom adapters can support it through `pickEntityId`.
+Canvas picking is also optional. Set `features.canvasPicking: true` to add a Pick toggle to the Scene Explorer header. Picking mode is inactive by default; while active, a short primary-pointer click selects a public scene mesh. Pointer drags are ignored so camera controls keep their normal behavior. Custom adapters can support it through `pickEntityId`, and registered Instancer thin instances can map Babylon Lite's `thinInstanceIndex` to stable instance rows.
 
 Notifications dismiss automatically after three seconds. Configure `notificationDurationMs`, or set it to `0` for manual dismissal. Set `notificationsEnabled: false` to disable notifications completely. These options are ready for a future preferences UI.
 
@@ -73,7 +73,7 @@ The footer's **FPS** and **Frame interval** are calculated from browser animatio
 
 ## Instancer adapter
 
-`createInstancerExplorerAdapter()` lets applications register Instancer sets without adding every instance to the main Scene Explorer. Registered source meshes get an `I` row action. Clicking it opens the dedicated Instancer tab, where source meshes contain their registered sets and stable instance rows.
+`createInstancerExplorerAdapter()` lets applications register Instancer sets without adding every instance to the main Scene Explorer. Registered source meshes get an `I` row action. Clicking it opens the dedicated Instancer tab, where source meshes contain their registered sets and stable instance rows. When Pick is enabled, clicking a registered thin instance selects the corresponding stable instance row.
 
 ```ts
 import { createInstancerExplorerAdapter, showLiteExplorer } from "babylon-lite-explorer";

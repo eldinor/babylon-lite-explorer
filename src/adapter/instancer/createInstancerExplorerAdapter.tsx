@@ -1,4 +1,5 @@
 import { signal } from "@preact/signals";
+import { createGpuPicker, disposePicker, pickAsync, type GpuPicker } from "@babylonjs/lite";
 import type { LiteEntity, LiteSceneAdapter } from "../LiteSceneAdapter";
 import { fail, ok } from "../LiteSceneAdapter";
 import type { PropertyDescriptor } from "../propertyDescriptors";
@@ -187,6 +188,8 @@ export function createInstancerExplorerAdapter(): InstancerExplorerAdapter {
   const records: RecordItem[] = [];
   const setIds = new WeakMap<object, string>();
   const objectIds = new WeakMap<object, number>();
+  const pickers = new Map<GpuPicker, (picker: GpuPicker) => void>();
+  const pickerByScene = new WeakMap<object, GpuPicker>();
   const version = signal(0);
   const expandedIds = signal<ReadonlySet<string>>(new Set());
   let nextObjectId = 1;
@@ -206,6 +209,7 @@ export function createInstancerExplorerAdapter(): InstancerExplorerAdapter {
   const instanceEntityId = (record: RecordItem, id: number) => `instancer:set:${record.id}:instance:${id}`;
   const readMetadata = (record: RecordItem, entry: InstancerEntryLike) => record.set.getMetadata?.(entry.id) ?? entry.metadata;
   const readEntry = (record: RecordItem, id: number) => [...record.set.entries()].find((entry) => entry.id === id);
+  const readEntryBySlot = (record: RecordItem, slot: number) => [...record.set.entries()].find((entry) => entry.slot === slot);
   const instanceLabel = (record: RecordItem, entry: InstancerEntryLike) => {
     const metadata = readMetadata(record, entry);
     return record.getLabel?.(entry.id, metadata, entry.slot) ?? defaultInstanceLabel(entry.id, metadata);
@@ -490,6 +494,31 @@ export function createInstancerExplorerAdapter(): InstancerExplorerAdapter {
       return ok();
     },
 
+    async pickEntityId(x, y, context) {
+      if (!isObject(context.scene)) return ok(null);
+      try {
+        let picker = pickerByScene.get(context.scene);
+        if (!picker) {
+          picker = (context.lite?.createGpuPicker ?? createGpuPicker)(context.scene as unknown as Parameters<typeof createGpuPicker>[0]);
+          pickerByScene.set(context.scene, picker);
+          pickers.set(picker, context.lite?.disposePicker ?? disposePicker);
+        }
+        const result = await (context.lite?.pickAsync ?? pickAsync)(picker, x, y);
+        if (!result.hit || !result.pickedMesh || result.thinInstanceIndex < 0) return ok(null);
+        for (const record of records) {
+          if (record.source !== result.pickedMesh) continue;
+          const entry = readEntryBySlot(record, result.thinInstanceIndex);
+          if (!entry) continue;
+          expandedIds.value = new Set([sourceEntityId(record.source), setEntityId(record)]);
+          bump();
+          return ok(instanceEntityId(record, entry.id));
+        }
+        return ok(null);
+      } catch (error) {
+        return fail("failed", error instanceof Error ? error.message : "Instancer picking failed.");
+      }
+    },
+
     getExplorerExtensions: () => ({
       panes: [{ key: "instancer", title: "Instancer", side: "left", order: 20, content: Panel, keepMounted: true }],
       commands: [{
@@ -519,6 +548,8 @@ export function createInstancerExplorerAdapter(): InstancerExplorerAdapter {
     getEntitySnapshot: (entity) => ok({ id: entity.id, label: entity.label, kind: entity.meta?.instancer ?? "instancer" }),
 
     dispose: () => {
+      for (const [picker, dispose] of pickers) dispose(picker);
+      pickers.clear();
       records.length = 0;
       bump();
     }

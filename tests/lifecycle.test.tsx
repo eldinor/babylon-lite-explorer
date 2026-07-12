@@ -217,9 +217,18 @@ it("registers custom panes and command-backed row actions", async () => {
 });
 
 it("opens the Instancer panel from a registered source mesh row action", async () => {
+  const canvas = document.createElement("canvas");
+  document.body.appendChild(canvas);
   const data = fakeScene();
   const instancerAdapter = createInstancerExplorerAdapter();
   const saveSet = vi.fn();
+  const createGpuPicker = vi.fn(() => ({}));
+  const disposePicker = vi.fn();
+  const pickAsync = vi.fn(() => Promise.resolve({
+    hit: true,
+    pickedMesh: data.mesh,
+    thinInstanceIndex: 0
+  }));
   const set = {
     count: 2,
     capacity: 4,
@@ -259,7 +268,10 @@ it("opens the Instancer panel from a registered source mesh row action", async (
     .toEqual(expect.arrayContaining([expect.objectContaining({ path: "rotationEuler", value: [0.25, 0, 0] })]));
   await instancerAdapter.setProperty?.(directInstance, "rotationEuler", [0, 0, 0], { scene: data.scene, engine: {} });
 
-  const handle = showLiteExplorer({ scene: data.scene, engine: {} }, { adapters: [instancerAdapter] });
+  const handle = showLiteExplorer(
+    { scene: data.scene, engine: {}, canvas, lite: { createGpuPicker, disposePicker, pickAsync } as unknown as import("../src/api/types").LiteExplorerRuntime },
+    { adapters: [instancerAdapter], features: { canvasPicking: true } }
+  );
   await handle.ready;
 
   document.querySelector<HTMLButtonElement>('[aria-label="Show instances Sphere"]')?.click();
@@ -314,6 +326,23 @@ it("opens the Instancer panel from a registered source mesh row action", async (
     .find((button) => button.textContent === "Save Set")
     ?.click();
   await waitFor(() => expect(saveSet).toHaveBeenCalledWith(expect.objectContaining({ label: "Sphere instances" })));
+  document.querySelector<HTMLButtonElement>(".ble-pick-toggle")?.click();
+  await waitFor(() => expect(document.querySelector(".ble-pick-toggle")?.textContent).toBe("Pick: On"));
+  const pickEvent = (type: string) => {
+    const event = new MouseEvent(type, { bubbles: true, button: 0, clientX: 20, clientY: 30 });
+    Object.defineProperties(event, {
+      pointerId: { value: 1 },
+      pointerType: { value: "mouse" },
+      isPrimary: { value: true }
+    });
+    canvas.dispatchEvent(event);
+  };
+  pickEvent("pointerdown");
+  pickEvent("pointerup");
+  await waitFor(() => {
+    expect(pickAsync).toHaveBeenCalledWith(expect.anything(), 20, 30);
+    expect(document.querySelector(".ble-selection-title")?.textContent).toBe("First stable instance");
+  });
   handle.dispose();
 });
 

@@ -118,7 +118,7 @@ export function composeLiteSceneAdapters(adapters: readonly LiteSceneAdapter[]):
 
     async pickEntityId(x, y, context) {
       let lastFailure: ReturnType<typeof fail> | null = null;
-      for (const adapter of adapters) {
+      for (const adapter of [...adapters].reverse()) {
         if (!adapter.pickEntityId) continue;
         const result = await adapter.pickEntityId(x, y, context);
         if (result.ok && result.value) return result;

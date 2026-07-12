@@ -39,4 +39,22 @@ describe("composeLiteSceneAdapters", () => {
 
     await expect(adapter.getSceneTree({ scene: {}, engine: {} })).rejects.toThrow('Duplicate Explorer entity ID "duplicate" across composed adapters.');
   });
+
+  it("lets later adapters return more specific pick results", async () => {
+    const first: LiteSceneAdapter = {
+      getSceneTree: () => [],
+      getProperties: () => [],
+      pickEntityId: vi.fn(() => ({ ok: true as const, value: "mesh" }))
+    };
+    const second: LiteSceneAdapter = {
+      getSceneTree: () => [],
+      getProperties: () => [],
+      pickEntityId: vi.fn(() => ({ ok: true as const, value: "instance" }))
+    };
+    const adapter = composeLiteSceneAdapters([first, second]);
+
+    expect(await adapter.pickEntityId?.(1, 2, { scene: {}, engine: {} })).toEqual({ ok: true, value: "instance" });
+    expect(second.pickEntityId).toHaveBeenCalled();
+    expect(first.pickEntityId).not.toHaveBeenCalled();
+  });
 });

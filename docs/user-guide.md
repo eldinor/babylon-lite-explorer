@@ -8,7 +8,7 @@ The tree lists the public scene, camera, lights, meshes and transform hierarchy,
 
 - Use Search to filter entities by label.
 - Use the arrow keys to move through and expand the tree.
-- Enable Pick to select a mesh by clicking the canvas. Camera drags are ignored.
+- Enable Pick to select a mesh by clicking the canvas. Camera drags are ignored. Registered Instancer thin instances can also be selected by Pick when the adapter can map Babylon Lite's `thinInstanceIndex` back to a stable instance entry.
 - Supported selection actions appear between the panes and status bar.
 - Meshes can be deleted from the selected-entity bar or the red row action. Set `confirmEntityRemoval: true` to ask before deletion; the default is `false`. Transform node, light, and camera deletion is not shown until Babylon Lite exposes an official public removal API for those entity types.
 
@@ -44,7 +44,7 @@ The copy button beside a property copies that value. The selection **Copy** acti
 
 ## Instancer
 
-Applications can add an Instancer tab with `createInstancerExplorerAdapter()` and explicit `instancerAdapter.register(set)` calls. Scene Explorer stays focused on scene objects; registered source meshes get an `I` row action that opens the Instancer tab.
+Applications can add an Instancer tab with `createInstancerExplorerAdapter()` and explicit `instancerAdapter.register(set)` calls. Scene Explorer stays focused on scene objects; registered source meshes get an `I` row action that opens the Instancer tab. When Pick is enabled, clicking a registered thin instance selects its stable instance row instead of only selecting the source mesh.
 
 The Instancer tab is a tree:
 
