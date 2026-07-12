@@ -48,6 +48,8 @@
     "./styles.css": "./dist/lite-explorer.css"
   },
   "files": [
+    "CHANGELOG.md",
+    "docs/**/*.md",
     "dist/index.js",
     "dist/index.d.ts",
     "dist/lite-explorer.css",
