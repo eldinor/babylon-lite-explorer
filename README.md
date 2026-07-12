@@ -25,6 +25,10 @@ const explorer = showLiteExplorer(
     layout: "single",
     theme: "dark",
     features: { focusSelected: false, canvasPicking: false },
+    userSettings: {
+      deletion: { confirmEntityRemoval: false },
+      instancer: { pickMode: "instance" },
+    },
     notificationDurationMs: 3000,
     notificationsEnabled: true,
     keyboardShortcutsEnabled: true,
@@ -43,17 +47,17 @@ explorer.dispose();
 
 Each call owns independent state. `dispose()` is idempotent. Caller-provided adapters remain caller-owned and are not disposed by the explorer.
 
-Set `userGuideUrl` to change the page opened by the footer `?` icon. It defaults to this repository's Markdown guide; the bundled demo points it to the in-app HTML guide.
+Set `userGuideUrl` to change the page opened by the footer `?` icon. It defaults to this repository's Markdown guide; the bundled demo points it to the in-app HTML guide. The footer gear opens the User Settings modal.
 
 `layout: "single"` is the compact default and stacks Properties beneath Scene Explorer at the top-right. Use `layout: "split"` for simultaneous side-by-side columns at the top-left.
 
-Drag the thin divider in Single mode to resize the stacked panes; the proportion is persisted. Split mode docks Scene Explorer at the left edge and Properties at the right, leaving the canvas interactive between them. Selected entities expose only adapter-backed actions, such as visibility, safe snapshot copying, and mesh deletion. Removable meshes also show a red Delete action on their Scene Explorer row. Set `confirmEntityRemoval: true` to ask before deletion; the default is `false`, and the option can be backed by a future user setting. Snapshots from the built-in adapter contain clean public property values without explorer IDs or UI descriptor metadata. Verified public PBR base color, metallic, roughness, and alpha fields are editable when present.
+Drag the thin divider in Single mode to resize the stacked panes; the proportion is persisted. Split mode docks Scene Explorer at the left edge and Properties at the right, leaving the canvas interactive between them. Selected entities expose only adapter-backed actions, such as visibility, safe snapshot copying, and mesh deletion. Removable meshes also show a red Delete action on their Scene Explorer row. Set `confirmEntityRemoval: true` or `userSettings.deletion.confirmEntityRemoval: true` to ask before deletion; the default is `false`. Snapshots from the built-in adapter contain clean public property values without explorer IDs or UI descriptor metadata. Verified public PBR base color, metallic, roughness, and alpha fields are editable when present.
 
 The header switches layout and theme. Keyboard shortcuts are `Ctrl+Shift+L` (layout), `Ctrl+Shift+Y` (theme), `Ctrl+Shift+E` (show/hide), and `Ctrl+Shift+F` (focus scene search). Set `keyboardShortcutsEnabled: false` to disable all of them. Property rows include a copy-value control.
 
 Camera focus is optional and disabled by default. Set `features.focusSelected: true` to expose Focus only for entities whose adapter reports `focusable: true` and implements `focusEntity`.
 
-Canvas picking is also optional. Set `features.canvasPicking: true` to add a Pick toggle to the Scene Explorer header. Picking mode is inactive by default; while active, a short primary-pointer click selects a public scene mesh. Pointer drags are ignored so camera controls keep their normal behavior. Custom adapters can support it through `pickEntityId`, and registered Instancer thin instances can map Babylon Lite's `thinInstanceIndex` to stable instance rows.
+Canvas picking is also optional. Set `features.canvasPicking: true` to add a Pick toggle to the Scene Explorer header. Picking mode is inactive by default unless `userSettings.picking.enabled` is true; while active, a short primary-pointer click selects a public scene mesh. Pointer drags are ignored so camera controls keep their normal behavior. Custom adapters can support it through `pickEntityId`, and registered Instancer thin instances can map Babylon Lite's `thinInstanceIndex` to stable instance rows.
 
 Notifications dismiss automatically after three seconds. Configure `notificationDurationMs`, or set it to `0` for manual dismissal. Set `notificationsEnabled: false` to disable notifications completely. These options are ready for a future preferences UI.
 
@@ -73,7 +77,7 @@ The footer's **FPS** and **Frame interval** are calculated from browser animatio
 
 ## Instancer adapter
 
-`createInstancerExplorerAdapter()` lets applications register Instancer sets without adding every instance to the main Scene Explorer. Registered source meshes get an `I` row action. Clicking it opens the dedicated Instancer tab, where source meshes contain their registered sets and stable instance rows. When Pick is enabled, clicking a registered thin instance selects the corresponding stable instance row.
+`createInstancerExplorerAdapter()` lets applications register Instancer sets without adding every instance to the main Scene Explorer. Registered source meshes get an `I` row action. Clicking it opens the dedicated Instancer tab, where source meshes contain their registered sets and stable instance rows. When Pick is enabled, clicking a registered thin instance opens the Instancer tab and selects the corresponding stable instance row. `userSettings.instancer.pickMode` defaults to `"instance"`; when the Instancer adapter is not registered, normal Explorer picking selects the source mesh.
 
 ```ts
 import { createInstancerExplorerAdapter, showLiteExplorer } from "babylon-lite-explorer";
@@ -93,7 +97,7 @@ showLiteExplorer(
 );
 ```
 
-Selecting a set with `saveSet` registered shows a **Save Set** action. Explorer passes an `InstancerSetSnapshot` with stable instance IDs, current slots, visibility, optional positions, derived Euler rotation, derived scaling, optional colors, optional VAT clips, optional matrices, and serialized metadata. Explorer does not choose the storage format. Applications can also export directly:
+Selecting a set with `saveSet` registered shows a **Save Set** action. Explorer passes an `InstancerSetSnapshot` with the source mesh label and public source transform, plus stable instance IDs, current slots, visibility, optional positions, derived Euler rotation, derived scaling, optional colors, optional VAT clips, optional matrices, and serialized metadata. Explorer does not choose the storage format. Applications can also export directly:
 
 ```ts
 const snapshot = instancerAdapter.exportSet(redBoxes);

@@ -10,7 +10,9 @@ All notable changes to Babylon Lite Explorer are documented here.
 - Added a mesh Delete action in the selected-entity bar and as a red Scene Explorer row action. Delete confirmation is available through `confirmEntityRemoval` and is off by default. Transform node, light, and camera removal intentionally wait for an official Babylon Lite public removal API beyond mesh removal.
 - Added extension panes, external command-backed row actions, and a first `createInstancerExplorerAdapter()` with `instancerAdapter.register(set)` plus a dedicated Instancer adapter example.
 - Added Instancer tree selection, Properties editing for instance visibility, position, rotation, scaling, and color when supported, `instancerAdapter.exportSet(set)`, and optional set-level **Save Set** callbacks for exporting stable instance snapshots.
-- Added Pick support for registered Instancer thin instances by mapping Babylon Lite `thinInstanceIndex` values back to stable instance entries.
+- Added Pick support for registered Instancer thin instances by mapping Babylon Lite `thinInstanceIndex` values back to stable instance entries and opening the Instancer tab on instance picks.
+- Added source mesh transform data to Instancer set snapshots so **Save Set** preserves public source position, rotation, and scaling alongside instance data.
+- Added a footer gear that opens a User Settings modal, plus the grouped `userSettings` option with `instancer.pickMode` defaulting to `"instance"`.
 
 ### Changed
 

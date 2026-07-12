@@ -1,6 +1,7 @@
 import type { ExplorerSignals } from "../signals/createExplorerSignals";
 import type { NotificationService } from "./notificationService";
 import type { RefreshController } from "./refreshController";
+import type { ShellService } from "./shellService";
 
 type PointerStart = { x: number; y: number };
 
@@ -13,7 +14,8 @@ export class PickingService {
     private readonly canvas: HTMLCanvasElement,
     private readonly signals: ExplorerSignals,
     private readonly refresh: RefreshController,
-    private readonly notifications: NotificationService
+    private readonly notifications: NotificationService,
+    private readonly shell?: ShellService
   ) {}
 
   start(): void {
@@ -51,6 +53,7 @@ export class PickingService {
       if (!this.started || request !== this.generation) return;
       if (!result.ok) { this.notifications.push(result.message); return; }
       await this.refresh.select(result.value);
+      if (this.signals.selectedEntity.value?.meta?.instancer) this.shell?.selectPane("instancer");
     } catch (error) {
       if (this.started && request === this.generation) this.notifications.push(error instanceof Error ? error.message : "Canvas picking failed.");
     }

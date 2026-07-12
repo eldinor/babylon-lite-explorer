@@ -52,11 +52,19 @@ export type InstancerInstanceSnapshot<TMetadata = unknown> = {
   metadata?: TMetadata;
 };
 
+export type InstancerSourceSnapshot = {
+  label: string;
+  position?: readonly [number, number, number];
+  rotation?: readonly [number, number, number];
+  scaling?: readonly [number, number, number];
+};
+
 export type InstancerSetSnapshot<TMetadata = unknown> = {
   id: string;
   label: string;
   kind: "thin" | "hierarchy" | "vat" | "custom";
   sourceLabel: string;
+  source: InstancerSourceSnapshot;
   count: number;
   visibleCount: number;
   capacity: number;
@@ -151,6 +159,16 @@ function tuple4(value: ArrayLike<number> | undefined): readonly [number, number,
   return [Number(value[0]), Number(value[1]), Number(value[2]), Number(value[3])];
 }
 
+function vector3Field(source: unknown, field: "position" | "rotation" | "scaling"): readonly [number, number, number] | undefined {
+  if (!isObject(source)) return undefined;
+  const value = source[field];
+  if (!isObject(value)) return undefined;
+  const x = Number(value.x);
+  const y = Number(value.y);
+  const z = Number(value.z);
+  return [x, y, z].every(Number.isFinite) ? [x, y, z] : undefined;
+}
+
 function matrixValues(value: ArrayLike<number> | undefined): number[] | undefined {
   if (!value || value.length < 16) return undefined;
   const matrix = Array.from(value, Number).slice(0, 16);
@@ -216,11 +234,18 @@ export function createInstancerExplorerAdapter(): InstancerExplorerAdapter {
   };
   const findBySceneEntity = (entity: LiteEntity | null) => records.filter((record) => entity && record.source === entity.source);
   const findRecordBySetEntity = (entity: LiteEntity) => records.find((record) => setEntityId(record) === entity.id);
+  const buildSourceSnapshot = (record: RecordItem): InstancerSourceSnapshot => ({
+    label: record.sourceLabel,
+    ...(vector3Field(record.source, "position") ? { position: vector3Field(record.source, "position") } : {}),
+    ...(vector3Field(record.source, "rotation") ? { rotation: vector3Field(record.source, "rotation") } : {}),
+    ...(vector3Field(record.source, "scaling") ? { scaling: vector3Field(record.source, "scaling") } : {})
+  });
   const buildSnapshot = (record: RecordItem): InstancerSetSnapshot<unknown> => ({
     id: record.id,
     label: record.label,
     kind: record.kind,
     sourceLabel: record.sourceLabel,
+    source: buildSourceSnapshot(record),
     count: record.set.count,
     visibleCount: record.set.visibleCount,
     capacity: record.set.capacity,

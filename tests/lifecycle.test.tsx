@@ -123,6 +123,8 @@ it("links the footer logo to BabylonPress", async () => {
   const help = document.querySelector<HTMLAnchorElement>(".ble-footer-help");
   expect(help?.href).toBe("https://github.com/eldinor/babylon-lite-explorer/blob/main/docs/user-guide.md");
   expect(help?.textContent).toBe("?");
+  const settings = document.querySelector<HTMLButtonElement>(".ble-footer-settings");
+  expect(settings?.getAttribute("aria-label")).toBe("Open User Settings");
   const github = document.querySelector<HTMLAnchorElement>(".ble-footer-github");
   expect(github?.href).toBe("https://github.com/eldinor/babylon-lite-explorer");
   expect(github?.getAttribute("aria-label")).toBe("Babylon Lite Explorer on GitHub");
@@ -133,6 +135,40 @@ it("links the footer logo to BabylonPress", async () => {
   await custom.ready;
   expect(document.querySelector<HTMLAnchorElement>(".ble-footer-help")?.href).toBe("https://example.com/guide");
   custom.dispose();
+});
+
+it("opens User Settings from the footer gear", async () => {
+  const data = fakeScene();
+  const handle = showLiteExplorer(
+    { scene: data.scene, engine: {}, canvas: document.createElement("canvas") },
+    {
+      features: { canvasPicking: true },
+      userSettings: {
+        deletion: { confirmEntityRemoval: true },
+        instancer: { pickMode: "instance" },
+        ui: { layout: "single", theme: "dark" }
+      }
+    }
+  );
+  await handle.ready;
+
+  document.querySelector<HTMLButtonElement>(".ble-footer-settings")?.click();
+  await waitFor(() => expect(document.querySelector(".ble-modal")?.textContent).toContain("User Settings"));
+  const instancerPick = [...document.querySelectorAll<HTMLSelectElement>(".ble-settings-grid select")]
+    .find((select) => select.closest("label")?.textContent?.includes("Instancer pick"));
+  expect(instancerPick?.value).toBe("instance");
+  const confirmDelete = [...document.querySelectorAll<HTMLInputElement>('.ble-settings-check input[type="checkbox"]')]
+    .find((input) => input.closest("label")?.textContent?.includes("Confirm delete"));
+  expect(confirmDelete?.checked).toBe(true);
+
+  const theme = [...document.querySelectorAll<HTMLSelectElement>(".ble-settings-grid select")]
+    .find((select) => select.closest("label")?.textContent?.includes("Theme"));
+  fireEvent.change(theme!, { target: { value: "light" } });
+  expect(document.querySelector(".ble-root")?.getAttribute("data-theme")).toBe("light");
+
+  document.querySelector<HTMLButtonElement>('[aria-label="Close User Settings"]')?.click();
+  await waitFor(() => expect(document.querySelector(".ble-modal")).toBeNull());
+  handle.dispose();
 });
 
 it("opens Animation Groups from the Properties footer", async () => {
@@ -229,6 +265,9 @@ it("opens the Instancer panel from a registered source mesh row action", async (
     pickedMesh: data.mesh,
     thinInstanceIndex: 0
   }));
+  data.mesh.position.set(10, 20, 30);
+  data.mesh.rotation.set(0.1, 0.2, 0.3);
+  data.mesh.scaling.set(2, 3, 4);
   const set = {
     count: 2,
     capacity: 4,
@@ -254,6 +293,12 @@ it("opens the Instancer panel from a registered source mesh row action", async (
   instancerAdapter.register(set, { label: "Sphere instances", saveSet });
   expect(instancerAdapter.exportSet(set)).toMatchObject({
     label: "Sphere instances",
+    source: {
+      label: "Sphere",
+      position: [10, 20, 30],
+      rotation: [0.1, 0.2, 0.3],
+      scaling: [2, 3, 4]
+    },
     instances: [
       { id: 1, slot: 0, label: "First stable instance", visible: true, position: [1, 2, 3], scale: [1, 2, 3], color: [1, 0, 0, 1], clip: "Idle" },
       { id: 2, slot: 1, label: "Second stable instance", visible: true, position: [4, 5, 6], scale: [2, 2, 2], color: [0, 0, 1, 1], clip: "Idle" }
@@ -325,7 +370,18 @@ it("opens the Instancer panel from a registered source mesh row action", async (
   [...document.querySelectorAll<HTMLButtonElement>(".ble-selection-actions button")]
     .find((button) => button.textContent === "Save Set")
     ?.click();
-  await waitFor(() => expect(saveSet).toHaveBeenCalledWith(expect.objectContaining({ label: "Sphere instances" })));
+  await waitFor(() => expect(saveSet).toHaveBeenCalledWith(expect.objectContaining({
+    label: "Sphere instances",
+    source: expect.objectContaining({ position: [10, 20, 30], rotation: [0.1, 0.2, 0.3], scaling: [2, 3, 4] })
+  })));
+  [...document.querySelectorAll<HTMLButtonElement>('.ble-tabs button[role="tab"]')]
+    .find((button) => button.textContent === "Scene Explorer")
+    ?.click();
+  await waitFor(() => {
+    const sceneTab = [...document.querySelectorAll<HTMLButtonElement>('.ble-tabs button[role="tab"]')]
+      .find((button) => button.textContent === "Scene Explorer");
+    expect(sceneTab?.getAttribute("aria-selected")).toBe("true");
+  });
   document.querySelector<HTMLButtonElement>(".ble-pick-toggle")?.click();
   await waitFor(() => expect(document.querySelector(".ble-pick-toggle")?.textContent).toBe("Pick: On"));
   const pickEvent = (type: string) => {
@@ -342,6 +398,9 @@ it("opens the Instancer panel from a registered source mesh row action", async (
   await waitFor(() => {
     expect(pickAsync).toHaveBeenCalledWith(expect.anything(), 20, 30);
     expect(document.querySelector(".ble-selection-title")?.textContent).toBe("First stable instance");
+    const instancerTab = [...document.querySelectorAll<HTMLButtonElement>('.ble-tabs button[role="tab"]')]
+      .find((button) => button.textContent === "Instancer");
+    expect(instancerTab?.getAttribute("aria-selected")).toBe("true");
   });
   handle.dispose();
 });

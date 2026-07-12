@@ -37,7 +37,7 @@
 .ble-toolbar-actions { display: flex; gap: 4px; }
 .ble-toolbar-actions .ble-dispose { border-color: color-mix(in srgb, var(--ble-danger) 65%, var(--ble-border)); color: var(--ble-danger); font-weight: 700; }
 .ble-toolbar-actions .ble-dispose:hover { border-color: var(--ble-danger) !important; background: color-mix(in srgb, var(--ble-danger) 14%, var(--ble-panel-2)); }
-.ble-root button, .ble-root input { font: inherit; color: inherit; }
+.ble-root button, .ble-root input, .ble-root select { font: inherit; color: inherit; }
 .ble-root button { min-height: 24px; border: 1px solid var(--ble-border); border-radius: 3px; background: var(--ble-panel-2); cursor: pointer; }
 .ble-root button:hover:not(:disabled) { border-color: var(--ble-accent); }
 .ble-root button:disabled { opacity: .5; cursor: default; }
@@ -115,9 +115,22 @@
 .ble-footer-logo img { display: block; width: 17px; height: 19px; object-fit: contain; }
 .ble-footer-help { display: inline-flex; flex: 0 0 auto; align-items: center; justify-content: center; width: 18px; height: 18px; border: 1px solid var(--ble-muted); border-radius: 50%; color: var(--ble-muted); font-weight: 700; line-height: 1; text-decoration: none; opacity: .82; }
 .ble-footer-help:hover, .ble-footer-help:focus-visible { border-color: var(--ble-text); color: var(--ble-text); opacity: 1; }
+.ble-footer-settings { display: inline-flex; flex: 0 0 auto; align-items: center; justify-content: center; width: 20px; min-height: 20px !important; padding: 0; border-color: transparent !important; background: transparent !important; color: var(--ble-muted) !important; line-height: 1; opacity: .82; }
+.ble-footer-settings:hover, .ble-footer-settings:focus-visible { border-color: var(--ble-text) !important; color: var(--ble-text) !important; opacity: 1; }
 .ble-footer-github { display: inline-flex; flex: 0 0 auto; align-items: center; justify-content: center; width: 20px; height: 24px; color: var(--ble-muted); opacity: .82; }
 .ble-footer-github:hover, .ble-footer-github:focus-visible { color: var(--ble-text); opacity: 1; }
 .ble-footer-github svg { display: block; width: 17px; height: 17px; }
+.ble-modal-backdrop { position: fixed; inset: 0; z-index: 9999999; display: grid; place-items: center; padding: 16px; background: rgb(0 0 0 / 45%); }
+.ble-modal { width: min(360px, 100%); max-height: min(520px, calc(100vh - 32px)); overflow: auto; border: 1px solid var(--ble-border); border-radius: 5px; background: var(--ble-panel); box-shadow: 0 16px 48px rgb(0 0 0 / 45%); }
+.ble-modal-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 9px 10px; border-bottom: 1px solid var(--ble-border); background: var(--ble-bg); }
+.ble-modal-header h2 { margin: 0; font-size: 13px; }
+.ble-modal-header button { width: 24px; min-height: 24px; padding: 0; }
+.ble-settings-grid { display: grid; gap: 10px; padding: 10px; }
+.ble-settings-grid label { display: grid; grid-template-columns: minmax(100px, 38%) minmax(0, 1fr); align-items: center; gap: 10px; min-width: 0; }
+.ble-settings-grid label > span { color: var(--ble-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ble-settings-grid select { width: 100%; height: 24px; border: 1px solid var(--ble-border); border-radius: 2px; background: var(--ble-bg); color: var(--ble-text); }
+.ble-settings-check { grid-template-columns: 18px minmax(0, 1fr) !important; }
+.ble-settings-check input { width: 14px; height: 14px; margin: 0; }
 .ble-selection-status { display: flex; align-items: center; gap: 7px; min-height: 26px; padding: 3px 9px; overflow: hidden; border-top: 1px solid var(--ble-border); background: var(--ble-panel); }
 .ble-selection-status span { flex: 0 0 auto; color: var(--ble-muted); }
 .ble-selection-status strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

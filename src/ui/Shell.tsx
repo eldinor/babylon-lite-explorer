@@ -1,5 +1,5 @@
 import type { ComponentChildren } from "preact";
-import { useRef } from "preact/hooks";
+import { useRef, useState } from "preact/hooks";
 import bpLogoUrl from "../assets/bplogo.svg";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { useExplorerRuntime } from "./runtime";
@@ -182,11 +182,58 @@ function StatusBar({ left, right }: { left: ComponentChildren; right: ComponentC
 
 function LinksFooter() {
   const { userGuideUrl } = useExplorerRuntime();
+  const [settingsOpen, setSettingsOpen] = useState(false);
   return <footer class="ble-links-footer">
+    <button class="ble-footer-settings" type="button" title="Open User Settings" aria-label="Open User Settings" onClick={() => setSettingsOpen(true)}>⚙</button>
     <a class="ble-footer-help" href={userGuideUrl} target="_blank" rel="noreferrer" title="Open User Guide" aria-label="Open User Guide">?</a>
     <a class="ble-footer-logo" href="https://babylonpress.org/" target="_blank" rel="noreferrer" title="Created by BabylonPress"><img src={bpLogoUrl} alt="BabylonPress" /></a>
     <a class="ble-footer-github" href="https://github.com/eldinor/babylon-lite-explorer" target="_blank" rel="noreferrer" title="Babylon Lite Explorer on GitHub" aria-label="Babylon Lite Explorer on GitHub"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .7a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2.23c-3.22.7-3.9-1.37-3.9-1.37-.52-1.34-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.57-.29-5.27-1.28-5.27-5.69 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.16 1.18a10.9 10.9 0 0 1 5.76 0c2.19-1.49 3.16-1.18 3.16-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.83 1.19 3.09 0 4.42-2.71 5.39-5.29 5.68.42.36.79 1.07.79 2.16v3.2c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .7Z"/></svg></a>
+    {settingsOpen && <UserSettingsModal onClose={() => setSettingsOpen(false)} />}
   </footer>;
+}
+
+function UserSettingsModal({ onClose }: { onClose(): void }) {
+  const { signals, setLayout, setTheme, setPickingActive, setConfirmEntityRemoval, setInstancerPickMode } = useExplorerRuntime();
+  const settings = signals.userSettings.value;
+  return <div class="ble-modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
+    <section class="ble-modal" role="dialog" aria-modal="true" aria-labelledby="ble-user-settings-title">
+      <header class="ble-modal-header">
+        <h2 id="ble-user-settings-title">User Settings</h2>
+        <button type="button" aria-label="Close User Settings" onClick={onClose}>x</button>
+      </header>
+      <div class="ble-settings-grid">
+        <label>
+          <span>Theme</span>
+          <select value={signals.theme.value} onChange={(event) => setTheme(event.currentTarget.value === "light" ? "light" : "dark")}>
+            <option value="dark">Dark</option>
+            <option value="light">Light</option>
+          </select>
+        </label>
+        <label>
+          <span>Layout</span>
+          <select value={signals.layout.value} onChange={(event) => setLayout(event.currentTarget.value === "split" ? "split" : "single")}>
+            <option value="single">Single</option>
+            <option value="split">Split</option>
+          </select>
+        </label>
+        <label class="ble-settings-check">
+          <input type="checkbox" checked={signals.pickingActive.value} disabled={!signals.pickingAvailable.value} onChange={(event) => setPickingActive(event.currentTarget.checked)} />
+          <span>Pick</span>
+        </label>
+        <label class="ble-settings-check">
+          <input type="checkbox" checked={settings.confirmEntityRemoval} onChange={(event) => setConfirmEntityRemoval(event.currentTarget.checked)} />
+          <span>Confirm delete</span>
+        </label>
+        <label>
+          <span>Instancer pick</span>
+          <select value={settings.instancerPickMode} onChange={(event) => setInstancerPickMode(event.currentTarget.value === "source" ? "source" : "instance")}>
+            <option value="instance">Instance</option>
+            <option value="source">Source</option>
+          </select>
+        </label>
+      </div>
+    </section>
+  </div>;
 }
 
 function PropertiesFooter() {

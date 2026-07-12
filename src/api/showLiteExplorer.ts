@@ -27,8 +27,8 @@ export function showLiteExplorer(context: LiteExplorerContext, options: LiteExpl
   const mode = options.mode ?? "overlay";
   const storedLayout = readPreference("ble.layout");
   const storedTheme = readPreference("ble.theme");
-  const layout = options.layout ?? (storedLayout === "split" ? "split" : "single");
-  const theme = options.theme ?? (storedTheme === "light" ? "light" : "dark");
+  const layout = options.userSettings?.ui?.layout ?? options.layout ?? (storedLayout === "split" ? "split" : "single");
+  const theme = options.userSettings?.ui?.theme ?? options.theme ?? (storedTheme === "light" ? "light" : "dark");
   const host = document.createElement("div");
   host.className = `ble-root ble-${mode}`;
   host.dataset.theme = theme;
@@ -51,6 +51,13 @@ export function showLiteExplorer(context: LiteExplorerContext, options: LiteExpl
   signals.adapter.value = adapter;
   signals.theme.value = theme;
   signals.layout.value = layout;
+  signals.userSettings.value = {
+    confirmEntityRemoval: options.userSettings?.deletion?.confirmEntityRemoval ?? options.confirmEntityRemoval ?? false,
+    instancerPickMode: options.userSettings?.instancer?.pickMode ?? "instance",
+    keyboardShortcutsEnabled: options.userSettings?.ui?.keyboardShortcutsEnabled ?? options.keyboardShortcutsEnabled ?? true,
+    notificationsEnabled: options.userSettings?.ui?.notificationsEnabled ?? options.notificationsEnabled ?? true,
+    notificationDurationMs: Math.max(0, options.userSettings?.ui?.notificationDurationMs ?? options.notificationDurationMs ?? 3000)
+  };
   try {
     const singlePercent = Number(localStorage.getItem("ble.singlePanePercent"));
     if (singlePercent >= 25 && singlePercent <= 75) signals.singlePanePercent.value = singlePercent;
@@ -58,15 +65,15 @@ export function showLiteExplorer(context: LiteExplorerContext, options: LiteExpl
   signals.isOpen.value = options.initiallyOpen ?? true;
   const notifications = new NotificationService(
     signals,
-    Math.max(0, options.notificationDurationMs ?? 3000),
-    options.notificationsEnabled !== false
+    signals.userSettings.value.notificationDurationMs,
+    signals.userSettings.value.notificationsEnabled
   );
   const focusSelectedEnabled = options.features?.focusSelected === true;
   const refresh = new RefreshController(signals, notifications);
   const shell = new ShellService(signals);
   const stats = new StatsService(signals);
   const picking = options.features?.canvasPicking === true && canvas
-    ? new PickingService(canvas, signals, refresh, notifications)
+    ? new PickingService(canvas, signals, refresh, notifications, shell)
     : undefined;
   signals.pickingAvailable.value = !!picking;
   const commands = new CommandService();
@@ -114,7 +121,7 @@ export function showLiteExplorer(context: LiteExplorerContext, options: LiteExpl
       const message = isActiveCamera
         ? `Delete active camera "${entity.label}"?`
         : `Delete "${entity.label}" from the scene?`;
-      if (options.confirmEntityRemoval === true && !window.confirm(message)) return;
+      if (signals.userSettings.value.confirmEntityRemoval && !window.confirm(message)) return;
       const result = await adapter.removeEntity(entity, currentContext);
       if (!result.ok) { notifications.push(result.message); return; }
       if (signals.selectedEntityId.value === entity.id) await refresh.select(null);
@@ -200,6 +207,12 @@ export function showLiteExplorer(context: LiteExplorerContext, options: LiteExpl
       if (active) picking.start(); else picking.stop();
       signals.pickingActive.value = active;
     },
+    setConfirmEntityRemoval(active) {
+      signals.userSettings.value = { ...signals.userSettings.value, confirmEntityRemoval: active };
+    },
+    setInstancerPickMode(mode) {
+      signals.userSettings.value = { ...signals.userSettings.value, instancerPickMode: mode };
+    },
     hide: () => handle.hide(),
     dispose: () => handle.dispose()
   };
@@ -261,9 +274,10 @@ export function showLiteExplorer(context: LiteExplorerContext, options: LiteExpl
       host.querySelector<HTMLInputElement>(".ble-search input")?.focus();
     }
   };
-  if (options.keyboardShortcutsEnabled !== false) {
+  if (signals.userSettings.value.keyboardShortcutsEnabled) {
     window.addEventListener("keydown", onKeyDown);
     disposables.add(createDisposable(() => window.removeEventListener("keydown", onKeyDown)));
   }
+  if (options.userSettings?.picking?.enabled === true) runtime.setPickingActive(true);
   return handle;
 }

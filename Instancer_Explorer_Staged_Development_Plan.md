@@ -349,6 +349,7 @@ Requirements:
 - Reverse map from `BaseInstanceSet` object to registered set ID.
 - Reliable slot-to-ID lookup at pick time.
 - Graceful handling when the picked slot no longer maps to a live instance.
+- User Settings should keep `instancer.pickMode` with `"instance"` as the default. With a registered Instancer adapter, instance picks can open the Instancer panel and focus the stable instance row. Without the Instancer adapter registered, normal Explorer picking should continue to resolve to the source mesh.
 
 ## Stage 7 - Explorer Instancer Example
 

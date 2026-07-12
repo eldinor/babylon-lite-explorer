@@ -22,12 +22,35 @@ export type LiteExplorerRuntime = Pick<typeof import("@babylonjs/lite"),
 export type LiteExplorerTheme = "dark" | "light";
 export type LiteExplorerMode = "overlay" | "inline";
 export type LiteExplorerLayout = "single" | "split";
+export type LiteExplorerInstancerPickMode = "instance" | "source";
 
 export type LiteExplorerFeatures = {
   /** Expose adapter-backed camera focus controls. Disabled by default. */
   focusSelected?: boolean;
   /** Select entities by clicking the canvas. Disabled by default. */
   canvasPicking?: boolean;
+};
+
+export type LiteExplorerUserSettings = {
+  picking?: {
+    /** Initial Pick toggle state when canvas picking is available. Defaults to false. */
+    enabled?: boolean;
+  };
+  deletion?: {
+    /** Ask before removing entities. Defaults to false. */
+    confirmEntityRemoval?: boolean;
+  };
+  instancer?: {
+    /** Registered Instancer picks resolve to stable instances by default. */
+    pickMode?: LiteExplorerInstancerPickMode;
+  };
+  ui?: {
+    theme?: LiteExplorerTheme;
+    layout?: LiteExplorerLayout;
+    keyboardShortcutsEnabled?: boolean;
+    notificationsEnabled?: boolean;
+    notificationDurationMs?: number;
+  };
 };
 
 export type LiteExplorerContext = {
@@ -57,6 +80,8 @@ export type LiteExplorerOptions = {
   /** Custom command-backed actions, including optional row actions. */
   commands?: readonly LiteExplorerCommand[];
   features?: LiteExplorerFeatures;
+  /** Initial user-facing settings. Top-level legacy options still work. */
+  userSettings?: LiteExplorerUserSettings;
   /** Notification auto-dismiss delay in milliseconds. Defaults to 3000; use 0 for manual dismissal. */
   notificationDurationMs?: number;
   /** Disable all explorer notifications. Defaults to true. */

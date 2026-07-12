@@ -1,11 +1,18 @@
 import { computed, signal } from "@preact/signals";
-import type { LiteExplorerContext, LiteExplorerLayout, LiteExplorerTheme } from "../api/types";
+import type { LiteExplorerContext, LiteExplorerInstancerPickMode, LiteExplorerLayout, LiteExplorerTheme } from "../api/types";
 import type { LiteEntity, LiteSceneAdapter, LiteStats } from "../adapter/LiteSceneAdapter";
 import type { PropertyDescriptor } from "../adapter/propertyDescriptors";
 import type { SidePaneDefinition, ToolbarItemDefinition } from "../services/shellService";
 import { filterTree, findEntityById } from "./treeUtils";
 
 export type ExplorerNotification = { id: number; tone: "error" | "info"; message: string };
+export type ExplorerUserSettingsState = {
+  confirmEntityRemoval: boolean;
+  instancerPickMode: LiteExplorerInstancerPickMode;
+  keyboardShortcutsEnabled: boolean;
+  notificationsEnabled: boolean;
+  notificationDurationMs: number;
+};
 
 export function createExplorerSignals() {
   const isOpen = signal(true);
@@ -26,6 +33,13 @@ export function createExplorerSignals() {
   const isRefreshingProperties = signal(false);
   const pickingAvailable = signal(false);
   const pickingActive = signal(false);
+  const userSettings = signal<ExplorerUserSettingsState>({
+    confirmEntityRemoval: false,
+    instancerPickMode: "instance",
+    keyboardShortcutsEnabled: true,
+    notificationsEnabled: true,
+    notificationDurationMs: 3000
+  });
   const panes = signal<SidePaneDefinition[]>([]);
   const toolbarItems = signal<ToolbarItemDefinition[]>([]);
   const selectedPanes = signal<Record<"left" | "right" | "single", string | null>>({ left: null, right: null, single: null });
@@ -37,6 +51,7 @@ export function createExplorerSignals() {
     isOpen, theme, layout, context, adapter, sceneVersion, selectedEntityId, selectedEntity,
     tree, extensionEntities, filteredTree, properties, stats, search, expandedIds, notifications,
     isRefreshingTree, isRefreshingProperties, pickingAvailable, pickingActive,
+    userSettings,
     panes, toolbarItems, selectedPanes,
     singlePanePercent
   };

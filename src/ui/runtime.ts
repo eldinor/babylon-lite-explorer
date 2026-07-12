@@ -1,7 +1,7 @@
 import { createContext } from "preact";
 import { useContext } from "preact/hooks";
 import type { ExplorerSignals } from "../signals/createExplorerSignals";
-import type { LiteExplorerLayout, LiteExplorerTheme } from "../api/types";
+import type { LiteExplorerInstancerPickMode, LiteExplorerLayout, LiteExplorerTheme } from "../api/types";
 import type { NotificationService } from "../services/notificationService";
 import type { CommandService } from "../services/commandService";
 import type { RefreshController } from "../services/refreshController";
@@ -17,6 +17,8 @@ export type ExplorerRuntime = {
   setLayout(layout: LiteExplorerLayout): void;
   setTheme(theme: LiteExplorerTheme): void;
   setPickingActive(active: boolean): void;
+  setConfirmEntityRemoval(active: boolean): void;
+  setInstancerPickMode(mode: LiteExplorerInstancerPickMode): void;
   hide(): void;
   dispose(): void;
 };

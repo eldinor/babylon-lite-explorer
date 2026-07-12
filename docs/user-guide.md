@@ -10,9 +10,9 @@ The tree lists the public scene, camera, lights, meshes and transform hierarchy,
 - Use the arrow keys to move through and expand the tree.
 - Enable Pick to select a mesh by clicking the canvas. Camera drags are ignored. Registered Instancer thin instances can also be selected by Pick when the adapter can map Babylon Lite's `thinInstanceIndex` back to a stable instance entry.
 - Supported selection actions appear between the panes and status bar.
-- Meshes can be deleted from the selected-entity bar or the red row action. Set `confirmEntityRemoval: true` to ask before deletion; the default is `false`. Transform node, light, and camera deletion is not shown until Babylon Lite exposes an official public removal API for those entity types.
+- Meshes can be deleted from the selected-entity bar or the red row action. Set `confirmEntityRemoval: true` or `userSettings.deletion.confirmEntityRemoval: true` to ask before deletion; the default is `false`. Transform node, light, and camera deletion is not shown until Babylon Lite exposes an official public removal API for those entity types.
 
-The Scene Explorer footer links to the User Guide, BabylonPress, and the project repository.
+The Scene Explorer footer opens User Settings from the gear button and links to the User Guide, BabylonPress, and the project repository.
 
 ## Properties
 
@@ -44,7 +44,7 @@ The copy button beside a property copies that value. The selection **Copy** acti
 
 ## Instancer
 
-Applications can add an Instancer tab with `createInstancerExplorerAdapter()` and explicit `instancerAdapter.register(set)` calls. Scene Explorer stays focused on scene objects; registered source meshes get an `I` row action that opens the Instancer tab. When Pick is enabled, clicking a registered thin instance selects its stable instance row instead of only selecting the source mesh.
+Applications can add an Instancer tab with `createInstancerExplorerAdapter()` and explicit `instancerAdapter.register(set)` calls. Scene Explorer stays focused on scene objects; registered source meshes get an `I` row action that opens the Instancer tab. When Pick is enabled, clicking a registered thin instance opens the Instancer tab and selects its stable instance row instead of only selecting the source mesh. `userSettings.instancer.pickMode` defaults to `"instance"`; without a registered Instancer adapter, Explorer picking selects the source mesh.
 
 The Instancer tab is a tree:
 
@@ -54,7 +54,7 @@ The Instancer tab is a tree:
 
 Selecting a source, set, or instance updates the Properties panel. Instance visibility is editable when the set exposes `setVisible(id, value)`. Position is editable when the set exposes `getPosition(id)` and `setPosition(id, position)`. Rotation and scaling are shown when the set exposes `getMatrix(id)`; rotation is editable through `setTransform(id, { rotationEuler })`, and scaling is editable through `setScale(id, scale)` or `setTransform(id, { scale })`. Per-instance color is shown and editable when `getColor(id)` and `setColor(id, color)` exist. Babylon Lite's thin-instance color path is supported for built-in PBR and Standard-style materials and multiplies per-instance color with the source material color, so white or neutral source materials make color edits visually obvious. VAT clip is shown when `getClip(id)` exists.
 
-If a registered set includes `saveSet`, selecting that set shows **Save Set** in the selected-entity action bar. The callback receives an `InstancerSetSnapshot` with stable instance IDs, current slots, labels, visibility, optional positions, derived Euler rotation, derived scaling, optional colors, optional VAT clips, optional matrices, and metadata serialized through `serializeMetadata` when provided. Explorer does not decide how to persist it.
+If a registered set includes `saveSet`, selecting that set shows **Save Set** in the selected-entity action bar. The callback receives an `InstancerSetSnapshot` with the source mesh label and public source transform, plus stable instance IDs, current slots, labels, visibility, optional positions, derived Euler rotation, derived scaling, optional colors, optional VAT clips, optional matrices, and metadata serialized through `serializeMetadata` when provided. Explorer does not decide how to persist it.
 
 Applications can also call `instancerAdapter.exportSet(set)` directly and use the same snapshot in Instancer code, for example by saving JSON or converting it into app-specific placement data.
 
@@ -81,6 +81,24 @@ Applications can also call `instancerAdapter.exportSet(set)` directly and use th
 **Split** docks Scene Explorer at the left and Properties or Tools at the right, leaving the canvas interactive between them.
 
 Dark and light themes, the selected layout, and the Single divider position are stored locally in the browser.
+
+## User Settings
+
+Open the footer gear to change live Explorer settings. The modal currently exposes theme, layout, Pick, delete confirmation, and Instancer pick mode.
+
+Initial settings can be supplied with `userSettings`:
+
+```ts
+showLiteExplorer(context, {
+  features: { canvasPicking: true },
+  userSettings: {
+    picking: { enabled: false },
+    deletion: { confirmEntityRemoval: false },
+    instancer: { pickMode: "instance" },
+    ui: { theme: "dark", layout: "single" },
+  },
+});
+```
 
 ## Keyboard shortcuts
 
