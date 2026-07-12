@@ -57,6 +57,11 @@ export type LiteExplorerContext = {
   engine: unknown;
   scene: unknown;
   canvas?: HTMLCanvasElement;
+  explorer?: {
+    userSettings?: {
+      instancerPickMode?: LiteExplorerInstancerPickMode;
+    };
+  };
   /**
    * The application's Babylon Lite module namespace. Pass this when Explorer and
    * the scene can resolve separate module instances, such as CDN/playground use.

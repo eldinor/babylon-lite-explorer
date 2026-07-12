@@ -154,8 +154,8 @@ it("opens User Settings from the footer gear", async () => {
 
   document.querySelector<HTMLButtonElement>(".ble-footer-settings")?.click();
   await waitFor(() => expect(document.querySelector(".ble-modal")?.textContent).toContain("User Settings"));
-  const instancerPick = [...document.querySelectorAll<HTMLSelectElement>(".ble-settings-grid select")]
-    .find((select) => select.closest("label")?.textContent?.includes("Instancer pick"));
+  expect([...document.querySelectorAll(".ble-settings-section h3")].map((item) => item.textContent)).toEqual(["General", "Instancer"]);
+  const instancerPick = document.querySelector<HTMLSelectElement>('[data-adapter-settings="instancer"] select');
   expect(instancerPick?.value).toBe("instance");
   const confirmDelete = [...document.querySelectorAll<HTMLInputElement>('.ble-settings-check input[type="checkbox"]')]
     .find((input) => input.closest("label")?.textContent?.includes("Confirm delete"));
@@ -337,6 +337,28 @@ it("opens the Instancer panel from a registered source mesh row action", async (
     const labels = [...document.querySelectorAll<HTMLLabelElement>(".ble-property-row > label")].map((label) => label.textContent);
     expect(labels).toEqual(expect.arrayContaining(["Instance ID", "Current slot", "Visible", "Position", "Rotation", "Scaling", "Color", "Clip", "Metadata"]));
   });
+  [...document.querySelectorAll<HTMLButtonElement>(".ble-instancer-tree-label")]
+    .find((button) => button.textContent === "Sphere")
+    ?.click();
+  const topLevelSourceLink = await waitFor(() => {
+    const link = document.querySelector<HTMLButtonElement>(".ble-property-link");
+    expect(link?.textContent).toBe("Sphere");
+    return link!;
+  });
+  topLevelSourceLink.click();
+  await waitFor(() => {
+    expect(document.querySelector(".ble-selection-title")?.textContent).toBe("Sphere");
+    const sceneTab = [...document.querySelectorAll<HTMLButtonElement>('.ble-tabs button[role="tab"]')]
+      .find((button) => button.textContent === "Scene Explorer");
+    expect(sceneTab?.getAttribute("aria-selected")).toBe("true");
+  });
+  [...document.querySelectorAll<HTMLButtonElement>('.ble-tabs button[role="tab"]')]
+    .find((button) => button.textContent === "Instancer")
+    ?.click();
+  [...document.querySelectorAll<HTMLButtonElement>(".ble-instancer-tree-label")]
+    .find((button) => button.textContent === "First stable instance")
+    ?.click();
+  await waitFor(() => expect(document.querySelector(".ble-selection-title")?.textContent).toBe("First stable instance"));
   const rotationX = document.querySelector<HTMLInputElement>('input[aria-label="Rotation X"]');
   const rotationY = document.querySelector<HTMLInputElement>('input[aria-label="Rotation Y"]');
   const rotationZ = document.querySelector<HTMLInputElement>('input[aria-label="Rotation Z"]');
@@ -363,12 +385,62 @@ it("opens the Instancer panel from a registered source mesh row action", async (
     expect(document.querySelector<HTMLInputElement>('input[aria-label="Color Z"]')?.value).toBe("0");
     expect(document.querySelector<HTMLInputElement>('input[aria-label="Color W"]')?.value).toBe("1");
   });
+  [...document.querySelectorAll<HTMLButtonElement>(".ble-selection-actions button")]
+    .find((button) => button.textContent === "Reset")
+    ?.click();
+  await waitFor(() => {
+    expect(set.setTransform).toHaveBeenCalledWith(1, expect.objectContaining({
+      position: [1, 2, 3],
+      rotationEuler: [0, 0, 0],
+      scale: [1, 2, 3]
+    }));
+    expect(set.setColor).toHaveBeenCalledWith(1, [1, 0, 0, 1]);
+  });
+  [...document.querySelectorAll<HTMLButtonElement>(".ble-instancer-tree-label")]
+    .find((button) => button.textContent === "Sphere instances")
+    ?.click();
+  await waitFor(() => expect(document.querySelector(".ble-selection-title")?.textContent).toBe("Sphere instances"));
+  const sourceLink = await waitFor(() => {
+    const link = document.querySelector<HTMLButtonElement>(".ble-property-link");
+    expect(link?.textContent).toBe("Sphere");
+    return link!;
+  });
+  sourceLink.click();
+  await waitFor(() => {
+    expect(document.querySelector(".ble-selection-title")?.textContent).toBe("Sphere");
+    const sceneTab = [...document.querySelectorAll<HTMLButtonElement>('.ble-tabs button[role="tab"]')]
+      .find((button) => button.textContent === "Scene Explorer");
+    expect(sceneTab?.getAttribute("aria-selected")).toBe("true");
+  });
+  [...document.querySelectorAll<HTMLButtonElement>('.ble-tabs button[role="tab"]')]
+    .find((button) => button.textContent === "Instancer")
+    ?.click();
   [...document.querySelectorAll<HTMLButtonElement>(".ble-instancer-tree-label")]
     .find((button) => button.textContent === "Sphere instances")
     ?.click();
   await waitFor(() => expect(document.querySelector(".ble-selection-title")?.textContent).toBe("Sphere instances"));
   [...document.querySelectorAll<HTMLButtonElement>(".ble-selection-actions button")]
+    .find((button) => button.textContent === "Reset Set")
+    ?.click();
+  await waitFor(() => {
+    expect(set.setTransform).toHaveBeenCalledWith(2, expect.objectContaining({
+      position: [4, 5, 6],
+      rotationEuler: [0, 0, 0],
+      scale: [2, 2, 2]
+    }));
+    expect(set.setColor).toHaveBeenCalledWith(2, [0, 0, 1, 1]);
+  });
+  [...document.querySelectorAll<HTMLButtonElement>(".ble-selection-actions button")]
     .find((button) => button.textContent === "Save Set")
+    ?.click();
+  await waitFor(() => {
+    expect(document.querySelector(".ble-instancer-export-modal")?.textContent).toContain("Copy JSON");
+    expect(document.querySelector(".ble-instancer-export-modal")?.textContent).toContain("Copy Instancer Code");
+    expect(document.querySelector(".ble-instancer-export-modal")?.textContent).toContain("Download JSON");
+    expect(document.querySelector(".ble-instancer-export-modal")?.textContent).toContain("App Save");
+  });
+  [...document.querySelectorAll<HTMLButtonElement>(".ble-export-actions button")]
+    .find((button) => button.textContent === "App Save")
     ?.click();
   await waitFor(() => expect(saveSet).toHaveBeenCalledWith(expect.objectContaining({
     label: "Sphere instances",
@@ -401,6 +473,26 @@ it("opens the Instancer panel from a registered source mesh row action", async (
     const instancerTab = [...document.querySelectorAll<HTMLButtonElement>('.ble-tabs button[role="tab"]')]
       .find((button) => button.textContent === "Instancer");
     expect(instancerTab?.getAttribute("aria-selected")).toBe("true");
+  });
+  document.querySelector<HTMLButtonElement>(".ble-footer-settings")?.click();
+  await waitFor(() => expect(document.querySelector(".ble-modal")?.textContent).toContain("User Settings"));
+  fireEvent.change(document.querySelector<HTMLSelectElement>('[data-adapter-settings="instancer"] select')!, { target: { value: "source" } });
+  document.querySelector<HTMLButtonElement>('[aria-label="Close User Settings"]')?.click();
+  [...document.querySelectorAll<HTMLButtonElement>('.ble-tabs button[role="tab"]')]
+    .find((button) => button.textContent === "Scene Explorer")
+    ?.click();
+  await waitFor(() => {
+    const sceneTab = [...document.querySelectorAll<HTMLButtonElement>('.ble-tabs button[role="tab"]')]
+      .find((button) => button.textContent === "Scene Explorer");
+    expect(sceneTab?.getAttribute("aria-selected")).toBe("true");
+  });
+  pickEvent("pointerdown");
+  pickEvent("pointerup");
+  await waitFor(() => {
+    expect(document.querySelector(".ble-selection-title")?.textContent).toBe("Sphere");
+    const sceneTab = [...document.querySelectorAll<HTMLButtonElement>('.ble-tabs button[role="tab"]')]
+      .find((button) => button.textContent === "Scene Explorer");
+    expect(sceneTab?.getAttribute("aria-selected")).toBe("true");
   });
   handle.dispose();
 });

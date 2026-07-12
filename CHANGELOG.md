@@ -12,7 +12,10 @@ All notable changes to Babylon Lite Explorer are documented here.
 - Added Instancer tree selection, Properties editing for instance visibility, position, rotation, scaling, and color when supported, `instancerAdapter.exportSet(set)`, and optional set-level **Save Set** callbacks for exporting stable instance snapshots.
 - Added Pick support for registered Instancer thin instances by mapping Babylon Lite `thinInstanceIndex` values back to stable instance entries and opening the Instancer tab on instance picks.
 - Added source mesh transform data to Instancer set snapshots so **Save Set** preserves public source position, rotation, and scaling alongside instance data.
+- Added Instancer **Save Set** export choices for copying JSON, copying Instancer placement code, downloading JSON, or calling the app save callback.
+- Added Instancer baseline reset actions for restoring a selected instance or a live set back to the values captured at registration.
 - Added a footer gear that opens a User Settings modal, plus the grouped `userSettings` option with `instancer.pickMode` defaulting to `"instance"`.
+- Added a dedicated Instancer Adapter guide covering registration, pick modes, editable set APIs, source links, Save Set, and reset behavior.
 
 ### Changed
 

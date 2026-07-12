@@ -49,7 +49,16 @@ export class PickingService {
     const context = this.signals.context.value;
     if (!adapter?.pickEntityId || !context) return;
     try {
-      const result = await adapter.pickEntityId(x, y, context);
+      const result = await adapter.pickEntityId(x, y, {
+        ...context,
+        explorer: {
+          ...context.explorer,
+          userSettings: {
+            ...context.explorer?.userSettings,
+            instancerPickMode: this.signals.userSettings.value.instancerPickMode
+          }
+        }
+      });
       if (!this.started || request !== this.generation) return;
       if (!result.ok) { this.notifications.push(result.message); return; }
       await this.refresh.select(result.value);

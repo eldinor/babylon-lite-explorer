@@ -44,7 +44,7 @@ The copy button beside a property copies that value. The selection **Copy** acti
 
 ## Instancer
 
-Applications can add an Instancer tab with `createInstancerExplorerAdapter()` and explicit `instancerAdapter.register(set)` calls. Scene Explorer stays focused on scene objects; registered source meshes get an `I` row action that opens the Instancer tab. When Pick is enabled, clicking a registered thin instance opens the Instancer tab and selects its stable instance row instead of only selecting the source mesh. `userSettings.instancer.pickMode` defaults to `"instance"`; without a registered Instancer adapter, Explorer picking selects the source mesh.
+Applications can add an Instancer tab with `createInstancerExplorerAdapter()` and explicit `instancerAdapter.register(set)` calls. Scene Explorer stays focused on scene objects; registered source meshes get an `I` row action that opens the Instancer tab. See the [Instancer Adapter guide](instancer-adapter.md) for setup and API details.
 
 The Instancer tab is a tree:
 
@@ -52,11 +52,11 @@ The Instancer tab is a tree:
 - Registered sets appear under their source.
 - Stable instance rows appear under each set.
 
-Selecting a source, set, or instance updates the Properties panel. Instance visibility is editable when the set exposes `setVisible(id, value)`. Position is editable when the set exposes `getPosition(id)` and `setPosition(id, position)`. Rotation and scaling are shown when the set exposes `getMatrix(id)`; rotation is editable through `setTransform(id, { rotationEuler })`, and scaling is editable through `setScale(id, scale)` or `setTransform(id, { scale })`. Per-instance color is shown and editable when `getColor(id)` and `setColor(id, color)` exist. Babylon Lite's thin-instance color path is supported for built-in PBR and Standard-style materials and multiplies per-instance color with the source material color, so white or neutral source materials make color edits visually obvious. VAT clip is shown when `getClip(id)` exists.
+Selecting a source, set, or instance updates the Properties panel. Source properties are clickable and select the real mesh in Scene Explorer. Instance visibility, position, rotation, scaling, color, VAT clip, and metadata are shown or edited only when the registered set exposes the needed public methods.
 
-If a registered set includes `saveSet`, selecting that set shows **Save Set** in the selected-entity action bar. The callback receives an `InstancerSetSnapshot` with the source mesh label and public source transform, plus stable instance IDs, current slots, labels, visibility, optional positions, derived Euler rotation, derived scaling, optional colors, optional VAT clips, optional matrices, and metadata serialized through `serializeMetadata` when provided. Explorer does not decide how to persist it.
+When Pick is enabled, Instancer pick mode controls what canvas clicks select. `"instance"` selects the stable instance row and switches to the Instancer tab. `"source"` selects the source mesh through the normal Scene Explorer picker. Without a registered Instancer adapter, Explorer picking selects the source mesh.
 
-Applications can also call `instancerAdapter.exportSet(set)` directly and use the same snapshot in Instancer code, for example by saving JSON or converting it into app-specific placement data.
+Selecting a set shows **Save Set** in the selected-entity action bar. The action opens choices to copy JSON, copy Instancer placement code, download JSON, or call the app's optional `saveSet` callback. **Reset** restores a selected instance from the registration-time baseline, and **Reset Set** restores all live instances in the selected set. Reset does not recreate instances removed by application code after registration.
 
 ## Tools
 
@@ -84,7 +84,7 @@ Dark and light themes, the selected layout, and the Single divider position are 
 
 ## User Settings
 
-Open the footer gear to change live Explorer settings. The modal currently exposes theme, layout, Pick, delete confirmation, and Instancer pick mode.
+Open the footer gear to change live Explorer settings. The modal currently exposes theme, layout, Pick, delete confirmation, and an adapter-specific **Instancer** section for Instancer pick mode. Future custom adapter settings should follow the same titled-section pattern.
 
 Initial settings can be supplied with `userSettings`:
 

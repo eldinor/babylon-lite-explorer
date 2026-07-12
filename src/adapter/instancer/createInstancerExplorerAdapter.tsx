@@ -94,6 +94,7 @@ type RecordItem = {
   getLabel?: (id: number, metadata: unknown, slot: number | undefined) => string;
   serializeMetadata?: (metadata: unknown, id: number) => unknown;
   saveSet?: (snapshot: InstancerSetSnapshot<unknown>) => void | Promise<void>;
+  baseline?: InstancerSetSnapshot<unknown>;
   transformCache: Map<number, {
     rotationEuler?: readonly [number, number, number];
     scale?: readonly [number, number, number];
@@ -178,6 +179,7 @@ function matrixValues(value: ArrayLike<number> | undefined): number[] | undefine
 function decomposeMatrix(value: ArrayLike<number> | undefined): { rotationEuler: readonly [number, number, number]; scale: readonly [number, number, number] } | undefined {
   const matrix = matrixValues(value);
   if (!matrix) return undefined;
+  const cleanZero = (part: number) => Math.abs(part) < 1e-12 ? 0 : part;
   const sx = Math.hypot(matrix[0], matrix[1], matrix[2]);
   const sy = Math.hypot(matrix[4], matrix[5], matrix[6]);
   const sz = Math.hypot(matrix[8], matrix[9], matrix[10]);
@@ -191,7 +193,7 @@ function decomposeMatrix(value: ArrayLike<number> | undefined): { rotationEuler:
   const rotationEuler: readonly [number, number, number] = cy > 1e-6
     ? [Math.atan2(r21, r22), Math.atan2(-r20, cy), Math.atan2(r10, r00)]
     : [Math.atan2(-matrix[9] / sz, matrix[5] / sy), Math.atan2(-r20, cy), 0];
-  return { rotationEuler, scale: [sx, sy, sz] };
+  return { rotationEuler: rotationEuler.map(cleanZero) as unknown as readonly [number, number, number], scale: [sx, sy, sz] };
 }
 
 function isFiniteTuple3(value: unknown): value is readonly [number, number, number] {
@@ -210,6 +212,7 @@ export function createInstancerExplorerAdapter(): InstancerExplorerAdapter {
   const pickerByScene = new WeakMap<object, GpuPicker>();
   const version = signal(0);
   const expandedIds = signal<ReadonlySet<string>>(new Set());
+  const exportDialogRecordId = signal<string | null>(null);
   let nextObjectId = 1;
 
   const bump = () => { version.value += 1; };
@@ -274,6 +277,62 @@ export function createInstancerExplorerAdapter(): InstancerExplorerAdapter {
       };
     })
   });
+  const safeFileName = (label: string) => label.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "instancer-set";
+  const codeIdentifier = (label: string) => `${safeFileName(label).replace(/-([a-z0-9])/g, (_match: string, part: string) => part.toUpperCase()) || "instancerSet"}Placements`;
+  const snapshotJson = (snapshot: InstancerSetSnapshot<unknown>) => JSON.stringify(snapshot, null, 2);
+  const snapshotCode = (snapshot: InstancerSetSnapshot<unknown>) => {
+    const identifier = codeIdentifier(snapshot.label);
+    const placements = snapshot.instances.map((instance) => ({
+      id: instance.id,
+      transform: {
+        ...(instance.position ? { position: instance.position } : {}),
+        ...(instance.rotationEuler ? { rotationEuler: instance.rotationEuler } : {}),
+        ...(instance.scale ? { scale: instance.scale } : {})
+      },
+      ...(instance.color ? { color: instance.color } : {}),
+      ...(instance.visible !== undefined ? { visible: instance.visible } : {}),
+      ...(instance.metadata !== undefined ? { metadata: instance.metadata } : {})
+    }));
+    return `const ${identifier} = ${JSON.stringify(placements, null, 2)};
+
+const restoredIds = new Map<number, number>();
+
+for (const placement of ${identifier}) {
+  const id = instancerSet.create(placement.transform, placement.metadata);
+  restoredIds.set(placement.id, id);
+  if (placement.color) instancerSet.setColor?.(id, placement.color);
+  if (placement.visible !== undefined) instancerSet.setVisible(id, placement.visible);
+}
+`;
+  };
+  const restoreInstance = (record: RecordItem, snapshot: InstancerInstanceSnapshot<unknown>) => {
+    if (!readEntry(record, snapshot.id)) return false;
+    if (record.set.setTransform && (snapshot.position || snapshot.rotationEuler || snapshot.scale)) {
+      record.set.setTransform(snapshot.id, {
+        ...(snapshot.position ? { position: snapshot.position } : {}),
+        ...(snapshot.rotationEuler ? { rotationEuler: snapshot.rotationEuler } : {}),
+        ...(snapshot.scale ? { scale: snapshot.scale } : {})
+      });
+    } else {
+      if (snapshot.position && record.set.setPosition) record.set.setPosition(snapshot.id, snapshot.position);
+      if (snapshot.scale && record.set.setScale) record.set.setScale(snapshot.id, snapshot.scale);
+    }
+    if (snapshot.visible !== undefined && record.set.setVisible) record.set.setVisible(snapshot.id, snapshot.visible);
+    if (snapshot.color && record.set.setColor) record.set.setColor(snapshot.id, snapshot.color);
+    record.transformCache.delete(snapshot.id);
+    return true;
+  };
+  const resetInstance = (record: RecordItem, id: number) => {
+    const baseline = record.baseline?.instances.find((instance) => instance.id === id);
+    return baseline ? restoreInstance(record, baseline) : false;
+  };
+  const resetSet = (record: RecordItem) => {
+    let restored = 0;
+    for (const instance of record.baseline?.instances ?? []) {
+      if (restoreInstance(record, instance)) restored++;
+    }
+    return restored;
+  };
 
   const buildEntities = (): LiteEntity[] => {
     const groups = [...new Map(records.map((record) => [record.source, records.filter((item) => item.source === record.source)]))];
@@ -313,10 +372,40 @@ export function createInstancerExplorerAdapter(): InstancerExplorerAdapter {
   };
 
   const Panel = () => {
-    const { signals, refresh } = useExplorerRuntime();
+    const { signals, refresh, notifications } = useExplorerRuntime();
     version.value;
     const selectedId = signals.selectedEntityId.value;
     const entities = buildEntities();
+    const exportRecord = exportDialogRecordId.value ? records.find((record) => record.id === exportDialogRecordId.value) : undefined;
+    const copyText = async (text: string, message: string) => {
+      try {
+        await navigator.clipboard.writeText(text);
+        notifications.push(message, "info");
+      } catch {
+        notifications.push("Could not write to the clipboard.");
+      }
+    };
+    const downloadJson = (record: RecordItem) => {
+      const snapshot = buildSnapshot(record);
+      const blob = new Blob([snapshotJson(snapshot)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${safeFileName(record.label)}.instances.json`;
+      link.click();
+      URL.revokeObjectURL(url);
+      notifications.push(`Downloaded ${record.label} JSON`, "info");
+    };
+    const runAppSave = async (record: RecordItem) => {
+      if (!record.saveSet) return;
+      try {
+        await record.saveSet(buildSnapshot(record));
+        notifications.push(`Saved ${record.label}`, "info");
+        exportDialogRecordId.value = null;
+      } catch (error) {
+        notifications.push(error instanceof Error ? error.message : `Could not save ${record.label}.`);
+      }
+    };
     const toggle = (id: string) => {
       const next = new Set(expandedIds.value);
       if (next.has(id)) next.delete(id); else next.add(id);
@@ -343,6 +432,20 @@ export function createInstancerExplorerAdapter(): InstancerExplorerAdapter {
     };
     return <div class="ble-instancer-panel">
       {entities.length ? <div class="ble-instancer-tree" role="tree" aria-label="Instancer entities">{entities.map((entity) => <Row entity={entity} key={entity.id} />)}</div> : <div class="ble-empty">No Instancer sets are registered.</div>}
+      {exportRecord && <div class="ble-modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) exportDialogRecordId.value = null; }}>
+        <section class="ble-modal ble-instancer-export-modal" role="dialog" aria-modal="true" aria-labelledby="ble-instancer-export-title">
+          <header class="ble-modal-header">
+            <h2 id="ble-instancer-export-title">Save {exportRecord.label}</h2>
+            <button type="button" aria-label="Close Instancer export" onClick={() => { exportDialogRecordId.value = null; }}>x</button>
+          </header>
+          <div class="ble-export-actions">
+            <button type="button" onClick={() => void copyText(snapshotJson(buildSnapshot(exportRecord)), `Copied ${exportRecord.label} JSON`)}>Copy JSON</button>
+            <button type="button" onClick={() => void copyText(snapshotCode(buildSnapshot(exportRecord)), `Copied ${exportRecord.label} Instancer code`)}>Copy Instancer Code</button>
+            <button type="button" onClick={() => downloadJson(exportRecord)}>Download JSON</button>
+            <button type="button" disabled={!exportRecord.saveSet} onClick={() => void runAppSave(exportRecord)}>App Save</button>
+          </div>
+        </section>
+      </div>}
     </div>;
   };
 
@@ -358,7 +461,7 @@ export function createInstancerExplorerAdapter(): InstancerExplorerAdapter {
       if (records.some((record) => record.id === id)) throw new Error(`Instancer set id already registered: ${id}`);
       const label = options.label ?? sourceLabel;
       setIds.set(asObject, id);
-      records.push({
+      const record: RecordItem = {
         id,
         label,
         kind,
@@ -369,7 +472,9 @@ export function createInstancerExplorerAdapter(): InstancerExplorerAdapter {
         serializeMetadata: options.serializeMetadata as RecordItem["serializeMetadata"],
         saveSet: options.saveSet,
         transformCache: new Map()
-      });
+      };
+      record.baseline = buildSnapshot(record);
+      records.push(record);
       bump();
     },
 
@@ -388,7 +493,7 @@ export function createInstancerExplorerAdapter(): InstancerExplorerAdapter {
       if (entity.meta?.instancer === "source") {
         const group = records.filter((record) => record.source === entity.source);
         return [
-          { kind: "readonly", path: "source", label: "Source", value: entity.label, section: "Instancer" },
+          { kind: "entityRef", path: "source", label: "Source", value: entity.label, source: entity.source, section: "Instancer" },
           { kind: "readonly", path: "setCount", label: "Sets", value: String(group.length), section: "Instancer" },
           { kind: "readonly", path: "instanceCount", label: "Instances", value: String(group.reduce((sum, record) => sum + record.set.count, 0)), section: "Instancer" }
         ];
@@ -402,7 +507,7 @@ export function createInstancerExplorerAdapter(): InstancerExplorerAdapter {
           { kind: "readonly", path: "count", label: "Count", value: String(record.set.count), section: "Instancer" },
           { kind: "readonly", path: "visibleCount", label: "Visible", value: String(record.set.visibleCount), section: "Instancer" },
           { kind: "readonly", path: "capacity", label: "Capacity", value: String(record.set.capacity), section: "Instancer" },
-          { kind: "readonly", path: "source", label: "Source", value: record.sourceLabel, section: "Instancer" }
+          { kind: "entityRef", path: "source", label: "Source", value: record.sourceLabel, source: record.source, section: "Instancer" }
         ];
       }
       if (entity.meta?.instancer === "instance" && isInstanceSource(entity.source)) {
@@ -530,6 +635,7 @@ export function createInstancerExplorerAdapter(): InstancerExplorerAdapter {
         }
         const result = await (context.lite?.pickAsync ?? pickAsync)(picker, x, y);
         if (!result.hit || !result.pickedMesh || result.thinInstanceIndex < 0) return ok(null);
+        if (context.explorer?.userSettings?.instancerPickMode === "source") return ok(null);
         for (const record of records) {
           if (record.source !== result.pickedMesh) continue;
           const entry = readEntryBySlot(record, result.thinInstanceIndex);
@@ -557,15 +663,42 @@ export function createInstancerExplorerAdapter(): InstancerExplorerAdapter {
           void api.refresh();
         }
       }, {
-        id: "save-instancer-set",
-        label: "Save Set",
-        when: (entity) => !!entity && entity.meta?.instancer === "set" && !!findRecordBySetEntity(entity)?.saveSet,
+        id: "reset-instancer-instance",
+        label: "Reset Instance",
+        when: (entity) => !!entity && entity.meta?.instancer === "instance" && isInstanceSource(entity.source) && !!entity.source.record.baseline,
+        run: async (entity, _context, api) => {
+          if (!entity || !isInstanceSource(entity.source)) return;
+          const { record, id } = entity.source;
+          if (!resetInstance(record, id)) {
+            api.notify(`Could not reset ${entity.label}.`);
+            return;
+          }
+          api.notify(`Reset ${entity.label}`, "info");
+          await api.refresh();
+        }
+      }, {
+        id: "reset-instancer-set",
+        label: "Reset Set",
+        when: (entity) => !!entity && entity.meta?.instancer === "set" && !!findRecordBySetEntity(entity)?.baseline,
         run: async (entity, _context, api) => {
           if (!entity) return;
           const record = findRecordBySetEntity(entity);
-          if (!record?.saveSet) return;
-          await record.saveSet(buildSnapshot(record));
-          api.notify(`Saved ${record.label}`, "info");
+          if (!record) return;
+          const restored = resetSet(record);
+          api.notify(`Reset ${record.label} (${restored} instances)`, "info");
+          await api.refresh();
+        }
+      }, {
+        id: "save-instancer-set",
+        label: "Save Set",
+        when: (entity) => !!entity && entity.meta?.instancer === "set",
+        run: async (entity, _context, api) => {
+          if (!entity) return;
+          const record = findRecordBySetEntity(entity);
+          if (!record) return;
+          exportDialogRecordId.value = record.id;
+          api.openPanel("instancer");
+          bump();
         }
       }]
     }),

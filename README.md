@@ -12,7 +12,7 @@ The default adapter uses the `@babylonjs/lite` installation from your applicatio
 
 ## Use
 
-[Read the detailed User Guide](docs/user-guide.md).
+[Read the detailed User Guide](docs/user-guide.md). For Instancer integration, see the [Instancer Adapter guide](docs/instancer-adapter.md).
 
 ```ts
 import * as lite from "@babylonjs/lite";
@@ -77,7 +77,9 @@ The footer's **FPS** and **Frame interval** are calculated from browser animatio
 
 ## Instancer adapter
 
-`createInstancerExplorerAdapter()` lets applications register Instancer sets without adding every instance to the main Scene Explorer. Registered source meshes get an `I` row action. Clicking it opens the dedicated Instancer tab, where source meshes contain their registered sets and stable instance rows. When Pick is enabled, clicking a registered thin instance opens the Instancer tab and selects the corresponding stable instance row. `userSettings.instancer.pickMode` defaults to `"instance"`; when the Instancer adapter is not registered, normal Explorer picking selects the source mesh.
+`createInstancerExplorerAdapter()` lets applications register Instancer sets without adding every instance to the main Scene Explorer. Registered source meshes get an `I` row action that opens the dedicated Instancer tab. The tab shows source meshes, their registered sets, and stable instance rows. Source properties are clickable and jump back to the real mesh in Scene Explorer.
+
+See the [Instancer Adapter guide](docs/instancer-adapter.md) for setup, pick modes, editable instance properties, Save Set export choices, reset behavior, and register options.
 
 ```ts
 import { createInstancerExplorerAdapter, showLiteExplorer } from "babylon-lite-explorer";
@@ -96,14 +98,6 @@ showLiteExplorer(
   { adapters: [instancerAdapter] },
 );
 ```
-
-Selecting a set with `saveSet` registered shows a **Save Set** action. Explorer passes an `InstancerSetSnapshot` with the source mesh label and public source transform, plus stable instance IDs, current slots, visibility, optional positions, derived Euler rotation, derived scaling, optional colors, optional VAT clips, optional matrices, and serialized metadata. Explorer does not choose the storage format. Applications can also export directly:
-
-```ts
-const snapshot = instancerAdapter.exportSet(redBoxes);
-```
-
-The snapshot is intended as a convenient bridge back to Instancer code: save it as JSON, convert it into app-specific TypeScript data, or send it to a backend and recreate instances by iterating the stable IDs and transforms. Babylon Lite supports thin-instance colors for built-in PBR and Standard-style material paths, where the instance color is multiplied with the source material color; use neutral source materials when instance color edits should be visually obvious.
 
 ## Public API coverage
 
@@ -168,5 +162,6 @@ Vite builds the ESM library and CSS. Preact, Signals, and Babylon Lite are exter
 ## Further documentation
 
 - [Changelog](CHANGELOG.md)
+- [Instancer Adapter guide](docs/instancer-adapter.md)
 - [Babylon Lite 1.10.0 public API inventory](docs/babylon-lite-api-inventory.md)
 - [Babylon Lite 1.4.0 migration notes](docs/babylon-lite-1.4.0-migration.md)

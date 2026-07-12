@@ -1,4 +1,5 @@
 import { useEffect, useState } from "preact/hooks";
+import type { LiteEntity } from "../adapter/LiteSceneAdapter";
 import type { PropertyDescriptor } from "../adapter/propertyDescriptors";
 import { useExplorerRuntime } from "./runtime";
 
@@ -13,7 +14,15 @@ export function formatEditorNumber(value: number, step?: number): string {
 }
 
 export function PropertyEditor({ descriptor }: { descriptor: PropertyDescriptor }) {
-  const { refresh } = useExplorerRuntime();
+  const { signals, refresh, shell } = useExplorerRuntime();
+  if (descriptor.kind === "entityRef") {
+    const target = findEntityBySource([...signals.tree.value, ...signals.extensionEntities.value], descriptor.source);
+    return <button class="ble-property-link" type="button" disabled={!target} title={descriptor.value} onClick={() => {
+      if (!target) return;
+      shell.selectPane("scene-explorer");
+      void refresh.select(target.id);
+    }}>{descriptor.value}</button>;
+  }
   if (descriptor.kind === "readonly" || descriptor.readonly) {
     const displayed = descriptor.kind === "number" ? formatEditorNumber(descriptor.value, descriptor.step) : String(descriptor.value);
     return <span class="ble-readonly" title={String(descriptor.value)}>{displayed}</span>;
@@ -25,6 +34,15 @@ export function PropertyEditor({ descriptor }: { descriptor: PropertyDescriptor 
   if (descriptor.kind === "vector3" || descriptor.kind === "color3" || descriptor.kind === "color4") return <TupleEditor descriptor={descriptor} />;
   if (descriptor.kind === "number") return <ScalarEditor descriptor={descriptor} />;
   return <TextEditor descriptor={descriptor} />;
+}
+
+function findEntityBySource(entities: readonly LiteEntity[], source: unknown): LiteEntity | null {
+  for (const entity of entities) {
+    if (entity.source === source) return entity;
+    const child = entity.children ? findEntityBySource(entity.children, source) : null;
+    if (child) return child;
+  }
+  return null;
 }
 
 function TextEditor({ descriptor }: { descriptor: Extract<PropertyDescriptor, { kind: "text" }> }) {

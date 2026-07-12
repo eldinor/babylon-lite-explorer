@@ -103,6 +103,7 @@ showLiteExplorer(
   {
     adapters: [instancerAdapter],
     features: { canvasPicking: true },
+    userSettings: { picking: { enabled: true } },
     userGuideUrl: demoUrl("user-guide/"),
   },
 );

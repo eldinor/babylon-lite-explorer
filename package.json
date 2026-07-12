@@ -2,6 +2,18 @@
   "name": "babylon-lite-explorer",
   "version": "0.4.1",
   "description": "A small, public-API-only explorer for Babylon Lite scenes",
+  "keywords": [
+    "babylon",
+    "babylon-lite",
+    "babylonjs",
+    "explorer",
+    "inspector",
+    "scene-inspector",
+    "webgpu",
+    "preact",
+    "instancer",
+    "3d"
+  ],
   "homepage": "https://explorer.babylonpress.org/",
   "license": "MIT",
   "author": {

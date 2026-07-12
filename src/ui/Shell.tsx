@@ -149,6 +149,8 @@ function SelectionBar() {
     "focus-selected": "Focus",
     "play-animation": "PLAY",
     "stop-animation": "STOP",
+    "reset-instancer-instance": "Reset",
+    "reset-instancer-set": "Reset Set",
     "save-instancer-set": "Save Set"
   };
   const actions = selected ? commands.list(selected).filter((command) => command.id in actionLabels) : [];
@@ -184,7 +186,9 @@ function LinksFooter() {
   const { userGuideUrl } = useExplorerRuntime();
   const [settingsOpen, setSettingsOpen] = useState(false);
   return <footer class="ble-links-footer">
-    <button class="ble-footer-settings" type="button" title="Open User Settings" aria-label="Open User Settings" onClick={() => setSettingsOpen(true)}>⚙</button>
+    <button class="ble-footer-settings" type="button" title="Open User Settings" aria-label="Open User Settings" onClick={() => setSettingsOpen(true)}>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M19.4 13.5c.1-.5.1-1 .1-1.5s0-1-.1-1.5l2-1.5-2-3.5-2.4 1a7 7 0 0 0-2.5-1.5L14.2 2h-4l-.4 2.5A7 7 0 0 0 7.4 6L5 5 3 8.5l2 1.5a8 8 0 0 0 0 3l-2 1.5L5 18l2.4-1a7 7 0 0 0 2.4 1.5l.4 2.5h4l.4-2.5A7 7 0 0 0 17 17l2.4 1 2-3.5-2-1ZM12 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7Z"/></svg>
+    </button>
     <a class="ble-footer-help" href={userGuideUrl} target="_blank" rel="noreferrer" title="Open User Guide" aria-label="Open User Guide">?</a>
     <a class="ble-footer-logo" href="https://babylonpress.org/" target="_blank" rel="noreferrer" title="Created by BabylonPress"><img src={bpLogoUrl} alt="BabylonPress" /></a>
     <a class="ble-footer-github" href="https://github.com/eldinor/babylon-lite-explorer" target="_blank" rel="noreferrer" title="Babylon Lite Explorer on GitHub" aria-label="Babylon Lite Explorer on GitHub"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .7a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2.23c-3.22.7-3.9-1.37-3.9-1.37-.52-1.34-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.57-.29-5.27-1.28-5.27-5.69 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.16 1.18a10.9 10.9 0 0 1 5.76 0c2.19-1.49 3.16-1.18 3.16-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.83 1.19 3.09 0 4.42-2.71 5.39-5.29 5.68.42.36.79 1.07.79 2.16v3.2c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .7Z"/></svg></a>
@@ -202,35 +206,41 @@ function UserSettingsModal({ onClose }: { onClose(): void }) {
         <button type="button" aria-label="Close User Settings" onClick={onClose}>x</button>
       </header>
       <div class="ble-settings-grid">
-        <label>
-          <span>Theme</span>
-          <select value={signals.theme.value} onChange={(event) => setTheme(event.currentTarget.value === "light" ? "light" : "dark")}>
-            <option value="dark">Dark</option>
-            <option value="light">Light</option>
-          </select>
-        </label>
-        <label>
-          <span>Layout</span>
-          <select value={signals.layout.value} onChange={(event) => setLayout(event.currentTarget.value === "split" ? "split" : "single")}>
-            <option value="single">Single</option>
-            <option value="split">Split</option>
-          </select>
-        </label>
-        <label class="ble-settings-check">
-          <input type="checkbox" checked={signals.pickingActive.value} disabled={!signals.pickingAvailable.value} onChange={(event) => setPickingActive(event.currentTarget.checked)} />
-          <span>Pick</span>
-        </label>
-        <label class="ble-settings-check">
-          <input type="checkbox" checked={settings.confirmEntityRemoval} onChange={(event) => setConfirmEntityRemoval(event.currentTarget.checked)} />
-          <span>Confirm delete</span>
-        </label>
-        <label>
-          <span>Instancer pick</span>
-          <select value={settings.instancerPickMode} onChange={(event) => setInstancerPickMode(event.currentTarget.value === "source" ? "source" : "instance")}>
-            <option value="instance">Instance</option>
-            <option value="source">Source</option>
-          </select>
-        </label>
+        <section class="ble-settings-section">
+          <h3>General</h3>
+          <label>
+            <span>Theme</span>
+            <select value={signals.theme.value} onChange={(event) => setTheme(event.currentTarget.value === "light" ? "light" : "dark")}>
+              <option value="dark">Dark</option>
+              <option value="light">Light</option>
+            </select>
+          </label>
+          <label>
+            <span>Layout</span>
+            <select value={signals.layout.value} onChange={(event) => setLayout(event.currentTarget.value === "split" ? "split" : "single")}>
+              <option value="single">Single</option>
+              <option value="split">Split</option>
+            </select>
+          </label>
+          <label class="ble-settings-check">
+            <input type="checkbox" checked={signals.pickingActive.value} disabled={!signals.pickingAvailable.value} onChange={(event) => setPickingActive(event.currentTarget.checked)} />
+            <span>Pick</span>
+          </label>
+          <label class="ble-settings-check">
+            <input type="checkbox" checked={settings.confirmEntityRemoval} onChange={(event) => setConfirmEntityRemoval(event.currentTarget.checked)} />
+            <span>Confirm delete</span>
+          </label>
+        </section>
+        <section class="ble-settings-section" data-adapter-settings="instancer">
+          <h3>Instancer</h3>
+          <label>
+            <span>Pick mode</span>
+            <select value={settings.instancerPickMode} onChange={(event) => setInstancerPickMode(event.currentTarget.value === "source" ? "source" : "instance")}>
+              <option value="instance">Instance</option>
+              <option value="source">Source</option>
+            </select>
+          </label>
+        </section>
       </div>
     </section>
   </div>;
