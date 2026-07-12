@@ -1,5 +1,5 @@
 import { expect, it, vi } from "vitest";
-import { waitFor } from "@testing-library/preact";
+import { fireEvent, waitFor } from "@testing-library/preact";
 import { showLiteExplorer } from "../src/api/showLiteExplorer";
 import { createInstancerExplorerAdapter } from "../src/adapter/instancer/createInstancerExplorerAdapter";
 import type { LiteSceneAdapter } from "../src/adapter/LiteSceneAdapter";
@@ -233,16 +233,31 @@ it("opens the Instancer panel from a registered source mesh row action", async (
     getVisible: () => true,
     setVisible: vi.fn(),
     getPosition: (id: number) => id === 1 ? [1, 2, 3] : [4, 5, 6],
-    getMatrix: (id: number) => Array.from({ length: 16 }, (_, index) => index + id)
+    setTransform: vi.fn(),
+    setScale: vi.fn(),
+    getColor: (id: number) => id === 1 ? [1, 0, 0, 1] : [0, 0, 1, 1],
+    setColor: vi.fn(),
+    getClip: () => "Idle",
+    getMatrix: (id: number) => id === 1
+      ? [1, 0, 0, 0, 0, 2, 0, 0, 0, 0, 3, 0, 1, 2, 3, 1]
+      : [2, 0, 0, 0, 0, 2, 0, 0, 0, 0, 2, 0, 4, 5, 6, 1]
   };
   instancerAdapter.register(set, { label: "Sphere instances", saveSet });
   expect(instancerAdapter.exportSet(set)).toMatchObject({
     label: "Sphere instances",
     instances: [
-      { id: 1, slot: 0, label: "First stable instance", visible: true, position: [1, 2, 3] },
-      { id: 2, slot: 1, label: "Second stable instance", visible: true, position: [4, 5, 6] }
+      { id: 1, slot: 0, label: "First stable instance", visible: true, position: [1, 2, 3], scale: [1, 2, 3], color: [1, 0, 0, 1], clip: "Idle" },
+      { id: 2, slot: 1, label: "Second stable instance", visible: true, position: [4, 5, 6], scale: [2, 2, 2], color: [0, 0, 1, 1], clip: "Idle" }
     ]
   });
+  const directInstance = (await instancerAdapter.getExtensionEntities?.({ scene: data.scene, engine: {} }) ?? [])
+    .flatMap((entity) => entity.children ?? [])
+    .flatMap((entity) => entity.children ?? [])
+    .find((entity) => entity.label === "First stable instance")!;
+  await instancerAdapter.setProperty?.(directInstance, "rotationEuler", [0.25, 0, 0], { scene: data.scene, engine: {} });
+  expect(instancerAdapter.getProperties(directInstance, { scene: data.scene, engine: {} }))
+    .toEqual(expect.arrayContaining([expect.objectContaining({ path: "rotationEuler", value: [0.25, 0, 0] })]));
+  await instancerAdapter.setProperty?.(directInstance, "rotationEuler", [0, 0, 0], { scene: data.scene, engine: {} });
 
   const handle = showLiteExplorer({ scene: data.scene, engine: {} }, { adapters: [instancerAdapter] });
   await handle.ready;
@@ -263,7 +278,33 @@ it("opens the Instancer panel from a registered source mesh row action", async (
   await waitFor(() => {
     expect(document.querySelector(".ble-selection-title")?.textContent).toBe("First stable instance");
     const labels = [...document.querySelectorAll<HTMLLabelElement>(".ble-property-row > label")].map((label) => label.textContent);
-    expect(labels).toEqual(expect.arrayContaining(["Instance ID", "Current slot", "Visible", "Position", "Metadata"]));
+    expect(labels).toEqual(expect.arrayContaining(["Instance ID", "Current slot", "Visible", "Position", "Rotation", "Scaling", "Color", "Clip", "Metadata"]));
+  });
+  const rotationX = document.querySelector<HTMLInputElement>('input[aria-label="Rotation X"]');
+  const rotationY = document.querySelector<HTMLInputElement>('input[aria-label="Rotation Y"]');
+  const rotationZ = document.querySelector<HTMLInputElement>('input[aria-label="Rotation Z"]');
+  expect(rotationX?.value).toBe("0");
+  expect(rotationY?.value).toBe("0");
+  expect(rotationZ?.value).toBe("0");
+  fireEvent.focus(rotationX!);
+  fireEvent.input(rotationX!, { target: { value: "0.5" } });
+  await waitFor(() => {
+    expect(set.setTransform).toHaveBeenCalledWith(1, expect.objectContaining({ rotationEuler: [0.5, 0, 0] }));
+    expect(document.querySelector<HTMLInputElement>('input[aria-label="Rotation X"]')?.value).toBe("0.5");
+    expect(document.querySelector<HTMLInputElement>('input[aria-label="Rotation Y"]')?.value).toBe("0");
+    expect(document.querySelector<HTMLInputElement>('input[aria-label="Rotation Z"]')?.value).toBe("0");
+  });
+  fireEvent.blur(rotationX!);
+  const colorY = document.querySelector<HTMLInputElement>('input[aria-label="Color Y"]');
+  expect(colorY?.value).toBe("0");
+  fireEvent.focus(colorY!);
+  fireEvent.input(colorY!, { target: { value: "0.75" } });
+  await waitFor(() => {
+    expect(set.setColor).toHaveBeenCalledWith(1, [1, 0.75, 0, 1]);
+    expect(document.querySelector<HTMLInputElement>('input[aria-label="Color X"]')?.value).toBe("1");
+    expect(document.querySelector<HTMLInputElement>('input[aria-label="Color Y"]')?.value).toBe("0.75");
+    expect(document.querySelector<HTMLInputElement>('input[aria-label="Color Z"]')?.value).toBe("0");
+    expect(document.querySelector<HTMLInputElement>('input[aria-label="Color W"]')?.value).toBe("1");
   });
   [...document.querySelectorAll<HTMLButtonElement>(".ble-instancer-tree-label")]
     .find((button) => button.textContent === "Sphere instances")

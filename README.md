@@ -93,17 +93,17 @@ showLiteExplorer(
 );
 ```
 
-Selecting a set with `saveSet` registered shows a **Save Set** action. Explorer passes an `InstancerSetSnapshot` with stable instance IDs, current slots, visibility, optional positions, optional matrices, and serialized metadata. Explorer does not choose the storage format. Applications can also export directly:
+Selecting a set with `saveSet` registered shows a **Save Set** action. Explorer passes an `InstancerSetSnapshot` with stable instance IDs, current slots, visibility, optional positions, derived Euler rotation, derived scaling, optional colors, optional VAT clips, optional matrices, and serialized metadata. Explorer does not choose the storage format. Applications can also export directly:
 
 ```ts
 const snapshot = instancerAdapter.exportSet(redBoxes);
 ```
 
-The snapshot is intended as a convenient bridge back to Instancer code: save it as JSON, convert it into app-specific TypeScript data, or send it to a backend and recreate instances by iterating the stable IDs and transforms.
+The snapshot is intended as a convenient bridge back to Instancer code: save it as JSON, convert it into app-specific TypeScript data, or send it to a backend and recreate instances by iterating the stable IDs and transforms. Babylon Lite supports thin-instance colors for built-in PBR and Standard-style material paths, where the instance color is multiplied with the source material color; use neutral source materials when instance color edits should be visually obvious.
 
 ## Public API coverage
 
-The default adapter currently exposes the public scene camera, meshes, mesh hierarchy, lights, derived materials, and animation groups. Material properties identify PBR, Standard, Node, Shader, material-view, and undetermined/custom families from their documented public fields. PBR materials expose environment intensity; Standard materials expose their public colors, alpha, specular power, and texture levels. The adapter edits documented scene-node transforms and visibility, base camera projection/viewport fields, recognized arc-rotate/free/geospatial camera fields, and documented light fields. Mesh deletion is routed through Babylon Lite's public `removeFromScene(scene, mesh)` API; optional confirmation is controlled by `confirmEntityRemoval`. Transform node, light, and camera removal are not exposed by the default adapter until Babylon Lite provides an official public removal method for those entity types. See [the audited API inventory](docs/babylon-lite-api-inventory.md).
+The default adapter currently exposes the public scene camera, meshes, mesh hierarchy, lights, derived materials, and animation groups. Material properties identify PBR, Standard, Node, Shader, material-view, and undetermined/custom families from their documented public fields. PBR and Standard materials are supported for public editing: PBR materials expose environment intensity and their public factors; Standard materials expose their public colors, alpha, specular power, and texture levels. The adapter edits documented scene-node transforms and visibility, base camera projection/viewport fields, recognized arc-rotate/free/geospatial camera fields, and documented light fields. Mesh deletion is routed through Babylon Lite's public `removeFromScene(scene, mesh)` API; optional confirmation is controlled by `confirmEntityRemoval`. Transform node, light, and camera removal are not exposed by the default adapter until Babylon Lite provides an official public removal method for those entity types. See [the audited API inventory](docs/babylon-lite-api-inventory.md).
 
 Mesh properties include a **Deformation** section showing whether the mesh is skinned, its public bone count, whether morph targets are present, the morph-target count, and current morph weights. Morph weights refresh while that mesh is selected. Skeletal animation usually changes bone matrices and deforms vertices without changing the mesh's own position, rotation, or scaling.
 

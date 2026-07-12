@@ -30,7 +30,7 @@ Babylon Lite 1.10.0 exposes `setSceneImageProcessing()` updates for exposure, co
 
 ### Materials
 
-PBR materials expose their factors and environment intensity. Standard materials expose their colors, alpha, specular power, and texture levels. The material family is inferred from documented public fields.
+PBR and Standard materials are supported through their documented public fields. PBR materials expose their factors and environment intensity. Standard materials expose their colors, alpha, specular power, and texture levels. The material family is inferred from documented public fields.
 
 An empty PBR material has no public family discriminator and may therefore appear as **Undetermined / Custom**.
 
@@ -52,9 +52,9 @@ The Instancer tab is a tree:
 - Registered sets appear under their source.
 - Stable instance rows appear under each set.
 
-Selecting a source, set, or instance updates the Properties panel. Instance visibility is editable when the set exposes `setVisible(id, value)`. Position is editable when the set exposes `getPosition(id)` and `setPosition(id, position)`.
+Selecting a source, set, or instance updates the Properties panel. Instance visibility is editable when the set exposes `setVisible(id, value)`. Position is editable when the set exposes `getPosition(id)` and `setPosition(id, position)`. Rotation and scaling are shown when the set exposes `getMatrix(id)`; rotation is editable through `setTransform(id, { rotationEuler })`, and scaling is editable through `setScale(id, scale)` or `setTransform(id, { scale })`. Per-instance color is shown and editable when `getColor(id)` and `setColor(id, color)` exist. Babylon Lite's thin-instance color path is supported for built-in PBR and Standard-style materials and multiplies per-instance color with the source material color, so white or neutral source materials make color edits visually obvious. VAT clip is shown when `getClip(id)` exists.
 
-If a registered set includes `saveSet`, selecting that set shows **Save Set** in the selected-entity action bar. The callback receives an `InstancerSetSnapshot` with stable instance IDs, current slots, labels, visibility, optional positions, optional matrices, and metadata serialized through `serializeMetadata` when provided. Explorer does not decide how to persist it.
+If a registered set includes `saveSet`, selecting that set shows **Save Set** in the selected-entity action bar. The callback receives an `InstancerSetSnapshot` with stable instance IDs, current slots, labels, visibility, optional positions, derived Euler rotation, derived scaling, optional colors, optional VAT clips, optional matrices, and metadata serialized through `serializeMetadata` when provided. Explorer does not decide how to persist it.
 
 Applications can also call `instancerAdapter.exportSet(set)` directly and use the same snapshot in Instancer code, for example by saving JSON or converting it into app-specific placement data.
 

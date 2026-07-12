@@ -26,6 +26,15 @@ export type InstancerSetLike<TMetadata = unknown> = {
   getMatrix?(id: number): ArrayLike<number>;
   getPosition?(id: number): ArrayLike<number>;
   setPosition?(id: number, position: readonly [number, number, number]): void;
+  setTransform?(id: number, transform: {
+    position?: readonly [number, number, number];
+    rotationEuler?: readonly [number, number, number];
+    scale?: readonly [number, number, number] | number;
+  }): void;
+  setScale?(id: number, scale: readonly [number, number, number] | number): void;
+  getColor?(id: number): ArrayLike<number>;
+  setColor?(id: number, color: readonly [number, number, number, number]): void;
+  getClip?(id: number): string | undefined;
 };
 
 export type InstancerInstanceSnapshot<TMetadata = unknown> = {
@@ -34,6 +43,10 @@ export type InstancerInstanceSnapshot<TMetadata = unknown> = {
   label: string;
   visible?: boolean;
   position?: readonly [number, number, number];
+  rotationEuler?: readonly [number, number, number];
+  scale?: readonly [number, number, number];
+  color?: readonly [number, number, number, number];
+  clip?: string;
   matrix?: readonly number[];
   metadata?: TMetadata;
 };
@@ -72,6 +85,10 @@ type RecordItem = {
   getLabel?: (id: number, metadata: unknown, slot: number | undefined) => string;
   serializeMetadata?: (metadata: unknown, id: number) => unknown;
   saveSet?: (snapshot: InstancerSetSnapshot<unknown>) => void | Promise<void>;
+  transformCache: Map<number, {
+    rotationEuler?: readonly [number, number, number];
+    scale?: readonly [number, number, number];
+  }>;
 };
 
 type InstanceSource = {
@@ -128,6 +145,44 @@ function tuple3(value: ArrayLike<number> | undefined): readonly [number, number,
   return [Number(value[0]), Number(value[1]), Number(value[2])];
 }
 
+function tuple4(value: ArrayLike<number> | undefined): readonly [number, number, number, number] | undefined {
+  if (!value || value.length < 4) return undefined;
+  return [Number(value[0]), Number(value[1]), Number(value[2]), Number(value[3])];
+}
+
+function matrixValues(value: ArrayLike<number> | undefined): number[] | undefined {
+  if (!value || value.length < 16) return undefined;
+  const matrix = Array.from(value, Number).slice(0, 16);
+  return matrix.every(Number.isFinite) ? matrix : undefined;
+}
+
+function decomposeMatrix(value: ArrayLike<number> | undefined): { rotationEuler: readonly [number, number, number]; scale: readonly [number, number, number] } | undefined {
+  const matrix = matrixValues(value);
+  if (!matrix) return undefined;
+  const sx = Math.hypot(matrix[0], matrix[1], matrix[2]);
+  const sy = Math.hypot(matrix[4], matrix[5], matrix[6]);
+  const sz = Math.hypot(matrix[8], matrix[9], matrix[10]);
+  if (!sx || !sy || !sz) return { rotationEuler: [0, 0, 0], scale: [sx, sy, sz] };
+  const r00 = matrix[0] / sx;
+  const r10 = matrix[1] / sx;
+  const r20 = matrix[2] / sx;
+  const r21 = matrix[6] / sy;
+  const r22 = matrix[10] / sz;
+  const cy = Math.hypot(r00, r10);
+  const rotationEuler: readonly [number, number, number] = cy > 1e-6
+    ? [Math.atan2(r21, r22), Math.atan2(-r20, cy), Math.atan2(r10, r00)]
+    : [Math.atan2(-matrix[9] / sz, matrix[5] / sy), Math.atan2(-r20, cy), 0];
+  return { rotationEuler, scale: [sx, sy, sz] };
+}
+
+function isFiniteTuple3(value: unknown): value is readonly [number, number, number] {
+  return Array.isArray(value) && value.length === 3 && value.every((part) => typeof part === "number" && Number.isFinite(part));
+}
+
+function isFiniteTuple4(value: unknown): value is readonly [number, number, number, number] {
+  return Array.isArray(value) && value.length === 4 && value.every((part) => typeof part === "number" && Number.isFinite(part));
+}
+
 export function createInstancerExplorerAdapter(): InstancerExplorerAdapter {
   const records: RecordItem[] = [];
   const setIds = new WeakMap<object, string>();
@@ -168,14 +223,24 @@ export function createInstancerExplorerAdapter(): InstancerExplorerAdapter {
     instances: [...record.set.entries()].sort((a, b) => a.id - b.id).map((entry) => {
       const metadata = readMetadata(record, entry);
       const position = tuple3(record.set.getPosition?.(entry.id));
-      const matrix = record.set.getMatrix?.(entry.id);
+      const matrix = matrixValues(record.set.getMatrix?.(entry.id));
+      const transform = decomposeMatrix(matrix);
+      const cachedTransform = record.transformCache.get(entry.id);
+      const color = tuple4(record.set.getColor?.(entry.id));
+      const clip = record.set.getClip?.(entry.id);
       return {
         id: entry.id,
         slot: entry.slot,
         label: instanceLabel(record, entry),
         visible: record.set.getVisible?.(entry.id),
         ...(position ? { position } : {}),
-        ...(matrix ? { matrix: Array.from(matrix, Number) } : {}),
+        ...(transform || cachedTransform ? {
+          ...(cachedTransform?.rotationEuler ?? transform?.rotationEuler ? { rotationEuler: cachedTransform?.rotationEuler ?? transform!.rotationEuler } : {}),
+          ...(cachedTransform?.scale ?? transform?.scale ? { scale: cachedTransform?.scale ?? transform!.scale } : {})
+        } : {}),
+        ...(color ? { color } : {}),
+        ...(clip ? { clip } : {}),
+        ...(matrix ? { matrix } : {}),
         metadata: record.serializeMetadata?.(metadata, entry.id) ?? metadata
       };
     })
@@ -273,7 +338,8 @@ export function createInstancerExplorerAdapter(): InstancerExplorerAdapter {
         set: set as InstancerSetLike,
         getLabel: options.getLabel as RecordItem["getLabel"],
         serializeMetadata: options.serializeMetadata as RecordItem["serializeMetadata"],
-        saveSet: options.saveSet
+        saveSet: options.saveSet,
+        transformCache: new Map()
       });
       bump();
     },
@@ -325,6 +391,30 @@ export function createInstancerExplorerAdapter(): InstancerExplorerAdapter {
         if (position) {
           properties.push({ kind: "vector3", path: "position", label: "Position", value: position, section: "Transform" });
         }
+        const transform = decomposeMatrix(record.set.getMatrix?.(id));
+        const cachedTransform = record.transformCache.get(id);
+        if (transform) {
+          const rotationEuler = cachedTransform?.rotationEuler ?? transform.rotationEuler;
+          const scale = cachedTransform?.scale ?? transform.scale;
+          if (record.set.setTransform) {
+            properties.push({ kind: "vector3", path: "rotationEuler", label: "Rotation", value: rotationEuler, section: "Transform" });
+          } else {
+            properties.push({ kind: "readonly", path: "rotationEuler", label: "Rotation", value: rotationEuler.map((part) => part.toFixed(3)).join(", "), section: "Transform" });
+          }
+          if (record.set.setScale || record.set.setTransform) {
+            properties.push({ kind: "vector3", path: "scale", label: "Scaling", value: scale, section: "Transform" });
+          } else {
+            properties.push({ kind: "readonly", path: "scale", label: "Scaling", value: scale.map((part) => part.toFixed(3)).join(", "), section: "Transform" });
+          }
+        }
+        const color = tuple4(record.set.getColor?.(id));
+        if (color) {
+          properties.push(record.set.setColor
+            ? { kind: "color4", path: "color", label: "Color", value: color, section: "Instancer" }
+            : { kind: "readonly", path: "color", label: "Color", value: color.map((part) => part.toFixed(3)).join(", "), section: "Instancer" });
+        }
+        const clip = record.set.getClip?.(id);
+        if (clip) properties.push({ kind: "readonly", path: "clip", label: "Clip", value: clip, section: "Instancer" });
         properties.push({ kind: "readonly", path: "metadata", label: "Metadata", value: metadataSummary(record.serializeMetadata?.(metadata, id) ?? metadata), section: "Metadata" });
         return properties;
       }
@@ -342,8 +432,51 @@ export function createInstancerExplorerAdapter(): InstancerExplorerAdapter {
       }
       if (path === "position") {
         if (!record.set.setPosition) return fail("unsupported", "This instance set does not expose position writes.");
-        if (!Array.isArray(value) || value.length !== 3 || !value.every((part) => typeof part === "number" && Number.isFinite(part))) return fail("invalid", "Position must be a vector3.");
-        record.set.setPosition(id, value as [number, number, number]);
+        if (!isFiniteTuple3(value)) return fail("invalid", "Position must be a vector3.");
+        record.set.setPosition(id, value);
+        bump();
+        return ok();
+      }
+      if (path === "rotationEuler") {
+        if (!record.set.setTransform) return fail("unsupported", "This instance set does not expose transform writes.");
+        if (!isFiniteTuple3(value)) return fail("invalid", "Rotation must be a vector3.");
+        const current = decomposeMatrix(record.set.getMatrix?.(id));
+        const cached = record.transformCache.get(id);
+        const position = tuple3(record.set.getPosition?.(id));
+        const scale = cached?.scale ?? current?.scale;
+        record.set.setTransform(id, {
+          ...(position ? { position } : {}),
+          rotationEuler: value,
+          ...(scale ? { scale } : {})
+        });
+        record.transformCache.set(id, { ...cached, rotationEuler: value });
+        bump();
+        return ok();
+      }
+      if (path === "scale") {
+        if (!isFiniteTuple3(value)) return fail("invalid", "Scaling must be a vector3.");
+        const cached = record.transformCache.get(id);
+        if (record.set.setScale) {
+          record.set.setScale(id, value);
+        } else if (record.set.setTransform) {
+          const current = decomposeMatrix(record.set.getMatrix?.(id));
+          const position = tuple3(record.set.getPosition?.(id));
+          record.set.setTransform(id, {
+            ...(position ? { position } : {}),
+            ...(cached?.rotationEuler ?? current?.rotationEuler ? { rotationEuler: cached?.rotationEuler ?? current!.rotationEuler } : {}),
+            scale: value
+          });
+        } else {
+          return fail("unsupported", "This instance set does not expose scaling writes.");
+        }
+        record.transformCache.set(id, { ...cached, scale: value });
+        bump();
+        return ok();
+      }
+      if (path === "color") {
+        if (!record.set.setColor) return fail("unsupported", "This instance set does not expose color writes.");
+        if (!isFiniteTuple4(value)) return fail("invalid", "Color must be a color4.");
+        record.set.setColor(id, value);
         bump();
         return ok();
       }

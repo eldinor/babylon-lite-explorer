@@ -34,6 +34,8 @@ The adapter calls `markMaterialUboDirty()` after supported material writes.
 - Standard: `name`, `diffuseColor`, `specularColor`, `specularPower`, `emissiveColor`, `ambientColor`, `alpha`, `bumpLevel`, `ambientTexLevel`, `lightmapLevel`, `opacityLevel`, and `reflectionLevel`.
 - Node, Shader, material-view, and undetermined/custom families are identified where their public shape permits it, but their family-specific values are not edited by the default adapter.
 
+Thin-instance per-instance colors are supported by Babylon Lite's built-in PBR and Standard-style shader paths when the mesh has a color buffer. The shader multiplies the instance color into the source material color, so color edits are most visible when the source material is white or otherwise neutral.
+
 An empty `createPbrMaterial()` result still has no stable public family discriminator. See [the material-type API issue](babylon-lite-material-type-issue.md).
 
 ## Discovered texture slots

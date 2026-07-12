@@ -279,6 +279,10 @@ Instance detail/edit fields:
 - Current slot, read-only
 - Visible, editable
 - Position, editable when the set supports it
+- Rotation, derived from matrix and editable through `setTransform` when the set supports it
+- Scaling, derived from matrix and editable through `setScale` or `setTransform` when the set supports it
+- Color, editable when the set supports `getColor` and `setColor`
+- VAT clip, read-only when the set supports `getClip`
 - Metadata, read-only or serialized through `serializeMetadata`
 
 Set actions:
@@ -286,7 +290,7 @@ Set actions:
 - A selected set can expose **Save Set** through the same command/action system as Delete and the Scene Explorer `I` action.
 - `saveSet(snapshot)` receives a stable `InstancerSetSnapshot` built from registered set data.
 - `instancerAdapter.exportSet(set)` returns the same snapshot for code-driven export.
-- The snapshot keeps stable instance IDs separate from current runtime slots, and may include visibility, position, matrix, and serialized metadata.
+- The snapshot keeps stable instance IDs separate from current runtime slots, and may include visibility, position, derived Euler rotation, derived scaling, color, VAT clip, matrix, and serialized metadata.
 - Explorer should not choose the persistence format. Applications can save JSON, generate app-specific TypeScript data, or send the snapshot to a backend.
 
 Expected behavior:
@@ -303,6 +307,9 @@ Initial tests:
 - Current slot is diagnostic only.
 - Visibility edits call `setVisible(id, value)`.
 - Position edits call `setPosition(id, value)`.
+- Rotation edits call `setTransform(id, { rotationEuler })`.
+- Scaling edits call `setScale(id, scale)` when available, otherwise `setTransform(id, { scale })`.
+- Color edits call `setColor(id, color)`.
 - Save Set calls the registered `saveSet` callback with the exported snapshot.
 - `exportSet(set)` works without a UI click and fails clearly for unregistered sets.
 

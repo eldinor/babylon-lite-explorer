@@ -58,9 +58,12 @@ function ScalarEditor({ descriptor }: { descriptor: Extract<PropertyDescriptor, 
 
 function TupleEditor({ descriptor }: { descriptor: Extract<PropertyDescriptor, { kind: "vector3" | "color3" | "color4" }> }) {
   const { refresh } = useExplorerRuntime();
+  const [editing, setEditing] = useState(false);
   const [values, setValues] = useState(() => descriptor.value.map((value) => formatEditorNumber(value, 0.01)));
-  useEffect(() => setValues(descriptor.value.map((value) => formatEditorNumber(value, 0.01))), [descriptor.value]);
-  return <div class="ble-tuple">{values.map((value, index) => <input key={index} aria-label={`${descriptor.label} ${"XYZW"[index]}`} type="number" step="0.01" value={value} onInput={(event) => {
+  useEffect(() => {
+    if (!editing) setValues(descriptor.value.map((value) => formatEditorNumber(value, 0.01)));
+  }, [descriptor.value, editing]);
+  return <div class="ble-tuple">{values.map((value, index) => <input key={index} aria-label={`${descriptor.label} ${"XYZW"[index]}`} type="number" step="0.01" value={value} onFocus={() => setEditing(true)} onBlur={() => setEditing(false)} onInput={(event) => {
     const next = [...values];
     next[index] = event.currentTarget.value;
     setValues(next);
