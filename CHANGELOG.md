@@ -11,6 +11,8 @@ All notable changes to Babylon Lite Explorer are documented here.
 
 ### Changed
 
+- Upgraded the Babylon Lite peer and development dependency to 1.11.0.
+- Adopted Babylon Lite 1.11.0's official material-family API and PBR/Standard type guards while retaining structural fallbacks for custom adapters and test doubles.
 - Deprecated the legacy structural Instancer facade while retaining its entry-scanning compatibility path for this release.
 - Updated generated VAT restore code to use the VAT creation-options API and preserve clip names.
 - Made logical VAT picking use the transformed source-bounds center instead of the instance origin, so tall characters can be selected through their visible body.

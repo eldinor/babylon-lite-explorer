@@ -19,7 +19,7 @@ The runnable source is in [`examples/instancer-vat`](../examples/instancer-vat/)
 Install Explorer, Babylon Lite, and the optional Instancer integration peer:
 
 ```sh
-npm install babylon-lite-explorer @babylonjs/lite @litools/instancer@^0.3.1
+npm install babylon-lite-explorer @babylonjs/lite@^1.11.0 @litools/instancer@^0.3.1
 ```
 
 The Instancer package is optional for the base Explorer, but required by applications that import and use `createInstancerExplorerAdapter()`.

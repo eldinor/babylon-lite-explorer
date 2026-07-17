@@ -2,6 +2,9 @@ import {
   AcesToneMapping,
   createGpuPicker,
   disposePicker,
+  getMaterialFamily,
+  isPbrMaterial,
+  isStandardMaterial,
   markMaterialUboDirty,
   NeutralToneMapping,
   pickAsync,
@@ -190,7 +193,10 @@ type PublicPbrMaterial = Material & Partial<Pick<PbrMaterialProps,
 >>;
 
 function isPublicPbrMaterial(material: Material): material is PublicPbrMaterial {
-  return "baseColorFactor" in material || "metallicFactor" in material || "roughnessFactor" in material;
+  return isPbrMaterial(material)
+    || "baseColorFactor" in material
+    || "metallicFactor" in material
+    || "roughnessFactor" in material;
 }
 
 type PublicStandardMaterial = Material & Partial<Pick<StandardMaterialProps,
@@ -199,6 +205,7 @@ type PublicStandardMaterial = Material & Partial<Pick<StandardMaterialProps,
 >>;
 
 function isPublicStandardMaterial(material: Material): material is PublicStandardMaterial {
+  if (isStandardMaterial(material)) return true;
   const value = material as Material & Record<string, unknown>;
   return Array.isArray(value.diffuseColor) && Array.isArray(value.specularColor) && typeof value.specularPower === "number";
 }
@@ -211,6 +218,11 @@ function getPublicMaterialType(material: Material, visited = new Set<object>()):
     const sourceType = getPublicMaterialType(value.source as Material, visited);
     return `${sourceType} View`;
   }
+  const family = getMaterialFamily(material);
+  if (family === "pbr") return "PBR";
+  if (family === "standard") return "Standard";
+  if (family === "node") return "Node";
+  if (family === "shader") return "Shader";
   if (value.inputs && typeof value.inputs === "object") return "Node";
   if (typeof value.vertexSource === "string" && typeof value.fragmentSource === "string") return "Shader";
   if (isPublicPbrMaterial(material)) return "PBR";

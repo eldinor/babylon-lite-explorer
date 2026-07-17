@@ -72,7 +72,7 @@
           <p>Properties for the selected scene, camera, mesh, transform, light, material, texture, or animation group refresh when the application changes that object outside Explorer.</p>
           <p>When animation groups exist, the lowest Properties footer displays their count. Select <strong>Animation Groups N</strong> to open Scene Explorer, clear its filter, expand the relevant branch, select <strong>Animation Groups</strong>, and scroll it into view.</p>
           <h3>Scene</h3>
-          <p>Clear color, image-processing exposure and contrast, tone mapping, metadata, environment primary color, and environment Y rotation. Babylon Lite 1.10.0 exposes <code>setSceneImageProcessing()</code> updates for exposure, contrast, tone-mapping enabled state, and the Standard/ACES/Khronos PBR Neutral tone-mapping algorithm. Algorithm changes are visible when the selected algorithm is compiled into a fresh tone-mapped PBR pipeline; switching only the algorithm after a tone-mapped pipeline has already been cached can still reuse the previous shader in the current Lite package.</p>
+          <p>Clear color, image-processing exposure and contrast, tone mapping, metadata, environment primary color, and environment Y rotation. Babylon Lite 1.11.0 exposes <code>setSceneImageProcessing()</code> updates for exposure, contrast, tone-mapping enabled state, and the Standard/ACES/Khronos PBR Neutral tone-mapping algorithm. Algorithm changes are visible when the selected algorithm is compiled into a fresh tone-mapped PBR pipeline; switching only the algorithm after a tone-mapped pipeline has already been cached can still reuse the previous shader in the current Lite package.</p>
           <h3>Materials</h3>
           <p>PBR factors and environment intensity; Standard colors, alpha, specular power, and texture levels. The displayed family is inferred from public fields.</p>
           <h3>Mesh deformation</h3>
@@ -121,7 +121,7 @@
           <ul>
             <li>Environment textures cannot be discovered because the public scene has no texture collection or environment-texture field.</li>
             <li>Original texture URLs and preview pixels are not retained through the current public texture API.</li>
-            <li>An empty PBR material has no public family discriminator and may appear as Undetermined / Custom.</li>
+            <li>Material families are identified through Babylon Lite 1.11.0's public family API, with structural fallbacks for custom material-like objects.</li>
             <li>Export Scene is a diagnostic JSON snapshot because Babylon Lite exposes no public scene serializer.</li>
             <li>A custom adapter currently replaces the default adapter; future composition will allow additional application-owned entities.</li>
           </ul>

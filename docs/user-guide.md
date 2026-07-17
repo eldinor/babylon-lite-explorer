@@ -26,13 +26,13 @@ When animation groups exist, the lowest Properties footer displays their count. 
 
 Scene properties include clear color, fixed simulation delta, shadow-generator count, fog, clip plane, image-processing exposure and contrast, tone mapping, metadata, environment primary color, and environment Y rotation. Existing fog settings are editable; clip planes and shadow generators are currently diagnostic readouts.
 
-Babylon Lite 1.10.0 exposes `setSceneImageProcessing()` updates for exposure, contrast, tone-mapping enabled state, and the Standard/ACES/Khronos PBR Neutral tone-mapping algorithm. Algorithm changes are visible when the selected algorithm is compiled into a fresh tone-mapped PBR pipeline; switching only the algorithm after a tone-mapped pipeline has already been cached can still reuse the previous shader in the current Lite package.
+Babylon Lite 1.11.0 exposes `setSceneImageProcessing()` updates for exposure, contrast, tone-mapping enabled state, and the Standard/ACES/Khronos PBR Neutral tone-mapping algorithm. Algorithm changes are visible when the selected algorithm is compiled into a fresh tone-mapped PBR pipeline; switching only the algorithm after a tone-mapped pipeline has already been cached can still reuse the previous shader in the current Lite package.
 
 ### Materials
 
 PBR and Standard materials are supported through their documented public fields. PBR materials expose their factors and environment intensity. Standard materials expose their colors, alpha, specular power, and texture levels. The material family is inferred from documented public fields.
 
-An empty PBR material has no public family discriminator and may therefore appear as **Undetermined / Custom**.
+Babylon Lite 1.11.0 exposes official material-family detection, so even an otherwise empty PBR material is identified as **PBR**.
 
 ### Mesh deformation
 
@@ -131,6 +131,6 @@ Environment intensity is a per-PBR-material property rather than a scene-level s
 - Environment textures cannot be discovered from the public scene.
 - Original texture URLs and preview pixels are not retained through the current public texture API.
 - Empty PBR materials cannot be reliably distinguished from custom empty materials.
-- Tone-mapping algorithm changes use Babylon Lite 1.10.0 `setSceneImageProcessing()`, but algorithm-only changes can reuse cached PBR WGSL after a tone-mapped pipeline already exists.
+- Tone-mapping algorithm changes use Babylon Lite 1.11.0 `setSceneImageProcessing()`, but algorithm-only changes can reuse cached PBR WGSL after a tone-mapped pipeline already exists.
 - Export Scene is a diagnostic JSON snapshot, not a scene serialization format.
 - A custom adapter currently replaces the default adapter instead of extending it.

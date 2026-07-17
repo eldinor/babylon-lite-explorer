@@ -55,6 +55,7 @@ describe("default adapter", () => {
       { name: "Standard", diffuseColor: [1, 1, 1], specularColor: [1, 1, 1], specularPower: 64 },
       { name: "Node", inputs: {} },
       { name: "Shader", vertexSource: "@vertex fn main() {}", fragmentSource: "@fragment fn main() {}" },
+      Object.assign(lite.createPbrMaterial(), { name: "Official empty PBR" }),
       { name: "PBR View", source: { baseColorFactor: [1, 1, 1, 1], metallicFactor: 0, roughnessFactor: 1 } },
       { name: "Custom" }
     ];
@@ -82,6 +83,7 @@ describe("default adapter", () => {
       Standard: "Standard",
       Node: "Node",
       Shader: "Shader",
+      "Official empty PBR": "PBR",
       "PBR View": "PBR View",
       Custom: "Undetermined / Custom"
     });
