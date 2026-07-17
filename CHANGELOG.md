@@ -2,7 +2,7 @@
 
 All notable changes to Babylon Lite Explorer are documented here.
 
-## Unreleased
+## 0.5.0 - 2026-07-17
 
 ### Added
 
