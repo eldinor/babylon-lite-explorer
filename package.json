@@ -1,6 +1,6 @@
 {
   "name": "babylon-lite-explorer",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "description": "A small, public-API-only explorer for Babylon Lite scenes",
   "keywords": [
     "babylon",
