@@ -44,15 +44,20 @@ The copy button beside a property copies that value. The selection **Copy** acti
 
 ## Instancer
 
-Applications can add an Instancer tab with `createInstancerExplorerAdapter()` and explicit `instancerAdapter.register(set)` calls. Scene Explorer stays focused on scene objects; registered source meshes get an `I` row action that opens the Instancer tab. See the [Instancer Adapter guide](instancer-adapter.md) for setup and API details.
+Applications can add an Instancer tab with `createInstancerExplorerAdapter()` and explicit `instancerAdapter.register(set)` calls. Install the optional `@litools/instancer@^0.3.1` peer for official thin, hierarchy, VAT, and multi-part VAT character support. Scene Explorer stays focused on scene objects; registered sources get an `I` row action that opens the Instancer tab. See the [Instancer Adapter guide](instancer-adapter.md) for setup and API details.
 
 The Instancer tab is a tree:
 
 - Source/original mesh rows are parents.
 - Registered sets appear under their source.
 - Stable instance rows appear under each set.
+- VAT sets include an **Animations** branch with inline Play/Pause controls.
 
 Selecting a source, set, or instance updates the Properties panel. Source properties are clickable and select the real mesh in Scene Explorer. Instance visibility, position, rotation, scaling, color, VAT clip, and metadata are shown or edited only when the registered set exposes the needed public methods.
+
+For VAT sets, select the set to change the shared active clip, expand **Animations** to inspect available clips, and use the inline action to play or pause. Pause requires the application to connect the adapter's playback callbacks to the same state that guards its VAT `update()` call. Animation groups consumed only for VAT baking should be removed from `scene.animationGroups`; ordinary non-Instancer animation groups remain in Scene Explorer.
+
+See [VAT Character and Sword Instancer Example](instancer-vat-example.md) for a complete end-user setup.
 
 When Pick is enabled, Instancer pick mode controls what canvas clicks select. `"instance"` selects the stable instance row and switches to the Instancer tab. `"source"` selects the source mesh through the normal Scene Explorer picker. Without a registered Instancer adapter, Explorer picking selects the source mesh.
 

@@ -12,7 +12,7 @@ The default adapter uses the `@babylonjs/lite` installation from your applicatio
 
 ## Use
 
-[Read the detailed User Guide](docs/user-guide.md). For Instancer integration, see the [Instancer Adapter guide](docs/instancer-adapter.md).
+[Read the detailed User Guide](https://github.com/eldinor/babylon-lite-explorer/blob/main/docs/user-guide.md). For Instancer integration, see the [Instancer Adapter guide](https://github.com/eldinor/babylon-lite-explorer/blob/main/docs/instancer-adapter.md) and the [VAT character and sword example](https://github.com/eldinor/babylon-lite-explorer/blob/main/docs/instancer-vat-example.md).
 
 ```ts
 import * as lite from "@babylonjs/lite";
@@ -79,7 +79,11 @@ The footer's **FPS** and **Frame interval** are calculated from browser animatio
 
 `createInstancerExplorerAdapter()` lets applications register Instancer sets without adding every instance to the main Scene Explorer. Registered source meshes get an `I` row action that opens the dedicated Instancer tab. The tab shows source meshes, their registered sets, and stable instance rows. Source properties are clickable and jump back to the real mesh in Scene Explorer.
 
-See the [Instancer Adapter guide](docs/instancer-adapter.md) for setup, pick modes, editable instance properties, Save Set export choices, reset behavior, and register options.
+Install the optional `@litools/instancer@^0.3.1` peer when using this adapter. Official thin, hierarchy, single-mesh VAT, and multi-part `VatCharacterSet` APIs are supported; the earlier structural registration facade remains temporarily available as deprecated compatibility.
+
+See the [Instancer Adapter guide](https://github.com/eldinor/babylon-lite-explorer/blob/main/docs/instancer-adapter.md) for setup, pick modes, editable instance properties, Save Set export choices, reset behavior, and register options.
+
+The [VAT Character and Sword example](https://github.com/eldinor/babylon-lite-explorer/blob/main/docs/instancer-vat-example.md) covers multi-part VAT setup, socket baking, attachment grip calibration, animation cleanup, logical picking, and inline playback controls.
 
 ```ts
 import { createInstancerExplorerAdapter, showLiteExplorer } from "babylon-lite-explorer";
@@ -101,7 +105,7 @@ showLiteExplorer(
 
 ## Public API coverage
 
-The default adapter currently exposes the public scene camera, meshes, mesh hierarchy, lights, derived materials, and animation groups. Material properties identify PBR, Standard, Node, Shader, material-view, and undetermined/custom families from their documented public fields. PBR and Standard materials are supported for public editing: PBR materials expose environment intensity and their public factors; Standard materials expose their public colors, alpha, specular power, and texture levels. The adapter edits documented scene-node transforms and visibility, base camera projection/viewport fields, recognized arc-rotate/free/geospatial camera fields, and documented light fields. Mesh deletion is routed through Babylon Lite's public `removeFromScene(scene, mesh)` API; optional confirmation is controlled by `confirmEntityRemoval`. Transform node, light, and camera removal are not exposed by the default adapter until Babylon Lite provides an official public removal method for those entity types. See [the audited API inventory](docs/babylon-lite-api-inventory.md).
+The default adapter currently exposes the public scene camera, meshes, mesh hierarchy, lights, derived materials, and animation groups. Material properties identify PBR, Standard, Node, Shader, material-view, and undetermined/custom families from their documented public fields. PBR and Standard materials are supported for public editing: PBR materials expose environment intensity and their public factors; Standard materials expose their public colors, alpha, specular power, and texture levels. The adapter edits documented scene-node transforms and visibility, base camera projection/viewport fields, recognized arc-rotate/free/geospatial camera fields, and documented light fields. Mesh deletion is routed through Babylon Lite's public `removeFromScene(scene, mesh)` API; optional confirmation is controlled by `confirmEntityRemoval`. Transform node, light, and camera removal are not exposed by the default adapter until Babylon Lite provides an official public removal method for those entity types.
 
 Mesh properties include a **Deformation** section showing whether the mesh is skinned, its public bone count, whether morph targets are present, the morph-target count, and current morph weights. Morph weights refresh while that mesh is selected. Skeletal animation usually changes bone matrices and deforms vertices without changing the mesh's own position, rotation, or scaling.
 
@@ -162,6 +166,6 @@ Vite builds the ESM library and CSS. Preact, Signals, and Babylon Lite are exter
 ## Further documentation
 
 - [Changelog](CHANGELOG.md)
-- [Instancer Adapter guide](docs/instancer-adapter.md)
-- [Babylon Lite 1.10.0 public API inventory](docs/babylon-lite-api-inventory.md)
-- [Babylon Lite 1.4.0 migration notes](docs/babylon-lite-1.4.0-migration.md)
+- [User Guide](https://github.com/eldinor/babylon-lite-explorer/blob/main/docs/user-guide.md)
+- [Instancer Adapter guide](https://github.com/eldinor/babylon-lite-explorer/blob/main/docs/instancer-adapter.md)
+- [VAT Character and Sword Instancer example](https://github.com/eldinor/babylon-lite-explorer/blob/main/docs/instancer-vat-example.md)

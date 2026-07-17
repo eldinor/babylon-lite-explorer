@@ -2,6 +2,20 @@
 
 All notable changes to Babylon Lite Explorer are documented here.
 
+## Unreleased
+
+### Added
+
+- Added official `@litools/instancer` 0.3.1 adapter types, hierarchy child-mesh picking, logical VAT screen-space picking, and coordinated multi-part `VatCharacterSet` inspection and editing.
+- Added a Samba Girl VAT demo with five animated characters and Fantasy Sword GLB hierarchy instances synchronized to baked right-hand sockets.
+
+### Changed
+
+- Deprecated the legacy structural Instancer facade while retaining its entry-scanning compatibility path for this release.
+- Updated generated VAT restore code to use the VAT creation-options API and preserve clip names.
+- Made logical VAT picking use the transformed source-bounds center instead of the instance origin, so tall characters can be selected through their visible body.
+- Added VAT animation branches, active/per-instance clip selectors, and inline Play/Pause controls to the Instancer Explorer.
+
 ## 0.4.1 - 2026-07-11
 
 ### Added

@@ -7,8 +7,10 @@ const root = resolve(import.meta.dirname, "..");
 const workspace = join(root, ".package-test");
 const packages = join(workspace, "packages");
 const consumer = join(workspace, "consumer");
+const adapterConsumer = join(workspace, "adapter-consumer");
 const npm = process.platform === "win32" ? "npm.cmd" : "npm";
 const vite = join(root, "node_modules", ".bin", process.platform === "win32" ? "vite.cmd" : "vite");
+const tsc = join(root, "node_modules", ".bin", process.platform === "win32" ? "tsc.cmd" : "tsc");
 const env = { ...process.env, npm_config_cache: join(root, ".npm-cache") };
 
 const run = (command, args, cwd) => execFileSync(command, args, {
@@ -22,6 +24,7 @@ const run = (command, args, cwd) => execFileSync(command, args, {
 rmSync(workspace, { recursive: true, force: true });
 mkdirSync(packages, { recursive: true });
 mkdirSync(consumer, { recursive: true });
+mkdirSync(adapterConsumer, { recursive: true });
 
 try {
   // verify:package builds explicitly before this script. Avoid running prepack a
@@ -61,7 +64,45 @@ try {
   if (!browserSource.includes(`Explorer ${packageVersion}`)) {
     throw new Error(`Browser entry does not contain package version ${packageVersion}.`);
   }
-  console.log(`Verified ${packed[0].filename}: consumer emitted ${js} and ${css}.`);
+
+  const instancerPacked = JSON.parse(run(npm, ["pack", "--ignore-scripts", "--json", "--pack-destination", packages], join(root, "node_modules", "@litools", "instancer")));
+  const instancerTarball = join(packages, instancerPacked[0].filename);
+  writeFileSync(join(adapterConsumer, "package.json"), JSON.stringify({
+    private: true,
+    type: "module",
+    dependencies: {
+      "@litools/instancer": `file:${instancerTarball.replaceAll("\\", "/")}`,
+      "babylon-lite-explorer": `file:${tarball.replaceAll("\\", "/")}`
+    }
+  }, null, 2));
+  writeFileSync(join(adapterConsumer, "index.html"), '<!doctype html><html><body><script type="module" src="/src.ts"></script></body></html>');
+  writeFileSync(join(adapterConsumer, "tsconfig.json"), JSON.stringify({
+    compilerOptions: {
+      lib: ["ES2022", "DOM"],
+      module: "ESNext",
+      moduleResolution: "Bundler",
+      noEmit: true,
+      skipLibCheck: true,
+      strict: true,
+      target: "ES2022"
+    },
+    include: ["src.ts"]
+  }, null, 2));
+  writeFileSync(join(adapterConsumer, "src.ts"), `
+import { createInstancerExplorerAdapter } from "babylon-lite-explorer";
+import type { InstanceSet } from "@litools/instancer";
+
+export function registerOfficialSet(set: InstanceSet<{ label: string }>) {
+  const adapter = createInstancerExplorerAdapter();
+  adapter.register(set, { getLabel: (id, metadata) => metadata?.label ?? \`Instance \${id}\` });
+  return adapter.exportSet(set);
+}
+`);
+  run(npm, ["install", "--legacy-peer-deps", "--ignore-scripts", "--no-audit", "--no-fund"], adapterConsumer);
+  run(tsc, ["-p", "tsconfig.json"], adapterConsumer);
+  run(vite, ["build", "--configLoader", "runner"], adapterConsumer);
+
+  console.log(`Verified ${packed[0].filename}: base and Instancer 0.3.1 consumers built successfully.`);
 } finally {
   rmSync(workspace, { recursive: true, force: true });
 }

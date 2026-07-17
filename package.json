@@ -49,7 +49,6 @@
   },
   "files": [
     "CHANGELOG.md",
-    "docs/**/*.md",
     "dist/index.js",
     "dist/index.d.ts",
     "dist/lite-explorer.css",
@@ -82,17 +81,21 @@
   },
   "peerDependencies": {
     "@babylonjs/lite": "^1.10.0",
+    "@litools/instancer": "^0.3.1",
     "@preact/signals": "^2.0.0",
     "preact": "^10.0.0"
   },
   "peerDependenciesMeta": {
     "@babylonjs/lite": {
       "optional": true
+    },
+    "@litools/instancer": {
+      "optional": true
     }
   },
   "devDependencies": {
     "@babylonjs/lite": "^1.10.0",
-    "@litools/instancer": "^0.2.0",
+    "@litools/instancer": "^0.3.1",
     "@preact/preset-vite": "^2.10.2",
     "@preact/signals": "^2.0.1",
     "@testing-library/preact": "^3.2.4",

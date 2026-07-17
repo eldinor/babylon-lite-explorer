@@ -45,6 +45,7 @@ export default defineConfig(({ command }) => ({
         hundredMeshes: resolve(projectRoot, "examples/hundred-meshes/index.html"),
         boombox: resolve(projectRoot, "examples/boombox/index.html"),
         instancerAdapter: resolve(projectRoot, "examples/instancer-adapter/index.html"),
+        instancerVat: resolve(projectRoot, "examples/instancer-vat/index.html"),
         distBundle: resolve(projectRoot, "examples/dist-bundle/index.html"),
         animatedGlb: resolve(projectRoot, "examples/animated-glb/index.html"),
         userGuide: resolve(projectRoot, "examples/user-guide/index.html")

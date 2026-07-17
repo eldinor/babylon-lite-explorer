@@ -6,6 +6,12 @@ The Instancer adapter adds a dedicated **Instancer** tab for applications that u
 
 Create one adapter, register each set, and pass it through `adapters`.
 
+Install the optional integration peer alongside Explorer:
+
+```sh
+npm install @litools/instancer@^0.3.1
+```
+
 ```ts
 import { createInstancerExplorerAdapter, showLiteExplorer } from "babylon-lite-explorer";
 
@@ -31,7 +37,21 @@ showLiteExplorer(
 );
 ```
 
-`register(set)` should be called with the Instancer set object. The adapter derives the original/source mesh from the set shape and uses metadata labels when available.
+`register(set)` accepts the official `BaseInstanceSet`, `VatInstanceSet`, and `VatCharacterSet` APIs. The adapter derives the source mesh or hierarchy root and uses metadata labels when available.
+
+The earlier structural `InstancerSetLike` API remains available for compatibility in this release, but is deprecated. Structural sets continue to use entry scans when resolving slots; official sets use `getIdForSlot()`, `has()`, and the non-throwing helpers added in Instancer 0.2.1 and available in 0.3.1.
+
+Supported set kinds are:
+
+- `thin` for a single rigid mesh
+- `hierarchy` for a rigid hierarchy pool
+- `vat` for a single VAT mesh
+- `vat-character` for a coordinated multi-part VAT character
+- `custom` for the deprecated structural fallback
+
+For `VatCharacterSet`, rows and metadata come from `primary`, while transform and visibility changes go through the character wrapper so secondary mesh parts remain synchronized.
+
+For a complete multi-part VAT character and socket-attached GLB walkthrough, see [VAT Character and Sword Instancer Example](instancer-vat-example.md).
 
 ## Scene Explorer Integration
 
@@ -42,6 +62,7 @@ The Instancer tab has its own tree:
 - Source/original meshes are top-level parents.
 - Registered sets appear under each source.
 - Stable instance rows appear under each set.
+- VAT sets include an **Animations** branch with inline Play/Pause controls.
 
 Selecting an Instancer source or set shows a clickable **Source** property. Clicking the source name selects the real mesh in Scene Explorer.
 
@@ -62,6 +83,26 @@ Modes:
 - `"instance"` selects the stable Instancer instance row and switches to the Instancer tab.
 - `"source"` lets the normal Scene Explorer picker select the source mesh.
 
+Rigid thin and hierarchy sets use GPU mesh/slot picking and resolve the slot through `getIdForSlot()`. Hierarchy picks recognize every mesh in the hierarchy pool. VAT and multi-part VAT characters use logical screen-space picking against each visible instance's transformed source-bounds center with a 24 CSS-pixel radius, avoiding mismatches between GPU picking and deformed VAT geometry.
+
+VAT sets include an **Animations** branch in the Instancer tree. Select the set to change its shared active clip, select a clip to inspect its frame count, FPS, and duration, or select an instance to change its per-instance clip override. Playback time is advanced by the application's normal `update()` loop, so wire its paused state during registration to enable the inline Play/Pause button:
+
+```ts
+let paused = false;
+
+instancerAdapter.register(characters, {
+  label: "Characters",
+  getPlaybackPaused: () => paused,
+  setPlaybackPaused: (next) => { paused = next; },
+});
+
+onBeforeRender(scene, (deltaMs) => {
+  if (!paused) characters.update(deltaMs * 0.001);
+});
+```
+
+Animation groups used only as VAT baking inputs should be removed from `scene.animationGroups` after baking. Otherwise Scene Explorer exposes skeletal playback controls that do not drive the VAT result. Do not remove unrelated animation groups belonging to ordinary animated scene models.
+
 If the Instancer adapter is not registered at all, Explorer picking selects the source mesh as usual.
 
 Users can change this live from the footer gear in **User Settings > Instancer**.
@@ -77,7 +118,7 @@ The adapter exposes only operations supported by the registered set:
 | Rotation | `getMatrix(id)`, `setTransform(id, { rotationEuler })` |
 | Scaling | `getMatrix(id)` plus `setScale(id, scale)` or `setTransform(id, { scale })` |
 | Color | `getColor(id)`, `setColor(id, color)` |
-| VAT clip | `getClip(id)` |
+| VAT clip | `getClip(id)` or `getPlaybackSample(id)` |
 | Metadata | `metadata`, `getMetadata(id)`, or `serializeMetadata` |
 
 Babylon Lite thin-instance color is multiplied with the source material color. For visible color edits, use neutral source materials such as white PBR or Standard-style materials.
@@ -104,6 +145,8 @@ The snapshot includes:
 - Stable instance ids and current slots
 - Labels, visibility, position, derived Euler rotation, derived scale
 - Optional colors, VAT clips, matrices, and serialized metadata
+
+VAT snapshots use `kind: "vat"` or `kind: "vat-character"`. Generated VAT restore code uses `create({ transform, metadata, clip })`; rigid thin and hierarchy code uses `create(transform, metadata)`.
 
 The top-level snapshot `id` is Explorer/application identity for the registered set. It is not used by `@litools/instancer` to recreate instances. Recreated instances receive new Instancer ids, so generated code keeps an old-to-new id map:
 
@@ -150,7 +193,9 @@ Options:
 | `getLabel` | Custom instance label resolver |
 | `serializeMetadata` | Converts metadata before showing/exporting it |
 | `saveSet` | Optional application save callback used by **App Save** |
+| `getPlaybackPaused` | Reads whether the application's VAT update loop is paused |
+| `setPlaybackPaused` | Pauses or resumes the application's VAT update loop for inline controls |
 
 ## Example
 
-The repository includes a complete example in `examples/instancer-adapter`. It registers two colored thin-instance sets, starts Pick enabled, shows source links, and demonstrates Save Set export choices.
+The repository includes `examples/instancer-adapter` for colored rigid sets and `examples/instancer-vat` for five multi-part Samba Girl VAT characters carrying hierarchy-instanced Fantasy Sword GLBs on baked right-hand sockets. See the end-user [VAT example walkthrough](instancer-vat-example.md).
