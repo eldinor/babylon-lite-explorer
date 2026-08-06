@@ -16,7 +16,7 @@ it("mounts independent instances and disposes idempotently", async () => {
   expect(document.querySelectorAll(".ble-root")).toHaveLength(2);
   expect(document.querySelector(".ble-root")?.getAttribute("data-layout")).toBe("single");
   expect(document.querySelector(".ble-root")?.querySelectorAll(".ble-single-stack > .ble-pane")).toHaveLength(2);
-  expect(document.querySelector(".ble-toolbar strong")?.textContent).toBe(`Babylon Lite 1.11.0 Explorer ${packageJson.version}`);
+  expect(document.querySelector(".ble-toolbar strong")?.textContent).toBe(`Babylon Lite 1.17.0 Explorer ${packageJson.version}`);
   expect([...document.querySelector(".ble-root")!.querySelectorAll<HTMLButtonElement>('.ble-tabs button[role="tab"]')].map((item) => item.textContent)).toEqual(["Scene Explorer", "Properties", "Tools"]);
   first.hide(); first.show(); first.toggle(); first.toggle();
   first.dispose(); first.dispose();
@@ -728,6 +728,73 @@ it("selects a picked entity, ignores drags, and removes canvas listeners", async
   pointer("pointerdown", 20, 30);
   pointer("pointerup", 20, 30);
   expect(pickEntityId).toHaveBeenCalledTimes(1);
+});
+
+it("shows and clears structured Last Pick diagnostics", async () => {
+  const canvas = document.createElement("canvas");
+  document.body.appendChild(canvas);
+  const entity = {
+    id: "diagnostic-pick", label: "Diagnostic mesh", kind: "mesh" as const, source: {},
+    capabilities: { editable: false, focusable: false, visibilityToggle: false, serializableSnapshot: false }
+  };
+  const details = {
+    distance: 6.25, pickedPoint: [1, 2, 3] as const, pickedNormal: null,
+    pickedNormalWorld: [0, 1, 0] as const, pickedFaceNormal: null, pickedFaceNormalWorld: null,
+    faceId: 14, subMeshId: 2, bu: 0.25, bv: 0.5, thinInstanceIndex: -1
+  };
+  const pickEntity = vi.fn(() => ({ ok: true as const, value: { entityId: entity.id, details } }));
+  const adapter: LiteSceneAdapter = { getSceneTree: () => [entity], getProperties: () => [], pickEntity };
+  const handle = showLiteExplorer({ scene: {}, engine: {}, canvas }, { adapter, features: { canvasPicking: true } });
+  await handle.ready;
+  document.querySelector<HTMLButtonElement>(".ble-pick-toggle")?.click();
+  const pointer = (type: string) => {
+    const event = new MouseEvent(type, { bubbles: true, button: 0, clientX: 12, clientY: 18 });
+    Object.defineProperties(event, { pointerId: { value: 1 }, pointerType: { value: "mouse" }, isPrimary: { value: true } });
+    canvas.dispatchEvent(event);
+  };
+  pointer("pointerdown"); pointer("pointerup");
+  await waitFor(() => expect(document.querySelector(".ble-properties")?.textContent).toContain("Last Pick"));
+  expect(document.querySelector(".ble-properties")?.textContent).toContain("Regular mesh");
+  expect(document.querySelector(".ble-properties")?.textContent).toContain("Face ID");
+
+  pointer("pointerdown"); pointer("pointerup");
+  await waitFor(() => expect(pickEntity).toHaveBeenCalledTimes(2));
+  document.querySelector<HTMLButtonElement>(".ble-tree-label")?.click();
+  await waitFor(() => expect(document.querySelector(".ble-properties")?.textContent).not.toContain("Last Pick"));
+  handle.dispose();
+});
+
+it("ignores stale structured GPU-pick responses", async () => {
+  const canvas = document.createElement("canvas");
+  document.body.appendChild(canvas);
+  const makeEntity = (id: string) => ({
+    id, label: id, kind: "mesh" as const, source: {},
+    capabilities: { editable: false, focusable: false, visibilityToggle: false, serializableSnapshot: false }
+  });
+  const entities = [makeEntity("first"), makeEntity("second")];
+  const resolvers: Array<(value: { ok: true; value: { entityId: string } }) => void> = [];
+  const adapter: LiteSceneAdapter = {
+    getSceneTree: () => entities, getProperties: () => [],
+    pickEntity: () => new Promise((resolve) => resolvers.push(resolve))
+  };
+  const handle = showLiteExplorer({ scene: {}, engine: {}, canvas }, { adapter, features: { canvasPicking: true } });
+  await handle.ready;
+  document.querySelector<HTMLButtonElement>(".ble-pick-toggle")?.click();
+  const click = () => {
+    for (const type of ["pointerdown", "pointerup"]) {
+      const event = new MouseEvent(type, { bubbles: true, button: 0, clientX: 4, clientY: 4 });
+      Object.defineProperties(event, { pointerId: { value: 1 }, pointerType: { value: "mouse" }, isPrimary: { value: true } });
+      canvas.dispatchEvent(event);
+    }
+  };
+  click(); click();
+  await waitFor(() => expect(resolvers).toHaveLength(2));
+  resolvers[1]({ ok: true, value: { entityId: "second" } });
+  await waitFor(() => expect(document.querySelector(".ble-selection-status strong")?.textContent).toBe("second"));
+  resolvers[0]({ ok: true, value: { entityId: "first" } });
+  await Promise.resolve();
+  expect(document.querySelector(".ble-selection-status strong")?.textContent).toBe("second");
+  handle.dispose();
 });
 
 it("virtualizes a large expanded Scene Explorer", async () => {

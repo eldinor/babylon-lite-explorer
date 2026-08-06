@@ -26,13 +26,13 @@ When animation groups exist, the lowest Properties footer displays their count. 
 
 Scene properties include clear color, fixed simulation delta, shadow-generator count, fog, clip plane, image-processing exposure and contrast, tone mapping, metadata, environment primary color, and environment Y rotation. Existing fog settings are editable; clip planes and shadow generators are currently diagnostic readouts.
 
-Babylon Lite 1.11.0 exposes `setSceneImageProcessing()` updates for exposure, contrast, tone-mapping enabled state, and the Standard/ACES/Khronos PBR Neutral tone-mapping algorithm. Algorithm changes are visible when the selected algorithm is compiled into a fresh tone-mapped PBR pipeline; switching only the algorithm after a tone-mapped pipeline has already been cached can still reuse the previous shader in the current Lite package.
+Babylon Lite 1.17.0 exposes `setSceneImageProcessing()` updates for exposure, contrast, tone-mapping enabled state, and the Standard/ACES/Khronos PBR Neutral tone-mapping algorithm. The earlier 1.11.0 audit found an algorithm-only cache limitation; it still needs a browser rendering regression test against 1.17.0.
 
 ### Materials
 
 PBR and Standard materials are supported through their documented public fields. PBR materials expose their factors and environment intensity. Standard materials expose their colors, alpha, specular power, and texture levels. The material family is inferred from documented public fields.
 
-Babylon Lite 1.11.0 exposes official material-family detection, so even an otherwise empty PBR material is identified as **PBR**.
+Babylon Lite 1.17.0 exposes official material-family detection, so even an otherwise empty PBR material is identified as **PBR**.
 
 ### Mesh deformation
 
@@ -60,6 +60,26 @@ For VAT sets, select the set to change the shared active clip, expand **Animatio
 See [VAT Character and Sword Instancer Example](instancer-vat-example.md) for a complete end-user setup.
 
 When Pick is enabled, Instancer pick mode controls what canvas clicks select. `"instance"` selects the stable instance row and switches to the Instancer tab. `"source"` selects the source mesh through the normal Scene Explorer picker. Without a registered Instancer adapter, Explorer picking selects the source mesh.
+
+Successful GPU picks add a read-only **Last Pick** section to the selected entity. It shows the returned point, distance, local/world normals, face and submesh IDs, barycentric coordinates, and either the thin-instance index or **Regular mesh**. A miss or a normal tree selection clears these diagnostics.
+
+### Geometry diagnostics
+
+When Babylon Lite retains CPU geometry for a selected mesh, Explorer shows vertex, index, triangle-list, normal, UV, tangent, and color counts. When it does not, **CPU geometry: Unavailable** is shown. The summary is cached until an explicit scene refresh to avoid allocating new geometry copies during live property updates.
+
+### Registered texture types
+
+Use `textureType: "dynamic"` or `textureType: "html"` when registering those texture objects. Use `textureType: "array"` for an explicit array classification, or omit it to auto-detect a public positive integer `layers` value. Dynamic and HTML hints are required because their Babylon Lite nominal brands cannot be inspected through a public runtime symbol.
+
+```ts
+const textureAdapter = createRegisteredSceneAdapter({
+  getEntities: () => [
+    { id: "ui", kind: "texture", label: "UI", source: htmlTexture, textureType: "html" },
+    { id: "paint", kind: "texture", label: "Paint", source: dynamicTexture, textureType: "dynamic" },
+    { id: "terrain", kind: "texture", label: "Terrain layers", source: arrayTexture, textureType: "array" }
+  ]
+});
+```
 
 Selecting a set shows **Save Set** in the selected-entity action bar. The action opens choices to copy JSON, copy Instancer placement code, download JSON, or call the app's optional `saveSet` callback. **Reset** restores a selected instance from the registration-time baseline, and **Reset Set** restores all live instances in the selected set. Reset does not recreate instances removed by application code after registration.
 
@@ -131,6 +151,6 @@ Environment intensity is a per-PBR-material property rather than a scene-level s
 - Environment textures cannot be discovered from the public scene.
 - Original texture URLs and preview pixels are not retained through the current public texture API.
 - Empty PBR materials cannot be reliably distinguished from custom empty materials.
-- Tone-mapping algorithm changes use Babylon Lite 1.11.0 `setSceneImageProcessing()`, but algorithm-only changes can reuse cached PBR WGSL after a tone-mapped pipeline already exists.
+- Tone-mapping algorithm changes use Babylon Lite 1.17.0 `setSceneImageProcessing()`; the earlier algorithm-only cache limitation still needs a 1.17.0 browser regression test.
 - Export Scene is a diagnostic JSON snapshot, not a scene serialization format.
 - A custom adapter currently replaces the default adapter instead of extending it.

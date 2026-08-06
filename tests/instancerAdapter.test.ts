@@ -39,17 +39,24 @@ describe("Instancer 0.3 adapter", () => {
     const adapter = createInstancerExplorerAdapter();
     adapter.register(set, { label: "Robots" });
 
-    const result = await adapter.pickEntityId?.(10, 20, {
+    const result = await adapter.pickEntity?.(10, 20, {
       engine: {},
       scene: {},
       lite: {
         createGpuPicker: vi.fn(() => ({})),
         disposePicker: vi.fn(),
-        pickAsync: vi.fn(async () => ({ hit: true, pickedMesh: childMesh, thinInstanceIndex: 3 }))
+        pickAsync: vi.fn(async () => ({
+          hit: true, distance: 5, pickedPoint: [1, 2, 3], pickedNormal: null, pickedNormalWorld: null,
+          pickedFaceNormal: null, pickedFaceNormalWorld: null, pickedMesh: childMesh,
+          faceId: 4, bu: 0.2, bv: 0.3, subMeshId: 0, thinInstanceIndex: 3, ray: null
+        }))
       } as never
     });
 
-    expect(result).toEqual({ ok: true, value: expect.stringContaining(":instance:7") });
+    expect(result).toEqual({ ok: true, value: {
+      entityId: expect.stringContaining(":instance:7"),
+      details: expect.objectContaining({ faceId: 4, thinInstanceIndex: 3, pickedPoint: [1, 2, 3] })
+    }});
     expect(getIdForSlot).toHaveBeenCalledWith(3);
     expect(entries).toHaveBeenCalledTimes(1); // registration snapshot only; picking does not scan entries
   });

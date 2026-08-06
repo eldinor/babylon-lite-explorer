@@ -8,9 +8,9 @@ export { createDefaultLiteSceneAdapter } from "./adapter/default/createDefaultLi
 export { createInstancerExplorerAdapter } from "./adapter/instancer/createInstancerExplorerAdapter";
 export type { InstancerEntryLike, InstancerExplorerAdapter, InstancerInstanceSnapshot, InstancerRegisterOptions, InstancerSetLike, InstancerSetSnapshot, InstancerSourceSnapshot, InstancerSupportedSet } from "./adapter/instancer/createInstancerExplorerAdapter";
 export { createRegisteredSceneAdapter } from "./adapter/registered/createRegisteredSceneAdapter";
-export type { LiteEntityRegistration } from "./adapter/registered/createRegisteredSceneAdapter";
+export type { LiteEntityRegistration, LiteRegisteredTextureType } from "./adapter/registered/createRegisteredSceneAdapter";
 export { fail, ok } from "./adapter/LiteSceneAdapter";
-export type { AdapterResult, LiteEntity, LiteEntityCapabilities, LiteEntityKind, LiteSceneAdapter, LiteStats } from "./adapter/LiteSceneAdapter";
+export type { AdapterResult, LiteEntity, LiteEntityCapabilities, LiteEntityKind, LitePickDetails, LitePickResult, LiteSceneAdapter, LiteStats } from "./adapter/LiteSceneAdapter";
 export type { PropertyDescriptor } from "./adapter/propertyDescriptors";
 export { CommandService } from "./services/commandService";
 export type { ExplorerCommand } from "./services/commandService";

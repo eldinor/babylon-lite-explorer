@@ -1,4 +1,5 @@
 import type { PropertyDescriptor } from "../adapter/propertyDescriptors";
+import type { LitePickDetails } from "../adapter/LiteSceneAdapter";
 import type { ExplorerSignals } from "../signals/createExplorerSignals";
 import { findEntityById, findEntityPath } from "../signals/treeUtils";
 import type { NotificationService } from "./notificationService";
@@ -24,7 +25,10 @@ export class RefreshController {
       this.signals.extensionEntities.value = extensionEntities;
       this.signals.sceneVersion.value++;
       const selected = this.signals.selectedEntityId.value;
-      if (selected && !findEntityById(tree, selected) && !findEntityById(extensionEntities, selected)) this.signals.selectedEntityId.value = null;
+      if (selected && !findEntityById(tree, selected) && !findEntityById(extensionEntities, selected)) {
+        this.signals.selectedEntityId.value = null;
+        this.signals.lastPick.value = null;
+      }
       await this.refreshProperties(request);
     } catch (error) {
       if (!this.disposed && request === this.generation) this.notifications.push(error instanceof Error ? error.message : "Scene refresh failed.");
@@ -33,7 +37,8 @@ export class RefreshController {
     }
   }
 
-  async select(id: string | null): Promise<void> {
+  async select(id: string | null, pickDetails?: LitePickDetails): Promise<void> {
+    this.signals.lastPick.value = id && pickDetails ? { entityId: id, details: pickDetails } : null;
     this.signals.selectedEntityId.value = id;
     if (id) {
       const path = findEntityPath(this.signals.tree.value, id);
@@ -59,12 +64,36 @@ export class RefreshController {
     this.signals.isRefreshingProperties.value = true;
     try {
       const properties = await adapter.getProperties(entity, context);
-      if (!this.disposed && request === this.generation && this.signals.selectedEntityId.value === selectedId) this.signals.properties.value = properties;
+      const lastPick = this.signals.lastPick.value;
+      const pickProperties = lastPick?.entityId === selectedId ? this.pickProperties(lastPick.details) : [];
+      if (!this.disposed && request === this.generation && this.signals.selectedEntityId.value === selectedId) this.signals.properties.value = [...properties, ...pickProperties];
     } catch (error) {
       if (!this.disposed && request === this.generation) this.notifications.push(error instanceof Error ? error.message : "Property refresh failed.");
     } finally {
       if (!this.disposed && request === this.generation) this.signals.isRefreshingProperties.value = false;
     }
+  }
+
+  private pickProperties(details: LitePickDetails): PropertyDescriptor[] {
+    const values: PropertyDescriptor[] = [
+      { kind: "number", path: "pick.distance", label: "Distance", value: details.distance, readonly: true, section: "Last Pick" },
+      { kind: "number", path: "pick.faceId", label: "Face ID", value: details.faceId, readonly: true, section: "Last Pick" },
+      { kind: "number", path: "pick.subMeshId", label: "Submesh ID", value: details.subMeshId, readonly: true, section: "Last Pick" },
+      { kind: "number", path: "pick.bu", label: "Barycentric U", value: details.bu, readonly: true, section: "Last Pick" },
+      { kind: "number", path: "pick.bv", label: "Barycentric V", value: details.bv, readonly: true, section: "Last Pick" },
+      { kind: "readonly", path: "pick.thinInstance", label: "Thin instance", value: details.thinInstanceIndex >= 0 ? String(details.thinInstanceIndex) : "Regular mesh", section: "Last Pick" }
+    ];
+    const vectors = [
+      ["pickedPoint", "Point", details.pickedPoint],
+      ["pickedNormal", "Normal (local)", details.pickedNormal],
+      ["pickedNormalWorld", "Normal (world)", details.pickedNormalWorld],
+      ["pickedFaceNormal", "Face normal (local)", details.pickedFaceNormal],
+      ["pickedFaceNormalWorld", "Face normal (world)", details.pickedFaceNormalWorld]
+    ] as const;
+    for (const [path, label, value] of vectors) if (value) {
+      values.push({ kind: "vector3", path: `pick.${path}`, label, value, readonly: true, section: "Last Pick" });
+    }
+    return values;
   }
 
   setProperty(descriptor: PropertyDescriptor, value: unknown): Promise<boolean> {
@@ -106,5 +135,5 @@ export class RefreshController {
     }
   }
 
-  dispose(): void { this.disposed = true; this.generation++; this.propertyWrites.clear(); }
+  dispose(): void { this.disposed = true; this.generation++; this.propertyWrites.clear(); this.signals.lastPick.value = null; }
 }

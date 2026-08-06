@@ -1,10 +1,26 @@
 import { signal } from "@preact/signals";
-import { createGpuPicker, disposePicker, getViewProjectionMatrix, pickAsync, type Camera, type GpuPicker } from "@babylonjs/lite";
+import { createGpuPicker, disposePicker, getViewProjectionMatrix, pickAsync, type Camera, type GpuPicker, type PickingInfo } from "@babylonjs/lite";
 import type { BaseInstanceSet, InstanceId, VatCharacterSet, VatInstanceSet } from "@litools/instancer";
-import type { LiteEntity, LiteSceneAdapter } from "../LiteSceneAdapter";
+import type { LiteEntity, LitePickDetails, LiteSceneAdapter } from "../LiteSceneAdapter";
 import { fail, ok } from "../LiteSceneAdapter";
 import type { PropertyDescriptor } from "../propertyDescriptors";
 import { useExplorerRuntime } from "../../ui/runtime";
+
+function litePickDetails(result: PickingInfo): LitePickDetails {
+  return {
+    distance: result.distance,
+    pickedPoint: result.pickedPoint,
+    pickedNormal: result.pickedNormal,
+    pickedNormalWorld: result.pickedNormalWorld,
+    pickedFaceNormal: result.pickedFaceNormal,
+    pickedFaceNormalWorld: result.pickedFaceNormalWorld,
+    faceId: result.faceId,
+    subMeshId: result.subMeshId,
+    bu: result.bu,
+    bv: result.bv,
+    thinInstanceIndex: result.thinInstanceIndex
+  };
+}
 
 /** @deprecated Use `InstanceEntry` from `@litools/instancer`. */
 export type InstancerEntryLike<TMetadata = unknown> = {
@@ -947,7 +963,7 @@ for (const placement of ${identifier}) {
       return ok();
     },
 
-    async pickEntityId(x, y, context) {
+    async pickEntity(x, y, context) {
       if (!isObject(context.scene)) return ok(null);
       if (context.explorer?.userSettings?.instancerPickMode === "source") return ok(null);
       try {
@@ -965,7 +981,7 @@ for (const placement of ${identifier}) {
             if (!entry) continue;
             expandedIds.value = new Set([sourceEntityId(record.source), setEntityId(record)]);
             bump();
-            return ok(instanceEntityId(record, entry.id));
+            return ok({ entityId: instanceEntityId(record, entry.id), details: litePickDetails(result) });
           }
         }
 
@@ -997,12 +1013,17 @@ for (const placement of ${identifier}) {
         if (nearest) {
           expandedIds.value = new Set([sourceEntityId(nearest.record.source), setEntityId(nearest.record)]);
           bump();
-          return ok(instanceEntityId(nearest.record, nearest.id));
+          return ok({ entityId: instanceEntityId(nearest.record, nearest.id) });
         }
         return ok(null);
       } catch (error) {
         return fail("failed", error instanceof Error ? error.message : "Instancer picking failed.");
       }
+    },
+
+    async pickEntityId(x, y, context) {
+      const result = await this.pickEntity!(x, y, context);
+      return result.ok ? ok(result.value?.entityId ?? null) : result;
     },
 
     getExplorerExtensions: () => ({

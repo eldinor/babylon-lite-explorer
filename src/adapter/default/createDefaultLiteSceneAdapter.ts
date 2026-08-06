@@ -2,6 +2,7 @@ import {
   AcesToneMapping,
   createGpuPicker,
   disposePicker,
+  getMeshGeometry,
   getMaterialFamily,
   isPbrMaterial,
   isStandardMaterial,
@@ -41,6 +42,7 @@ import {
   type LiteEntity,
   type LiteEntityCapabilities,
   type LiteEntityKind,
+  type LitePickDetails,
   type LiteSceneAdapter,
   type LiteStats
 } from "../LiteSceneAdapter";
@@ -273,6 +275,7 @@ function metadataProperties(source: object): PropertyDescriptor[] {
 }
 
 export function createDefaultLiteSceneAdapter(): LiteSceneAdapter {
+  let geometryPropertiesByMesh = new WeakMap<Mesh, PropertyDescriptor[]>();
   const objectIds = new WeakMap<object, string>();
   const entityTypes = new WeakMap<object, LiteEntityKind>();
   let nextId = 1;
@@ -318,6 +321,7 @@ export function createDefaultLiteSceneAdapter(): LiteSceneAdapter {
   });
 
   const getSceneTree = (context: LiteExplorerContext): LiteEntity[] => {
+    geometryPropertiesByMesh = new WeakMap<Mesh, PropertyDescriptor[]>();
     if (!isPublicScene(context.scene)) return [];
     const scene = context.scene;
     entityTypes.set(scene, "scene");
@@ -445,6 +449,27 @@ export function createDefaultLiteSceneAdapter(): LiteSceneAdapter {
     return values;
   };
 
+  const meshGeometryProperties = (mesh: Mesh, context: LiteExplorerContext): PropertyDescriptor[] => {
+    const cached = geometryPropertiesByMesh.get(mesh);
+    if (cached) return cached;
+    const geometry = (context.lite?.getMeshGeometry ?? getMeshGeometry)(mesh);
+    const values: PropertyDescriptor[] = geometry ? [
+      { kind: "readonly", path: "geometry.cpu", label: "CPU geometry", value: "Available", section: "Geometry" },
+      { kind: "number", path: "geometry.vertexCount", label: "Vertices", value: geometry.positions.length / 3, readonly: true, section: "Geometry" },
+      { kind: "number", path: "geometry.indexCount", label: "Indices", value: geometry.indices.length, readonly: true, section: "Geometry" },
+      { kind: "number", path: "geometry.triangleCount", label: "Triangles (triangle-list)", value: geometry.indices.length / 3, readonly: true, section: "Geometry" },
+      { kind: "readonly", path: "geometry.normals", label: "Normals", value: `${geometry.normals.length / 3} elements`, section: "Geometry Attributes" },
+      { kind: "readonly", path: "geometry.uvs", label: "UV0", value: geometry.uvs ? `${geometry.uvs.length / 2} elements` : "Unavailable", section: "Geometry Attributes" },
+      { kind: "readonly", path: "geometry.uvs2", label: "UV1", value: geometry.uvs2 ? `${geometry.uvs2.length / 2} elements` : "Unavailable", section: "Geometry Attributes" },
+      { kind: "readonly", path: "geometry.tangents", label: "Tangents", value: geometry.tangents ? `${geometry.tangents.length / 4} elements` : "Unavailable", section: "Geometry Attributes" },
+      { kind: "readonly", path: "geometry.colors", label: "Colors", value: geometry.colors ? `${geometry.colors.length / 4} elements` : "Unavailable", section: "Geometry Attributes" }
+    ] : [
+      { kind: "readonly", path: "geometry.cpu", label: "CPU geometry", value: "Unavailable", section: "Geometry" }
+    ];
+    geometryPropertiesByMesh.set(mesh, values);
+    return values;
+  };
+
   const cameraProperties = (camera: Camera): PropertyDescriptor[] => {
     const values: PropertyDescriptor[] = [
       { kind: "number", path: "fov", label: "Field of view", value: camera.fov, min: 0.01, max: Math.PI, step: 0.01, section: "Camera" },
@@ -513,7 +538,7 @@ export function createDefaultLiteSceneAdapter(): LiteSceneAdapter {
     return values;
   };
 
-  const getProperties = (entity: LiteEntity): PropertyDescriptor[] => {
+  const getProperties = (entity: LiteEntity, context: LiteExplorerContext): PropertyDescriptor[] => {
     const source = entity.source;
     const base: PropertyDescriptor[] = [
       { kind: "readonly", path: "$kind", label: "Kind", value: entity.kind, section: "General" },
@@ -522,7 +547,7 @@ export function createDefaultLiteSceneAdapter(): LiteSceneAdapter {
     if (!source || typeof source !== "object") return base;
     const metadata = metadataProperties(source);
     const knownKind = entityTypes.get(source);
-    if (knownKind === "mesh") return [...base, ...nodeProperties(source as Mesh), ...meshDeformationProperties(source as Mesh), ...metadata];
+    if (knownKind === "mesh") return [...base, ...nodeProperties(source as Mesh), ...meshGeometryProperties(source as Mesh, context), ...meshDeformationProperties(source as Mesh), ...metadata];
     if (knownKind === "transform") return [...base, ...nodeProperties(source as SceneNode), ...metadata];
     if (knownKind === "camera") {
       const camera = source as Camera;
@@ -861,7 +886,7 @@ export function createDefaultLiteSceneAdapter(): LiteSceneAdapter {
     return ok();
   };
 
-  const pickEntityId: NonNullable<LiteSceneAdapter["pickEntityId"]> = async (x, y, context) => {
+  const pickEntity: NonNullable<LiteSceneAdapter["pickEntity"]> = async (x, y, context) => {
     if (!isPublicScene(context.scene)) return fail("unsupported", "Canvas picking requires a public Babylon Lite SceneContext.");
     try {
       let picker = pickerByScene.get(context.scene);
@@ -872,15 +897,35 @@ export function createDefaultLiteSceneAdapter(): LiteSceneAdapter {
       }
       const result = await (context.lite?.pickAsync ?? pickAsync)(picker, x, y);
       if (!result.hit || !result.pickedMesh) return ok(null);
-      return ok(objectIds.get(result.pickedMesh) ?? null);
+      const entityId = objectIds.get(result.pickedMesh);
+      if (!entityId) return ok(null);
+      const details: LitePickDetails = {
+        distance: result.distance,
+        pickedPoint: result.pickedPoint,
+        pickedNormal: result.pickedNormal,
+        pickedNormalWorld: result.pickedNormalWorld,
+        pickedFaceNormal: result.pickedFaceNormal,
+        pickedFaceNormalWorld: result.pickedFaceNormalWorld,
+        faceId: result.faceId,
+        subMeshId: result.subMeshId,
+        bu: result.bu,
+        bv: result.bv,
+        thinInstanceIndex: result.thinInstanceIndex
+      };
+      return ok({ entityId, details });
     } catch (error) {
       return fail("failed", error instanceof Error ? error.message : "Canvas picking failed.");
     }
   };
 
-  const getEntitySnapshot: NonNullable<LiteSceneAdapter["getEntitySnapshot"]> = (entity) => {
+  const pickEntityId: NonNullable<LiteSceneAdapter["pickEntityId"]> = async (x, y, context) => {
+    const result = await pickEntity(x, y, context);
+    return result.ok ? ok(result.value?.entityId ?? null) : result;
+  };
+
+  const getEntitySnapshot: NonNullable<LiteSceneAdapter["getEntitySnapshot"]> = (entity, context) => {
     const snapshot: Record<string, unknown> = {};
-    for (const descriptor of getProperties(entity)) {
+    for (const descriptor of getProperties(entity, context)) {
       if (!descriptor.path.startsWith("$")) snapshot[descriptor.path] = descriptor.value;
     }
     return ok(snapshot);
@@ -891,6 +936,7 @@ export function createDefaultLiteSceneAdapter(): LiteSceneAdapter {
     getProperties,
     setProperty,
     getStats,
+    pickEntity,
     pickEntityId,
     setEntityVisible: async (entity, visible, context) => setProperty(entity, "visible", visible, context),
     removeEntity,

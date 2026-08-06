@@ -56,6 +56,22 @@ export type AdapterResult<T = void> =
 export const ok = <T = void>(value: T = undefined as T): AdapterResult<T> => ({ ok: true, value });
 export const fail = (code: "unsupported" | "invalid" | "failed", message: string): AdapterResult<never> => ({ ok: false, code, message });
 
+export type LitePickDetails = {
+  distance: number;
+  pickedPoint: readonly [number, number, number] | null;
+  pickedNormal: readonly [number, number, number] | null;
+  pickedNormalWorld: readonly [number, number, number] | null;
+  pickedFaceNormal: readonly [number, number, number] | null;
+  pickedFaceNormalWorld: readonly [number, number, number] | null;
+  faceId: number;
+  subMeshId: number;
+  bu: number;
+  bv: number;
+  thinInstanceIndex: number;
+};
+
+export type LitePickResult = { entityId: string; details?: LitePickDetails };
+
 export type LiteSceneAdapter = {
   getSceneTree(context: LiteExplorerContext): LiteEntity[] | Promise<LiteEntity[]>;
   getExtensionEntities?(context: LiteExplorerContext): LiteEntity[] | Promise<LiteEntity[]>;
@@ -69,6 +85,8 @@ export type LiteSceneAdapter = {
   playAnimationGroup?(entity: LiteEntity, context: LiteExplorerContext): AdapterResult | Promise<AdapterResult>;
   stopAnimationGroup?(entity: LiteEntity, context: LiteExplorerContext): AdapterResult | Promise<AdapterResult>;
   getEntitySnapshot?(entity: LiteEntity, context: LiteExplorerContext): AdapterResult<unknown> | Promise<AdapterResult<unknown>>;
+  pickEntity?(x: number, y: number, context: LiteExplorerContext): AdapterResult<LitePickResult | null> | Promise<AdapterResult<LitePickResult | null>>;
+  /** @deprecated Implement pickEntity to preserve Babylon Lite pick diagnostics. */
   pickEntityId?(x: number, y: number, context: LiteExplorerContext): AdapterResult<string | null> | Promise<AdapterResult<string | null>>;
   getExplorerExtensions?(api: LiteExplorerExtensionApi): LiteExplorerExtensionRegistration;
   dispose?(): void;

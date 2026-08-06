@@ -6,6 +6,7 @@ export type LiteExplorerRuntime = Pick<typeof import("@babylonjs/lite"),
   | "addToScene"
   | "createGpuPicker"
   | "disposePicker"
+  | "getMeshGeometry"
   | "loadGltf"
   | "markMaterialUboDirty"
   | "NeutralToneMapping"

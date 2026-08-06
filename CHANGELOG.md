@@ -2,6 +2,16 @@
 
 All notable changes to Babylon Lite Explorer are documented here.
 
+## Unreleased
+
+### Changed
+
+- Upgraded the Babylon Lite peer and development dependency to 1.17.0.
+- Audited the 1.12.0 through 1.17.0 public API additions and documented the most useful Explorer follow-ups.
+- Added cached selected-mesh geometry counts and attribute diagnostics through `getMeshGeometry()`.
+- Added structured GPU-pick results and a read-only Last Pick property section while retaining `pickEntityId` compatibility.
+- Added explicit Dynamic/HTML/array classification and array auto-detection for registered texture entities.
+
 ## 0.5.0 - 2026-07-17
 
 ### Added

@@ -57,4 +57,28 @@ describe("composeLiteSceneAdapters", () => {
     expect(second.pickEntityId).toHaveBeenCalled();
     expect(first.pickEntityId).not.toHaveBeenCalled();
   });
+
+  it("preserves structured pick diagnostics and falls back to legacy adapters", async () => {
+    const details = {
+      distance: 4, pickedPoint: [1, 2, 3] as const, pickedNormal: null, pickedNormalWorld: null,
+      pickedFaceNormal: null, pickedFaceNormalWorld: null, faceId: 7, subMeshId: 2, bu: 0.2, bv: 0.3,
+      thinInstanceIndex: -1
+    };
+    const legacy: LiteSceneAdapter = {
+      getSceneTree: () => [], getProperties: () => [],
+      pickEntityId: vi.fn(() => ({ ok: true as const, value: "legacy" }))
+    };
+    const structured: LiteSceneAdapter = {
+      getSceneTree: () => [], getProperties: () => [],
+      pickEntity: vi.fn(() => ({ ok: true as const, value: { entityId: "structured", details } }))
+    };
+    const adapter = composeLiteSceneAdapters([legacy, structured]);
+    expect(await adapter.pickEntity?.(1, 2, { scene: {}, engine: {} })).toEqual({
+      ok: true, value: { entityId: "structured", details }
+    });
+    expect(legacy.pickEntityId).not.toHaveBeenCalled();
+
+    const fallback = composeLiteSceneAdapters([legacy]);
+    expect(await fallback.pickEntity?.(1, 2, { scene: {}, engine: {} })).toEqual({ ok: true, value: { entityId: "legacy" } });
+  });
 });

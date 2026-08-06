@@ -127,6 +127,24 @@ export function composeLiteSceneAdapters(adapters: readonly LiteSceneAdapter[]):
       return lastFailure ?? ok(null);
     },
 
+    async pickEntity(x, y, context) {
+      let lastFailure: ReturnType<typeof fail> | null = null;
+      for (const adapter of [...adapters].reverse()) {
+        if (adapter.pickEntity) {
+          const result = await adapter.pickEntity(x, y, context);
+          if (result.ok && result.value) return result;
+          if (!result.ok) lastFailure = result;
+          continue;
+        }
+        if (adapter.pickEntityId) {
+          const result = await adapter.pickEntityId(x, y, context);
+          if (result.ok && result.value) return ok({ entityId: result.value });
+          if (!result.ok) lastFailure = result;
+        }
+      }
+      return lastFailure ?? ok(null);
+    },
+
     dispose() {
       owners.clear();
     }

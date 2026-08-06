@@ -1,6 +1,6 @@
 import { computed, signal } from "@preact/signals";
 import type { LiteExplorerContext, LiteExplorerInstancerPickMode, LiteExplorerLayout, LiteExplorerTheme } from "../api/types";
-import type { LiteEntity, LiteSceneAdapter, LiteStats } from "../adapter/LiteSceneAdapter";
+import type { LiteEntity, LitePickDetails, LiteSceneAdapter, LiteStats } from "../adapter/LiteSceneAdapter";
 import type { PropertyDescriptor } from "../adapter/propertyDescriptors";
 import type { SidePaneDefinition, ToolbarItemDefinition } from "../services/shellService";
 import { filterTree, findEntityById } from "./treeUtils";
@@ -33,6 +33,7 @@ export function createExplorerSignals() {
   const isRefreshingProperties = signal(false);
   const pickingAvailable = signal(false);
   const pickingActive = signal(false);
+  const lastPick = signal<{ entityId: string; details: LitePickDetails } | null>(null);
   const userSettings = signal<ExplorerUserSettingsState>({
     confirmEntityRemoval: false,
     instancerPickMode: "instance",
@@ -50,7 +51,7 @@ export function createExplorerSignals() {
   return {
     isOpen, theme, layout, context, adapter, sceneVersion, selectedEntityId, selectedEntity,
     tree, extensionEntities, filteredTree, properties, stats, search, expandedIds, notifications,
-    isRefreshingTree, isRefreshingProperties, pickingAvailable, pickingActive,
+    isRefreshingTree, isRefreshingProperties, pickingAvailable, pickingActive, lastPick,
     userSettings,
     panes, toolbarItems, selectedPanes,
     singlePanePercent

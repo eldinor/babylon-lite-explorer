@@ -33,6 +33,76 @@ describe("default adapter", () => {
     expect(mesh?.meta?.liveProperties).toBe(true);
   });
 
+  it("reports and caches selected mesh CPU geometry diagnostics", async () => {
+    const data = fakeScene();
+    const getMeshGeometry = vi.fn(() => ({
+      positions: new Float32Array(12),
+      normals: new Float32Array(12),
+      indices: new Uint32Array(6),
+      uvs: new Float32Array(8),
+      tangents: new Float32Array(16),
+      colors: new Float32Array(16)
+    }));
+    const context = { scene: data.scene, engine: {}, lite: { getMeshGeometry } as unknown as import("../src/api/types").LiteExplorerRuntime };
+    const adapter = createDefaultLiteSceneAdapter();
+    const tree = await adapter.getSceneTree(context);
+    const mesh = tree[0].children?.find((item) => item.label === "Nodes")?.children?.find((item) => item.kind === "mesh")!;
+
+    const first = await adapter.getProperties(mesh, context);
+    const second = await adapter.getProperties(mesh, context);
+    expect(first).toEqual(expect.arrayContaining([
+      expect.objectContaining({ path: "geometry.vertexCount", value: 4 }),
+      expect.objectContaining({ path: "geometry.indexCount", value: 6 }),
+      expect.objectContaining({ path: "geometry.triangleCount", value: 2 }),
+      expect.objectContaining({ path: "geometry.uvs", value: "4 elements" }),
+      expect.objectContaining({ path: "geometry.uvs2", value: "Unavailable" }),
+      expect.objectContaining({ path: "geometry.tangents", value: "4 elements" }),
+      expect.objectContaining({ path: "geometry.colors", value: "4 elements" })
+    ]));
+    expect(second).toEqual(first);
+    expect(getMeshGeometry).toHaveBeenCalledTimes(1);
+
+    const refreshedTree = await adapter.getSceneTree(context);
+    const refreshedMesh = refreshedTree[0].children?.find((item) => item.label === "Nodes")?.children?.find((item) => item.kind === "mesh")!;
+    await adapter.getProperties(refreshedMesh, context);
+    expect(getMeshGeometry).toHaveBeenCalledTimes(2);
+  });
+
+  it("reports unavailable CPU geometry without exposing copied arrays", async () => {
+    const data = fakeScene();
+    const context = {
+      scene: data.scene,
+      engine: {},
+      lite: { getMeshGeometry: vi.fn(() => null) } as unknown as import("../src/api/types").LiteExplorerRuntime
+    };
+    const adapter = createDefaultLiteSceneAdapter();
+    const tree = await adapter.getSceneTree(context);
+    const mesh = tree[0].children?.find((item) => item.label === "Nodes")?.children?.find((item) => item.kind === "mesh")!;
+    const properties = await adapter.getProperties(mesh, context);
+    expect(properties).toContainEqual(expect.objectContaining({ path: "geometry.cpu", value: "Unavailable" }));
+    expect(properties.some((property) => ArrayBuffer.isView(property.value))).toBe(false);
+  });
+
+  it("preserves exact GPU picking diagnostics", async () => {
+    const data = fakeScene();
+    const pickingInfo = {
+      hit: true, distance: 8.5, pickedPoint: [1, 2, 3], pickedNormal: [0, 1, 0], pickedNormalWorld: [0, 1, 0],
+      pickedFaceNormal: [1, 0, 0], pickedFaceNormalWorld: [1, 0, 0], pickedMesh: data.mesh,
+      faceId: 12, bu: 0.25, bv: 0.5, subMeshId: 3, thinInstanceIndex: 9, ray: null
+    };
+    const liteRuntime = {
+      createGpuPicker: vi.fn(() => ({})), disposePicker: vi.fn(), pickAsync: vi.fn(async () => pickingInfo)
+    } as unknown as import("../src/api/types").LiteExplorerRuntime;
+    const context = { scene: data.scene, engine: {}, lite: liteRuntime };
+    const adapter = createDefaultLiteSceneAdapter();
+    const tree = await adapter.getSceneTree(context);
+    const mesh = tree[0].children?.find((item) => item.label === "Nodes")?.children?.find((item) => item.kind === "mesh")!;
+    expect(await adapter.pickEntity?.(10, 20, context)).toEqual({ ok: true, value: {
+      entityId: mesh.id,
+      details: expect.objectContaining({ distance: 8.5, pickedPoint: [1, 2, 3], faceId: 12, subMeshId: 3, bu: 0.25, bv: 0.5, thinInstanceIndex: 9 })
+    }});
+  });
+
   it("marks the active camera for live property refresh", async () => {
     const data = fakeScene();
     data.scene.camera = {
@@ -280,6 +350,7 @@ describe("default adapter", () => {
         position: [3, 4, 5],
         rotation: [0, 0, 0],
         scaling: [1, 1, 1],
+        "geometry.cpu": "Unavailable",
         skinned: "No",
         hasMorphTargets: "No",
         "metadata.category": "hero",

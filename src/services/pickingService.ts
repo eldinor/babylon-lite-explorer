@@ -1,4 +1,5 @@
 import type { ExplorerSignals } from "../signals/createExplorerSignals";
+import type { LitePickDetails } from "../adapter/LiteSceneAdapter";
 import type { NotificationService } from "./notificationService";
 import type { RefreshController } from "./refreshController";
 import type { ShellService } from "./shellService";
@@ -47,9 +48,9 @@ export class PickingService {
     const request = ++this.generation;
     const adapter = this.signals.adapter.value;
     const context = this.signals.context.value;
-    if (!adapter?.pickEntityId || !context) return;
+    if ((!adapter?.pickEntity && !adapter?.pickEntityId) || !context) return;
     try {
-      const result = await adapter.pickEntityId(x, y, {
+      const pickContext = {
         ...context,
         explorer: {
           ...context.explorer,
@@ -58,10 +59,18 @@ export class PickingService {
             instancerPickMode: this.signals.userSettings.value.instancerPickMode
           }
         }
-      });
+      };
+      const result = adapter.pickEntity
+        ? await adapter.pickEntity(x, y, pickContext)
+        : await Promise.resolve(adapter.pickEntityId!(x, y, pickContext)).then((legacy) => legacy.ok
+          ? { ok: true as const, value: legacy.value ? { entityId: legacy.value } : null }
+          : legacy);
       if (!this.started || request !== this.generation) return;
       if (!result.ok) { this.notifications.push(result.message); return; }
-      await this.refresh.select(result.value);
+      const details: LitePickDetails | undefined = result.value && "details" in result.value
+        ? result.value.details as LitePickDetails | undefined
+        : undefined;
+      await this.refresh.select(result.value?.entityId ?? null, details);
       if (this.signals.selectedEntity.value?.meta?.instancer) this.shell?.selectPane("instancer");
     } catch (error) {
       if (this.started && request === this.generation) this.notifications.push(error instanceof Error ? error.message : "Canvas picking failed.");
