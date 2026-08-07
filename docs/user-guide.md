@@ -107,6 +107,12 @@ Selecting a set shows **Save Set** in the selected-entity action bar. The action
 
 Dark and light themes, the selected layout, and the Single divider position are stored locally in the browser.
 
+## Host container and lifecycle
+
+Pass `container: HTMLElement` to mount Explorer into a chosen ancestor instead of the canvas parent. This is useful when the canvas has a fixed aspect ratio but its surrounding workspace has unused side space; see the configurable-container example.
+
+The returned handle exposes `state` as `"visible"`, `"hidden"`, or `"disposed"`, plus `isDisposed`. Hiding preserves the instance and allows `show()` to restore it. The visibly labeled **Dispose** action permanently tears it down; `onDispose` runs exactly once after teardown.
+
 ## User Settings
 
 Open the footer gear to change live Explorer settings. The modal currently exposes theme, layout, Pick, delete confirmation, and an adapter-specific **Instancer** section for Instancer pick mode. Future custom adapter settings should follow the same titled-section pattern.

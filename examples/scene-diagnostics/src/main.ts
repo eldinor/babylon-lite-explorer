@@ -7,6 +7,7 @@ import {
   createEngine,
   createGround,
   createHemisphericLight,
+  createLineSystem,
   createPbrMaterial,
   createPcfDirectionalShadowGenerator,
   createSceneContext,
@@ -41,9 +42,25 @@ setFog(scene, {
   end: 22,
   color: [0.16, 0.22, 0.32],
 });
-// This public state appears in Explorer, but Lite 1.9's built-in PBR shaders do
+// This public state appears in Explorer, but Lite 1.17's built-in PBR shaders do
 // not consume scene.clipPlane. See docs/babylon-lite-pbr-clip-plane-issue.md.
 setClipPlane(scene, [0.5, 0.866, 0, 0]);
+
+const planePoint = (tangentDistance: number, z: number) => ({
+  x: -0.866 * tangentDistance,
+  y: 0.5 * tangentDistance,
+  z,
+});
+const clipPlaneGuide = createLineSystem(engine, {
+  name: "Clip plane guide",
+  color: { r: 1, g: 0.72, b: 0.15, a: 1 },
+  lines: [
+    [planePoint(-5, -7), planePoint(5, -7), planePoint(5, 7), planePoint(-5, 7), planePoint(-5, -7)],
+    [{ x: 0, y: 0, z: 0 }, { x: 1, y: 1.732, z: 0 }],
+  ],
+});
+clipPlaneGuide.pickable = false;
+addToScene(scene, clipPlaneGuide);
 
 const ground = createGround(engine, { width: 18, height: 24, subdivisions: 1 });
 ground.name = "Fog ground";
@@ -109,5 +126,9 @@ await registerSceneWithShadowSupport(scene);
 await startEngine(engine);
 showLiteExplorer(
   { engine, scene, canvas, lite },
-  { features: { canvasPicking: true }, userGuideUrl: demoUrl("user-guide/") },
+  {
+    features: { canvasPicking: true },
+    userSettings: { picking: { enabled: true } },
+    userGuideUrl: demoUrl("user-guide/"),
+  },
 );

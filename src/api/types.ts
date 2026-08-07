@@ -23,6 +23,7 @@ export type LiteExplorerRuntime = Pick<typeof import("@babylonjs/lite"),
 export type LiteExplorerTheme = "dark" | "light";
 export type LiteExplorerMode = "overlay" | "inline";
 export type LiteExplorerLayout = "single" | "split";
+export type LiteExplorerState = "visible" | "hidden" | "disposed";
 export type LiteExplorerInstancerPickMode = "instance" | "source";
 
 export type LiteExplorerFeatures = {
@@ -71,6 +72,7 @@ export type LiteExplorerContext = {
 };
 
 export type LiteExplorerOptions = {
+  /** Element that owns the Explorer host. Defaults to the canvas parent, then document.body. */
   container?: HTMLElement;
   canvas?: HTMLCanvasElement;
   mode?: LiteExplorerMode;
@@ -98,11 +100,15 @@ export type LiteExplorerOptions = {
   keyboardShortcutsEnabled?: boolean;
   /** User Guide URL opened by the footer help icon. */
   userGuideUrl?: string;
+  /** Called exactly once after Explorer disposal completes. */
+  onDispose?: () => void;
   title?: string;
 };
 
 export type LiteExplorerHandle = {
   readonly ready: Promise<void>;
+  readonly state: LiteExplorerState;
+  readonly isDisposed: boolean;
   dispose(): void;
   show(): void;
   hide(): void;

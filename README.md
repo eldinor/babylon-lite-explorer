@@ -32,6 +32,7 @@ const explorer = showLiteExplorer(
     notificationDurationMs: 3000,
     notificationsEnabled: true,
     keyboardShortcutsEnabled: true,
+    onDispose: () => console.log("Explorer disposed"),
     userGuideUrl: "https://example.com/babylon-lite-explorer-guide",
   },
 );
@@ -45,7 +46,21 @@ explorer.show();
 explorer.dispose();
 ```
 
-Each call owns independent state. `dispose()` is idempotent. Caller-provided adapters remain caller-owned and are not disposed by the explorer.
+Each call owns independent state. `explorer.state` is `"visible"`, `"hidden"`, or `"disposed"`, and `explorer.isDisposed` provides a convenience check. `dispose()` is idempotent and `onDispose` runs exactly once after teardown. Caller-provided adapters remain caller-owned and are not disposed by the explorer. The permanent UI action is labeled **Dispose**; use **Hide** when the same handle should be able to show Explorer again.
+
+### Configurable container
+
+By default Explorer mounts into the canvas parent, then falls back to `document.body`. Pass an `HTMLElement` to mount the overlay in another ancestor—for example, to use free space beside a fixed-aspect-ratio canvas:
+
+```ts
+const workspace = document.querySelector<HTMLElement>("#workspace")!;
+const explorer = showLiteExplorer(
+  { engine, scene, canvas, lite },
+  { container: workspace, mode: "overlay" },
+);
+```
+
+Explorer temporarily gives a static non-body overlay container `position: relative` and restores its inline position when disposed. See the [configurable-container example](examples/configurable-container/).
 
 Set `userGuideUrl` to change the page opened by the footer `?` icon. It defaults to this repository's Markdown guide; the bundled demo points it to the in-app HTML guide. The footer gear opens the User Settings modal.
 
@@ -67,7 +82,7 @@ For jsDelivr and Lite Playground, use the browser export. The root `+esm` URL ma
 
 ```ts
 import * as lite from "@babylonjs/lite";
-import { showLiteExplorer } from "https://cdn.jsdelivr.net/npm/babylon-lite-explorer@0.3.1/browser/+esm";
+import { showLiteExplorer } from "https://cdn.jsdelivr.net/npm/babylon-lite-explorer@0.6.0/browser/+esm";
 
 const explorer = showLiteExplorer({ engine, scene, canvas, lite });
 await explorer.ready;

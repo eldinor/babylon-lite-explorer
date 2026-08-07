@@ -9,7 +9,8 @@ import packageJson from "../package.json";
 it("mounts independent instances and disposes idempotently", async () => {
   vi.useFakeTimers();
   const data = fakeScene();
-  const first = showLiteExplorer({ scene: data.scene, engine: {} });
+  const onDispose = vi.fn();
+  const first = showLiteExplorer({ scene: data.scene, engine: {} }, { onDispose });
   const second = showLiteExplorer({ scene: data.scene, engine: {} }, { theme: "light" });
   await first.ready;
   await second.ready;
@@ -18,8 +19,15 @@ it("mounts independent instances and disposes idempotently", async () => {
   expect(document.querySelector(".ble-root")?.querySelectorAll(".ble-single-stack > .ble-pane")).toHaveLength(2);
   expect(document.querySelector(".ble-toolbar strong")?.textContent).toBe(`Babylon Lite 1.17.0 Explorer ${packageJson.version}`);
   expect([...document.querySelector(".ble-root")!.querySelectorAll<HTMLButtonElement>('.ble-tabs button[role="tab"]')].map((item) => item.textContent)).toEqual(["Scene Explorer", "Properties", "Tools"]);
-  first.hide(); first.show(); first.toggle(); first.toggle();
+  expect(first.state).toBe("visible");
+  expect(first.isDisposed).toBe(false);
+  first.hide(); expect(first.state).toBe("hidden");
+  first.show(); expect(first.state).toBe("visible");
+  first.toggle(); first.toggle();
   first.dispose(); first.dispose();
+  expect(first.state).toBe("disposed");
+  expect(first.isDisposed).toBe(true);
+  expect(onDispose).toHaveBeenCalledTimes(1);
   expect(document.querySelectorAll(".ble-root")).toHaveLength(1);
   second.dispose();
   expect(document.querySelectorAll(".ble-root")).toHaveLength(0);
@@ -58,7 +66,7 @@ it("switches layouts from the header without refresh or hide controls", async ()
   const handle = showLiteExplorer({ scene: data.scene, engine: {} });
   await handle.ready;
   const headerLabels = [...document.querySelectorAll<HTMLButtonElement>(".ble-toolbar-actions button")].map((button) => button.textContent);
-  expect(headerLabels).toEqual(["Split", "Light", "Hide", "×"]);
+  expect(headerLabels).toEqual(["Split", "Light", "Hide", "Dispose"]);
   expect(headerLabels).not.toContain("Refresh");
   document.querySelector<HTMLButtonElement>(".ble-toolbar-actions button")?.click();
   expect(document.querySelector(".ble-root")?.getAttribute("data-layout")).toBe("split");

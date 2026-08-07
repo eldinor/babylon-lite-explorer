@@ -240,6 +240,8 @@ export function showLiteExplorer(context: LiteExplorerContext, options: LiteExpl
 
   const handle: LiteExplorerHandle = {
     ready,
+    get state() { return disposed ? "disposed" : signals.isOpen.value ? "visible" : "hidden"; },
+    get isDisposed() { return disposed; },
     dispose() {
       if (disposed) return;
       disposed = true;
@@ -255,6 +257,7 @@ export function showLiteExplorer(context: LiteExplorerContext, options: LiteExpl
       render(null, host);
       host.remove();
       if (restoredPosition !== undefined) container.style.position = restoredPosition;
+      options.onDispose?.();
     },
     show() { if (!disposed) { signals.isOpen.value = true; host.hidden = false; rerender(); } },
     hide() { if (!disposed) { runtime.setPickingActive(false); signals.isOpen.value = false; host.hidden = true; rerender(); } },

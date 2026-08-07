@@ -4,6 +4,8 @@ All notable changes to Babylon Lite Explorer are documented here.
 
 ## Unreleased
 
+## 0.6.0 - 2026-08-07
+
 ### Changed
 
 - Upgraded the Babylon Lite peer and development dependency to 1.17.0.
@@ -11,6 +13,9 @@ All notable changes to Babylon Lite Explorer are documented here.
 - Added cached selected-mesh geometry counts and attribute diagnostics through `getMeshGeometry()`.
 - Added structured GPU-pick results and a read-only Last Pick property section while retaining `pickEntityId` compatibility.
 - Added explicit Dynamic/HTML/array classification and array auto-detection for registered texture entities.
+- Added public visible/hidden/disposed lifecycle state, `isDisposed`, and an exactly-once `onDispose` callback.
+- Replaced the ambiguous permanent-close icon with a visible **Dispose** label.
+- Added a configurable-container example for mounting Explorer above a fixed-aspect-ratio canvas.
 
 ## 0.5.0 - 2026-07-17
 
