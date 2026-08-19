@@ -81,7 +81,7 @@
   },
   "peerDependencies": {
     "@babylonjs/lite": "^1.17.0",
-    "@litools/instancer": "^0.3.1",
+    "@litools/instancer": "^0.3.1 || ^0.6.0",
     "@preact/signals": "^2.0.0",
     "preact": "^10.0.0"
   },
