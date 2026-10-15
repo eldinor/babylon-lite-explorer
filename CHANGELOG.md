@@ -4,6 +4,14 @@ All notable changes to Babylon Lite Explorer are documented here.
 
 ## Unreleased
 
+### Changed
+
+- Raised the Babylon Lite peer and development baseline to 1.34.0 and the optional Instancer baseline to 0.7.0.
+- Migrated the VAT example from the removed `mat4Compose()` export to `composeMat4()`.
+- Removed the environment Y rotation control: `SceneContext.envRotationY` is no longer public, and `setEnvironmentRotation()` has no public readback API.
+- Updated integration guides and added [1.34.0 migration notes](docs/babylon-lite-1.34.0-migration.md).
+- Added regression coverage using current Lite light and material factories; toolbar version assertions now follow the installed Lite runtime.
+
 ## 0.6.0 - 2026-08-07
 
 ### Changed

@@ -1,5 +1,7 @@
 # Babylon Lite 1.17.0 public API inventory
 
+Historical snapshot. For the current dependency baseline and breaking-change audit, see the [1.34.0 migration notes](babylon-lite-1.34.0-migration.md).
+
 Audited on 2026-08-06 against the installed `@babylonjs/lite@1.17.0` declarations, changelog, and package implementation, plus the default Explorer adapter. Babylon Lite exposes one public package entry point: `@babylonjs/lite`.
 
 This inventory describes what the default adapter currently uses. A public Babylon Lite feature is not automatically Explorer-supported until it is listed here.

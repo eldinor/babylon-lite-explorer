@@ -651,7 +651,6 @@ export function createDefaultLiteSceneAdapter(): LiteSceneAdapter {
         section: "Image Processing"
       });
       if (isNumberTuple(scene.environmentPrimaryColor, 3)) values.push({ kind: "color3", path: "environmentPrimaryColor", label: "Environment primary color", value: [...scene.environmentPrimaryColor], section: "Environment" });
-      if (typeof scene.envRotationY === "number") values.push({ kind: "number", path: "envRotationY", label: "Environment Y rotation", value: scene.envRotationY, step: 0.01, section: "Environment" });
       if (scene.fog) {
         values.push(
           { kind: "select", path: "fog.mode", label: "Mode", value: String(scene.fog.mode), options: [
@@ -716,8 +715,6 @@ export function createDefaultLiteSceneAdapter(): LiteSceneAdapter {
           await (context.lite?.setSceneImageProcessing ?? setSceneImageProcessing)(scene, { toneMappingEnabled: true, toneMapping });
         } else if (path === "environmentPrimaryColor" && isNumberTuple(value, 3)) {
           scene.environmentPrimaryColor = [clamp01(value[0]), clamp01(value[1]), clamp01(value[2])];
-        } else if (path === "envRotationY" && typeof value === "number" && Number.isFinite(value)) {
-          scene.envRotationY = value;
         } else {
           return fail("invalid", `Invalid value for ${path}.`);
         }

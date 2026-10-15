@@ -19,7 +19,7 @@ The runnable source is in [`examples/instancer-vat`](../examples/instancer-vat/)
 Install Explorer, Babylon Lite, and the optional Instancer integration peer:
 
 ```sh
-npm install babylon-lite-explorer @babylonjs/lite@^1.17.0 @litools/instancer@^0.3.1
+npm install babylon-lite-explorer @babylonjs/lite@^1.34.0 @litools/instancer@^0.7.0
 ```
 
 The Instancer package is optional for the base Explorer, but required by applications that import and use `createInstancerExplorerAdapter()`.
@@ -143,11 +143,11 @@ Create each character with a world transform, then create and bind its sword:
 
 ```ts
 const transforms = [
-  mat4Compose(-2.1, 0, -1.5, 0, 0, 0, 1, 0.1, 0.1, 0.1),
-  mat4Compose(0, 0, -1.5, 0, 0, 0, 1, 0.1, 0.1, 0.1),
-  mat4Compose(2.1, 0, -1.5, 0, 0, 0, 1, 0.1, 0.1, 0.1),
-  mat4Compose(-1.05, 0, 1.25, 0, 0, 0, 1, 0.1, 0.1, 0.1),
-  mat4Compose(1.05, 0, 1.25, 0, 0, 0, 1, 0.1, 0.1, 0.1),
+  composeMat4(-2.1, 0, -1.5, 0, 0, 0, 1, 0.1, 0.1, 0.1),
+  composeMat4(0, 0, -1.5, 0, 0, 0, 1, 0.1, 0.1, 0.1),
+  composeMat4(2.1, 0, -1.5, 0, 0, 0, 1, 0.1, 0.1, 0.1),
+  composeMat4(-1.05, 0, 1.25, 0, 0, 0, 1, 0.1, 0.1, 0.1),
+  composeMat4(1.05, 0, 1.25, 0, 0, 0, 1, 0.1, 0.1, 0.1),
 ];
 
 for (let index = 0; index < transforms.length; index++) {

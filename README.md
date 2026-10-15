@@ -10,6 +10,8 @@ npm install babylon-lite-explorer
 
 The default adapter uses the `@babylonjs/lite` installation from your application. Install it separately if your application does not already include it.
 
+The current baseline is `@babylonjs/lite@^1.34.0`, with optional `@litools/instancer@^0.7.0` integration. See the [migration notes](docs/babylon-lite-1.34.0-migration.md) for breaking changes since Lite 1.17. Environment Y rotation is no longer shown because Lite exposes a setter without public readback.
+
 ## Use
 
 [Read the detailed User Guide](https://github.com/eldinor/babylon-lite-explorer/blob/main/docs/user-guide.md). For Instancer integration, see the [Instancer Adapter guide](https://github.com/eldinor/babylon-lite-explorer/blob/main/docs/instancer-adapter.md) and the [VAT character and sword example](https://github.com/eldinor/babylon-lite-explorer/blob/main/docs/instancer-vat-example.md).
@@ -72,7 +74,7 @@ The header switches layout and theme. Keyboard shortcuts are `Ctrl+Shift+L` (lay
 
 Camera focus is optional and disabled by default. Set `features.focusSelected: true` to expose Focus only for entities whose adapter reports `focusable: true` and implements `focusEntity`.
 
-Canvas picking is also optional. Set `features.canvasPicking: true` to add a Pick toggle to the Scene Explorer header. Picking mode is inactive by default unless `userSettings.picking.enabled` is true; while active, a short primary-pointer click selects a public scene mesh. Pointer drags are ignored so camera controls keep their normal behavior. Successful Babylon Lite 1.17 picks add a read-only **Last Pick** section with world point, distance, normals, face/submesh IDs, barycentric coordinates, and thin-instance identity. Custom adapters should implement `pickEntity`; the legacy `pickEntityId` hook remains supported without diagnostics.
+Canvas picking is also optional. Set `features.canvasPicking: true` to add a Pick toggle to the Scene Explorer header. Picking mode is inactive by default unless `userSettings.picking.enabled` is true; while active, a short primary-pointer click selects a public scene mesh. Pointer drags are ignored so camera controls keep their normal behavior. Successful Babylon Lite 1.34 picks add a read-only **Last Pick** section with world point, distance, normals, face/submesh IDs, barycentric coordinates, and thin-instance identity. Custom adapters should implement `pickEntity`; the legacy `pickEntityId` hook remains supported without diagnostics.
 
 Notifications dismiss automatically after three seconds. Configure `notificationDurationMs`, or set it to `0` for manual dismissal. Set `notificationsEnabled: false` to disable notifications completely. These options are ready for a future preferences UI.
 
@@ -94,7 +96,7 @@ The footer's **FPS** and **Frame interval** are calculated from browser animatio
 
 `createInstancerExplorerAdapter()` lets applications register Instancer sets without adding every instance to the main Scene Explorer. Registered source meshes get an `I` row action that opens the dedicated Instancer tab. The tab shows source meshes, their registered sets, and stable instance rows. Source properties are clickable and jump back to the real mesh in Scene Explorer.
 
-Install the optional `@litools/instancer@^0.3.1` peer when using this adapter. Official thin, hierarchy, single-mesh VAT, and multi-part `VatCharacterSet` APIs are supported; the earlier structural registration facade remains temporarily available as deprecated compatibility.
+Install the optional `@litools/instancer@^0.7.0` peer when using this adapter. Official thin, hierarchy, single-mesh VAT, and multi-part `VatCharacterSet` APIs are supported; the earlier structural registration facade remains temporarily available as deprecated compatibility.
 
 See the [Instancer Adapter guide](https://github.com/eldinor/babylon-lite-explorer/blob/main/docs/instancer-adapter.md) for setup, pick modes, editable instance properties, Save Set export choices, reset behavior, and register options.
 
@@ -120,15 +122,15 @@ showLiteExplorer(
 
 ## Public API coverage
 
-The default adapter currently exposes the public scene camera, meshes, mesh hierarchy, lights, derived materials, and animation groups. Material properties use Babylon Lite 1.17.0's official `getMaterialFamily()` and family type guards to identify PBR, Standard, Node, Shader, material-view, and undetermined/custom families, with structural fallbacks for custom material-like objects. PBR and Standard materials are supported for public editing: PBR materials expose environment intensity and their public factors; Standard materials expose their public colors, alpha, specular power, and texture levels. The adapter edits documented scene-node transforms and visibility, base camera projection/viewport fields, recognized arc-rotate/free/geospatial camera fields, and documented light fields. Mesh deletion is routed through Babylon Lite's public `removeFromScene(scene, mesh)` API; optional confirmation is controlled by `confirmEntityRemoval`. Transform node, light, and camera removal are not exposed by the default adapter until Babylon Lite provides an official public removal method for those entity types.
+The default adapter currently exposes the public scene camera, meshes, mesh hierarchy, lights, derived materials, and animation groups. Material properties use Babylon Lite 1.34.0's official `getMaterialFamily()` and family type guards to identify PBR, Standard, Node, Shader, material-view, and undetermined/custom families, with structural fallbacks for custom material-like objects. PBR and Standard materials are supported for public editing: PBR materials expose environment intensity and their public factors; Standard materials expose their public colors, alpha, specular power, and texture levels. The adapter edits documented scene-node transforms and visibility, base camera projection/viewport fields, recognized arc-rotate/free/geospatial camera fields, and documented light fields. Mesh deletion is routed through Babylon Lite's public `removeFromScene(scene, mesh)` API; optional confirmation is controlled by `confirmEntityRemoval`. Lite also supports public transform node, light, and camera removal; the default adapter currently exposes deletion only for meshes.
 
 Mesh properties include a **Deformation** section showing whether the mesh is skinned, its public bone count, whether morph targets are present, the morph-target count, and current morph weights. Morph weights refresh while that mesh is selected. Skeletal animation usually changes bone matrices and deforms vertices without changing the mesh's own position, rotation, or scaling.
 
-Selected meshes also expose a read-only **Geometry** section backed by Babylon Lite 1.17's `getMeshGeometry()`: CPU geometry availability, vertex/index counts, a triangle-list count, and public normal, UV, tangent, and color attribute counts. Explorer caches this derived summary until the scene tree is explicitly refreshed so live property polling does not repeatedly copy CPU geometry arrays.
+Selected meshes also expose a read-only **Geometry** section backed by Babylon Lite 1.34's `getMeshGeometry()`: CPU geometry availability, vertex/index counts, a triangle-list count, and public normal, UV, tangent, and color attribute counts. Explorer caches this derived summary until the scene tree is explicitly refreshed so live property polling does not repeatedly copy CPU geometry arrays.
 
 Registered texture entities accept `textureType: "texture2d" | "dynamic" | "html" | "array"`. Arrays are auto-detected from a positive integer `layers` field; Dynamic and HTML textures require an explicit hint because Babylon Lite's nominal runtime brand symbols are not public. The registered adapter's default Properties view shows the type, dimensions, array layers, and available UV/invert-Y values. A custom `getProperties` callback remains authoritative.
 
-Selecting **Scene** exposes its public clear color, fixed simulation delta, image-processing exposure, contrast, tone-mapping state and algorithm, environment primary color, and environment Y rotation. Babylon Lite 1.17.0 exposes `setSceneImageProcessing()` updates for image-processing values, so exposure, contrast, tone-mapping enabled state, and the Standard/ACES/Khronos PBR Neutral tone-mapping algorithm can be routed through the public runtime update path.
+Selecting **Scene** exposes its public clear color, fixed simulation delta, image-processing exposure, contrast, tone-mapping state and algorithm, and environment primary color. Babylon Lite 1.34.0 exposes `setSceneImageProcessing()` updates for image-processing values, so exposure, contrast, tone-mapping enabled state, and the Standard/ACES/Khronos PBR Neutral tone-mapping algorithm can be routed through the public runtime update path.
 
 ### Environment textures
 
@@ -144,13 +146,13 @@ const environment = await loadEnvironment(scene, url, options);
 
 The current Explorer cannot add that retained object alongside its automatically discovered entities because a custom adapter replaces the default adapter rather than extending it. Future adapter composition is intended to support this case. Environment intensity is a per-PBR-material field, not a scene-level environment setting.
 
-Babylon Lite 1.17.0 tracks projection changes separately, so assigning `camera.fov`, `camera.nearPlane`, or `camera.farPlane` invalidates the cached projection without requiring camera movement or a resize. The new orthographic-camera bounds use the same revision mechanism but are not yet exposed by the default adapter.
+Babylon Lite 1.34.0 tracks projection changes separately, so assigning `camera.fov`, `camera.nearPlane`, or `camera.farPlane` invalidates the cached projection without requiring camera movement or a resize. The new orthographic-camera bounds use the same revision mechanism but are not yet exposed by the default adapter.
 
-Babylon Lite 1.17.0 tone-mapping enabled/disabled and algorithm changes are routed through `setSceneImageProcessing()`. The earlier 1.11.0 audit found that switching only Standard, ACES, or Khronos PBR Neutral after a tone-mapped pipeline had been cached could reuse the previous WGSL. This still needs a browser rendering regression test against 1.17.0 before the workaround is removed.
+Babylon Lite 1.34.0 tone-mapping enabled/disabled and algorithm changes are routed through `setSceneImageProcessing()`. The earlier 1.11.0 audit found that switching only Standard, ACES, or Khronos PBR Neutral after a tone-mapped pipeline had been cached could reuse the previous WGSL. This still needs a browser rendering regression test against 1.34.0 before the workaround is removed.
 
 Babylon Lite 1.4.0 preserves glTF node names on public transform nodes, but generated renderable meshes are named `gltf_mesh_0`, `gltf_mesh_1`, and so on. The original glTF `mesh.name` is not retained on the public mesh object, so Explorer cannot recover it through public APIs. A named parent transform may still provide the model's original node-level label.
 
-Texture previews and original texture URLs are unavailable through the default adapter. Babylon Lite 1.17.0 exposes GPU handles, dimensions, UV transforms, and `invertY` on `Texture2D`, but it does not retain public source-image/URL metadata or provide a public pixel-readback surface for these textures. These build-time texture fields remain read-only in Explorer.
+Texture previews and original texture URLs are unavailable through the default adapter. Babylon Lite 1.34.0 exposes GPU handles, dimensions, UV transforms, and `invertY` on `Texture2D`, but it does not retain public source-image/URL metadata or provide a public pixel-readback surface for these textures. These build-time texture fields remain read-only in Explorer.
 
 ## Future: additional application-owned entities
 

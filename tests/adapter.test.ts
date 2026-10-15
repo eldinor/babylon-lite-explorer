@@ -5,6 +5,38 @@ import { findEntityById } from "../src/signals/treeUtils";
 import { fakeScene } from "./helpers";
 
 describe("default adapter", () => {
+  it("inspects current Lite scene-node lights and edits factory-created materials", async () => {
+    const engine = lite.createNullEngine();
+    const scene = lite.createSceneContext(engine, { defaultRenderTask: false });
+    const light = lite.createDirectionalLight([0, -1, 0], 1);
+    lite.addToScene(scene, light);
+    lite.setEnvironmentRotation(scene, 0.7);
+    const adapter = createDefaultLiteSceneAdapter();
+    const context = { scene, engine, lite };
+    try {
+      const root = (await adapter.getSceneTree(context))[0];
+      const lightEntity = root.children!.find((item) => item.label === "Nodes")!.children!.find((item) => item.source === light)!;
+      expect((await adapter.setProperty?.(lightEntity, "intensity", 2, context))?.ok).toBe(true);
+      expect(light.intensity).toBe(2);
+      expect((await adapter.getProperties(root, context)).some((item) => item.path === "envRotationY")).toBe(false);
+
+      for (const material of [lite.createPbrMaterial(), lite.createStandardMaterial()]) {
+        const data = fakeScene();
+        data.mesh.material = Object.assign(material, { name: "Factory material" });
+        const materialContext = { scene: data.scene, engine, lite };
+        const materialRoot = (await adapter.getSceneTree(materialContext))[0];
+        const entity = materialRoot.children!.find((item) => item.label === "Materials")!.children![0];
+        const path = lite.isPbrMaterial(material) ? "baseColorFactor" : "diffuseColor";
+        const value = lite.isPbrMaterial(material) ? [0.2, 0.4, 0.6, 1] : [0.2, 0.4, 0.6];
+        expect((await adapter.setProperty?.(entity, path, value, materialContext))?.ok).toBe(true);
+        expect((await adapter.getProperties(entity, materialContext)).find((item) => item.path === path)?.value).toEqual(value);
+      }
+    } finally {
+      adapter.dispose?.();
+      // NullEngine allocates no GPU resources or animation-frame driver.
+    }
+  });
+
   it("marks mutable scene entities for live property refresh", async () => {
     const data = fakeScene();
     const tree = await createDefaultLiteSceneAdapter().getSceneTree({ scene: data.scene, engine: {} });
@@ -187,8 +219,7 @@ describe("default adapter", () => {
       "imageProcessing.contrast",
       "imageProcessing.toneMappingEnabled",
       "imageProcessing.toneMapping",
-      "environmentPrimaryColor",
-      "envRotationY"
+      "environmentPrimaryColor"
     ]));
     expect(properties.find((property) => property.path === "clipPlane")?.value).toBe("[0.000, 1.000, 0.000, -2.000]");
 
@@ -198,7 +229,8 @@ describe("default adapter", () => {
     const originalClearColor = data.scene.clearColor;
     expect((await adapter.setProperty?.(scene, "clearColor", [0.2, 0.3, 0.4, 1], context))?.ok).toBe(true);
     expect((await adapter.setProperty?.(scene, "environmentPrimaryColor", [0.4, 0.5, 0.6], context))?.ok).toBe(true);
-    expect((await adapter.setProperty?.(scene, "envRotationY", Math.PI, context))?.ok).toBe(true);
+    expect(properties.some((property) => property.path === "envRotationY")).toBe(false);
+    expect((await adapter.setProperty?.(scene, "envRotationY", Math.PI, context))?.ok).toBe(false);
     expect((await adapter.setProperty?.(scene, "fixedDeltaMs", 16.667, context))?.ok).toBe(true);
     expect((await adapter.setProperty?.(scene, "fog.mode", "2", context))?.ok).toBe(true);
     expect((await adapter.setProperty?.(scene, "fog.density", 0.025, context))?.ok).toBe(true);
@@ -212,7 +244,6 @@ describe("default adapter", () => {
     expect(data.scene.clearColor).toBe(originalClearColor);
     expect(data.scene.clearColor).toEqual({ r: 0.2, g: 0.3, b: 0.4, a: 1 });
     expect(data.scene.environmentPrimaryColor).toEqual([0.4, 0.5, 0.6]);
-    expect(data.scene.envRotationY).toBe(Math.PI);
     expect(data.scene.fixedDeltaMs).toBe(16.667);
     expect(data.scene.fog).toEqual({ mode: 2, density: 0.025, start: 2, end: 20, color: [0.6, 0.7, 0.8] });
   });

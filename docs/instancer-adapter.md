@@ -9,7 +9,7 @@ Create one adapter, register each set, and pass it through `adapters`.
 Install the optional integration peer alongside Explorer:
 
 ```sh
-npm install @litools/instancer@^0.3.1
+npm install @litools/instancer@^0.7.0
 ```
 
 ```ts
@@ -39,7 +39,7 @@ showLiteExplorer(
 
 `register(set)` accepts the official `BaseInstanceSet`, `VatInstanceSet`, and `VatCharacterSet` APIs. The adapter derives the source mesh or hierarchy root and uses metadata labels when available.
 
-The earlier structural `InstancerSetLike` API remains available for compatibility in this release, but is deprecated. Structural sets continue to use entry scans when resolving slots; official sets use `getIdForSlot()`, `has()`, and the non-throwing helpers added in Instancer 0.2.1 and available in 0.3.1.
+The earlier structural `InstancerSetLike` API remains available for compatibility in this release, but is deprecated. Structural sets continue to use entry scans when resolving slots; official sets use `getIdForSlot()`, `has()`, and the non-throwing helpers added in Instancer 0.2.1 and available in 0.7.0.
 
 Supported set kinds are:
 

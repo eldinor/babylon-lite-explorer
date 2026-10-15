@@ -10,7 +10,7 @@ The tree lists the public scene, camera, lights, meshes and transform hierarchy,
 - Use the arrow keys to move through and expand the tree.
 - Enable Pick to select a mesh by clicking the canvas. Camera drags are ignored. Registered Instancer thin instances can also be selected by Pick when the adapter can map Babylon Lite's `thinInstanceIndex` back to a stable instance entry.
 - Supported selection actions appear between the panes and status bar.
-- Meshes can be deleted from the selected-entity bar or the red row action. Set `confirmEntityRemoval: true` or `userSettings.deletion.confirmEntityRemoval: true` to ask before deletion; the default is `false`. Transform node, light, and camera deletion is not shown until Babylon Lite exposes an official public removal API for those entity types.
+- Meshes can be deleted from the selected-entity bar or the red row action. Set `confirmEntityRemoval: true` or `userSettings.deletion.confirmEntityRemoval: true` to ask before deletion; the default is `false`. The default adapter currently exposes deletion only for meshes, although Lite also provides public removal for transform nodes, lights, and cameras.
 
 The Scene Explorer footer opens User Settings from the gear button and links to the User Guide, BabylonPress, and the project repository.
 
@@ -24,15 +24,15 @@ When animation groups exist, the lowest Properties footer displays their count. 
 
 ### Scene
 
-Scene properties include clear color, fixed simulation delta, shadow-generator count, fog, clip plane, image-processing exposure and contrast, tone mapping, metadata, environment primary color, and environment Y rotation. Existing fog settings are editable; clip planes and shadow generators are currently diagnostic readouts.
+Scene properties include clear color, fixed simulation delta, shadow-generator count, fog, clip plane, image-processing exposure and contrast, tone mapping, metadata, and environment primary color. Existing fog settings are editable; clip planes and shadow generators are currently diagnostic readouts.
 
-Babylon Lite 1.17.0 exposes `setSceneImageProcessing()` updates for exposure, contrast, tone-mapping enabled state, and the Standard/ACES/Khronos PBR Neutral tone-mapping algorithm. The earlier 1.11.0 audit found an algorithm-only cache limitation; it still needs a browser rendering regression test against 1.17.0.
+Babylon Lite 1.34.0 exposes `setSceneImageProcessing()` updates for exposure, contrast, tone-mapping enabled state, and the Standard/ACES/Khronos PBR Neutral tone-mapping algorithm. The earlier 1.11.0 audit found an algorithm-only cache limitation; it still needs a browser rendering regression test against 1.34.0.
 
 ### Materials
 
 PBR and Standard materials are supported through their documented public fields. PBR materials expose their factors and environment intensity. Standard materials expose their colors, alpha, specular power, and texture levels. The material family is inferred from documented public fields.
 
-Babylon Lite 1.17.0 exposes official material-family detection, so even an otherwise empty PBR material is identified as **PBR**.
+Babylon Lite 1.34.0 exposes official material-family detection, so even an otherwise empty PBR material is identified as **PBR**.
 
 ### Mesh deformation
 
@@ -44,7 +44,7 @@ The copy button beside a property copies that value. The selection **Copy** acti
 
 ## Instancer
 
-Applications can add an Instancer tab with `createInstancerExplorerAdapter()` and explicit `instancerAdapter.register(set)` calls. Install the optional `@litools/instancer@^0.3.1` peer for official thin, hierarchy, VAT, and multi-part VAT character support. Scene Explorer stays focused on scene objects; registered sources get an `I` row action that opens the Instancer tab. See the [Instancer Adapter guide](instancer-adapter.md) for setup and API details.
+Applications can add an Instancer tab with `createInstancerExplorerAdapter()` and explicit `instancerAdapter.register(set)` calls. Install the optional `@litools/instancer@^0.7.0` peer for official thin, hierarchy, VAT, and multi-part VAT character support. Scene Explorer stays focused on scene objects; registered sources get an `I` row action that opens the Instancer tab. See the [Instancer Adapter guide](instancer-adapter.md) for setup and API details.
 
 The Instancer tab is a tree:
 
@@ -157,6 +157,6 @@ Environment intensity is a per-PBR-material property rather than a scene-level s
 - Environment textures cannot be discovered from the public scene.
 - Original texture URLs and preview pixels are not retained through the current public texture API.
 - Empty PBR materials cannot be reliably distinguished from custom empty materials.
-- Tone-mapping algorithm changes use Babylon Lite 1.17.0 `setSceneImageProcessing()`; the earlier algorithm-only cache limitation still needs a 1.17.0 browser regression test.
+- Tone-mapping algorithm changes use Babylon Lite 1.34.0 `setSceneImageProcessing()`; the earlier algorithm-only cache limitation still needs a 1.34.0 browser regression test.
 - Export Scene is a diagnostic JSON snapshot, not a scene serialization format.
 - A custom adapter currently replaces the default adapter instead of extending it.

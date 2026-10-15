@@ -7,7 +7,7 @@ import {
   createSceneContext,
   loadEnvironment,
   loadGltf,
-  mat4Compose,
+  composeMat4,
   onBeforeRender,
   registerScene,
   startEngine,
@@ -103,11 +103,11 @@ const swords = createVatAttachmentBinding<SwordMetadata>({
 });
 
 const transforms = [
-  mat4Compose(-2.1, 0, -1.5, 0, 0, 0, 1, CHARACTER_SCALE, CHARACTER_SCALE, CHARACTER_SCALE),
-  mat4Compose(0, 0, -1.5, 0, 0, 0, 1, CHARACTER_SCALE, CHARACTER_SCALE, CHARACTER_SCALE),
-  mat4Compose(2.1, 0, -1.5, 0, 0, 0, 1, CHARACTER_SCALE, CHARACTER_SCALE, CHARACTER_SCALE),
-  mat4Compose(-1.05, 0, 1.25, 0, 0, 0, 1, CHARACTER_SCALE, CHARACTER_SCALE, CHARACTER_SCALE),
-  mat4Compose(1.05, 0, 1.25, 0, 0, 0, 1, CHARACTER_SCALE, CHARACTER_SCALE, CHARACTER_SCALE),
+  composeMat4(-2.1, 0, -1.5, 0, 0, 0, 1, CHARACTER_SCALE, CHARACTER_SCALE, CHARACTER_SCALE),
+  composeMat4(0, 0, -1.5, 0, 0, 0, 1, CHARACTER_SCALE, CHARACTER_SCALE, CHARACTER_SCALE),
+  composeMat4(2.1, 0, -1.5, 0, 0, 0, 1, CHARACTER_SCALE, CHARACTER_SCALE, CHARACTER_SCALE),
+  composeMat4(-1.05, 0, 1.25, 0, 0, 0, 1, CHARACTER_SCALE, CHARACTER_SCALE, CHARACTER_SCALE),
+  composeMat4(1.05, 0, 1.25, 0, 0, 0, 1, CHARACTER_SCALE, CHARACTER_SCALE, CHARACTER_SCALE),
 ];
 
 for (let index = 0; index < transforms.length; index++) {

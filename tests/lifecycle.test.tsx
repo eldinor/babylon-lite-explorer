@@ -5,6 +5,7 @@ import { createInstancerExplorerAdapter } from "../src/adapter/instancer/createI
 import type { LiteSceneAdapter } from "../src/adapter/LiteSceneAdapter";
 import { fakeScene } from "./helpers";
 import packageJson from "../package.json";
+import { VERSION } from "@babylonjs/lite";
 
 it("mounts independent instances and disposes idempotently", async () => {
   vi.useFakeTimers();
@@ -17,7 +18,7 @@ it("mounts independent instances and disposes idempotently", async () => {
   expect(document.querySelectorAll(".ble-root")).toHaveLength(2);
   expect(document.querySelector(".ble-root")?.getAttribute("data-layout")).toBe("single");
   expect(document.querySelector(".ble-root")?.querySelectorAll(".ble-single-stack > .ble-pane")).toHaveLength(2);
-  expect(document.querySelector(".ble-toolbar strong")?.textContent).toBe(`Babylon Lite 1.17.0 Explorer ${packageJson.version}`);
+  expect(document.querySelector(".ble-toolbar strong")?.textContent).toBe(`Babylon Lite ${VERSION} Explorer ${packageJson.version}`);
   expect([...document.querySelector(".ble-root")!.querySelectorAll<HTMLButtonElement>('.ble-tabs button[role="tab"]')].map((item) => item.textContent)).toEqual(["Scene Explorer", "Properties", "Tools"]);
   expect(first.state).toBe("visible");
   expect(first.isDisposed).toBe(false);
@@ -620,8 +621,7 @@ it("shows public scene settings when Scene is selected", async () => {
       "Contrast",
       "Tone mapping",
       "Tone mapping type",
-      "Environment primary color",
-      "Environment Y rotation"
+      "Environment primary color"
     ]));
   });
   expect(document.querySelector<HTMLInputElement>('.ble-property-control input[type="checkbox"]')?.checked).toBe(false);

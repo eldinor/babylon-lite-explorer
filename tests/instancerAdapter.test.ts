@@ -10,7 +10,7 @@ const matrixAt = (x: number, y = 0, z = 0) => new Float32Array([
   x, y, z, 1
 ]);
 
-describe("Instancer 0.3 adapter", () => {
+describe("Instancer 0.7 adapter", () => {
   it("uses official slot lookup and hierarchy child meshes for rigid picking", async () => {
     const childMesh = { name: "Hierarchy child" };
     const root = { name: "Robot root" };

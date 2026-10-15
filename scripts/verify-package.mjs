@@ -102,7 +102,7 @@ export function registerOfficialSet(set: InstanceSet<{ label: string }>) {
   run(tsc, ["-p", "tsconfig.json"], adapterConsumer);
   run(vite, ["build", "--configLoader", "runner"], adapterConsumer);
 
-  console.log(`Verified ${packed[0].filename}: base and Instancer 0.3.1 consumers built successfully.`);
+  console.log(`Verified ${packed[0].filename}: base and Instancer 0.7.0 consumers built successfully.`);
 } finally {
   rmSync(workspace, { recursive: true, force: true });
 }
