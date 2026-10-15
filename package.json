@@ -1,6 +1,6 @@
 {
   "name": "babylon-lite-explorer",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "A small, public-API-only explorer for Babylon Lite scenes",
   "keywords": [
     "babylon",
@@ -57,6 +57,7 @@
     "dist/adapter/default/createDefaultLiteSceneAdapter.d.ts",
     "dist/adapter/instancer/createInstancerExplorerAdapter.d.ts",
     "dist/adapter/registered/createRegisteredSceneAdapter.d.ts",
+    "dist/adapter/composeLiteSceneAdapters.d.ts",
     "dist/adapter/LiteSceneAdapter.d.ts",
     "dist/adapter/propertyDescriptors.d.ts",
     "dist/api/extensions.d.ts",

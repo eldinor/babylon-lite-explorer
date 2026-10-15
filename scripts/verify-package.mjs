@@ -49,6 +49,8 @@ try {
   if (!css || !js) throw new Error(`Expected JavaScript and CSS assets, received: ${emitted.join(", ")}`);
   if (!readFileSync(join(assets, css), "utf8").includes(".ble-root")) throw new Error("Consumer CSS does not contain Explorer styles.");
   const installedEntry = join(consumer, "node_modules", "babylon-lite-explorer", "dist", "index.js");
+  const compositionTypes = join(consumer, "node_modules", "babylon-lite-explorer", "dist", "adapter", "composeLiteSceneAdapters.d.ts");
+  if (!existsSync(compositionTypes)) throw new Error("Packed library is missing the public adapter composition declaration.");
   if (!existsSync(installedEntry) || !readFileSync(installedEntry, "utf8").startsWith('import "./lite-explorer.css";')) {
     throw new Error("Packed JavaScript entry does not import the extracted stylesheet.");
   }

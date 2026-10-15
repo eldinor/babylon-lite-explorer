@@ -84,7 +84,7 @@ For jsDelivr and Lite Playground, use the browser export. The root `+esm` URL ma
 
 ```ts
 import * as lite from "@babylonjs/lite";
-import { showLiteExplorer } from "https://cdn.jsdelivr.net/npm/babylon-lite-explorer@0.6.0/browser/+esm";
+import { showLiteExplorer } from "https://cdn.jsdelivr.net/npm/babylon-lite-explorer@0.7.0/browser/+esm";
 
 const explorer = showLiteExplorer({ engine, scene, canvas, lite });
 await explorer.ready;
